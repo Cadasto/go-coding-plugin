@@ -1,0 +1,14 @@
+{
+  "name": "go-coding-plugin",
+  "version": "0.1.0",
+  "description": "Idiomatic Go coding standards for AI assistants — formatting, errors, concurrency, testing, layout.",
+  "author": {
+    "name": "Cadasto B.V.",
+    "url": "https://github.com/Cadasto"
+  },
+  "license": "MIT",
+  "skills": "skills",
+  "agents": "agents",
+  "rules": "rules",
+  "hooks": "hooks/cursor-hooks.json"
+}
