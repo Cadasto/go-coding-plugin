@@ -4,6 +4,11 @@
       {
         "command": "bash hooks/session-start.sh"
       }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "bash hooks/format-on-save.sh"
+      }
     ]
   }
 }

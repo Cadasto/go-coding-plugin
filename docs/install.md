@@ -38,3 +38,12 @@ A session restart is required for an update to take effect.
 ## Cursor
 
 Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or local path). The repo root contains `.cursor-plugin/plugin.json`, which declares the `skills`, `agents`, `rules`, and `hooks` paths. After changing content locally, reload or reinstall the plugin so Cursor picks it up.
+
+## Hooks
+
+The plugin ships two host-agnostic hooks (Claude `hooks/hooks.json`, Cursor `hooks/cursor-hooks.json`):
+
+- **`session-start.sh`** — on session start, detects a Go workspace (`go.mod`/`*.go`) and prints one standards line.
+- **`format-on-save.sh`** — after each edit of a `*.go` file (Claude `PostToolUse` on `Write`/`Edit`; Cursor `afterFileEdit`), runs **`gofumpt -w`** on that file, or **`gofmt -w -s`** when `gofumpt` is not installed. It is **host-only** (no container round-trip), **edits the file in place**, and is a **silent no-op** when no Go formatter is on `PATH` — so install `gofmt` (ships with Go) or `gofumpt` to benefit. It never blocks an edit. This is per-file formatting only; run `golangci-lint` and your tests via CI/`make` for full-tree checks.
+
+> The Cursor wiring targets the `afterFileEdit` event; if your Cursor version exposes a different post-edit event or payload shape, adjust `hooks/cursor-hooks.json` and the path-extraction in `format-on-save.sh` accordingly.

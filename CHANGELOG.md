@@ -9,6 +9,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- Hooks: `hooks/format-on-save.sh` — after a `Write`/`Edit` of a `*.go` file, runs `gofumpt -w` (or `gofmt -w -s`) on that file; host-only, silent no-op if no formatter, exits 0 always. Wired via `hooks/hooks.json` (Claude `PostToolUse`, `matcher: "Write|Edit"`, `${CLAUDE_PLUGIN_ROOT}`) and `hooks/cursor-hooks.json` (Cursor `afterFileEdit`, workspace-relative).
+
 ## [0.1.0] - 2026-06-13
 
 First tagged release — the full dual-host (Claude Code + Cursor) Go-standards surface: the `go-coding` router skill, six load-on-use standards skills, a context-isolated review agent, two slash commands, a shipped golangci-lint v2 reference config, and a Cursor rule. Pure Markdown + JSON, grounded in Go 1.25 + golangci-lint v2 with cited sources; no MCP backend.

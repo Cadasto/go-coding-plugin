@@ -9,6 +9,18 @@
           }
         ]
       }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/format-on-save.sh",
+            "timeout": 20000
+          }
+        ]
+      }
     ]
   }
 }
