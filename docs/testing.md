@@ -10,7 +10,7 @@ exercising the components.
 - **Official validator** — `claude plugin validate .`: checks the manifest and component structure (no extra dependencies).
 - **Structural review** — run the `plugin-dev:plugin-validator` agent after creating or modifying components.
 - **Skill quality review** — run the `plugin-dev:skill-reviewer` agent: description-triggering quality, progressive disclosure, content structure.
-- **Token cost** — `claude plugin details go-coding-plugin` shows the inventory and projected token cost; keep skill/command metadata lean.
+- **Token cost** — `claude plugin details go-coding` shows the inventory and projected token cost; keep skill/command metadata lean.
 
 ## Local triggering tests
 

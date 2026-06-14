@@ -1,5 +1,5 @@
 {
-  "name": "go-coding-plugin",
+  "name": "go-coding",
   "version": "0.1.0",
   "description": "Idiomatic Go coding standards for AI assistants — formatting, errors, concurrency, testing, layout.",
   "author": {

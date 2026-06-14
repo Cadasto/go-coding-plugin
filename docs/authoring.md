@@ -6,7 +6,7 @@ The detailed companion to [AGENTS.md](../AGENTS.md) (which is authoritative); th
 ## Naming & layout
 
 - **Components are kebab-case** and namespaced `<plugin>:<component>` (e.g.
-  `go-coding-plugin:go-errors`) — don't repeat the plugin's words in a component name. A component's
+  `go-coding:go-errors`) — don't repeat the plugin's words in a component name. A component's
   frontmatter `name` MUST equal its directory (skills) or filename stem (agents);
   `scripts/validate.py` enforces this.
 - `skills/<name>/SKILL.md` (includes user-invoked slash commands) · `agents/<name>.md` ·

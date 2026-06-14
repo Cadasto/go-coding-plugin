@@ -8,7 +8,7 @@ An AI plugin by **Cadasto B.V.** that teaches AI coding assistants **idiomatic G
 
 ```
 /plugin marketplace add Cadasto/plugin-marketplace
-/plugin install go-coding-plugin@cadasto
+/plugin install go-coding@cadasto
 ```
 
 Or from a local working copy: `claude plugin add /path/to/go-coding-plugin`.

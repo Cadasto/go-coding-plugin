@@ -10,10 +10,10 @@ This plugin is distributed for both [Claude Code](https://docs.claude.com/en/doc
 
 ```
 /plugin marketplace add Cadasto/plugin-marketplace
-/plugin install go-coding-plugin@cadasto
+/plugin install go-coding@cadasto
 ```
 
-The marketplace name is `cadasto`, so the plugin is addressed as `go-coding-plugin@cadasto`.
+The marketplace name is `cadasto`, so the plugin is addressed as `go-coding@cadasto`.
 
 ### Install (local working copy, for development)
 
@@ -25,12 +25,12 @@ claude plugin add /path/to/go-coding-plugin
 
 ```bash
 claude plugin validate .                 # manifest + component structure
-claude plugin details go-coding-plugin   # component inventory + projected token cost
+claude plugin details go-coding   # component inventory + projected token cost
 ```
 
 ```
 /plugin marketplace update cadasto
-/plugin update go-coding-plugin
+/plugin update go-coding
 ```
 
 A session restart is required for an update to take effect.
