@@ -6,7 +6,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor, and co
 
 The **Go Coding Plugin** is an AI plugin by Cadasto B.V. that teaches AI coding assistants **idiomatic Go coding standards** — formatting, naming, error handling, concurrency, testing, and project layout — through skills, commands, agents, hooks, and Cursor rules. It targets **both Claude Code and Cursor** from a single shared component set.
 
-> **Current status — v0.1.0.** A complete dual-host (Claude Code + Cursor) Go-standards set that validates clean (`./scripts/validate.sh` + `claude plugin validate .`): the auto-invoked `go-coding` **router** skill; the focused standards skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting`, `go-layout`; the read-only `go-reviewer` agent; the user-invoked `/go-explain` and `/go-lint-setup` skills; a shipped `references/golangci.v2.yml`; the `rules/go-context.mdc` Cursor rule; and host-agnostic `session-start` + `format-on-save` hooks. Do not assume a file is present because it is documented here — check first.
+> **Current status — v0.2.0.** A complete dual-host (Claude Code + Cursor) Go-standards set that validates clean (`./scripts/validate.sh` + `claude plugin validate .`): the auto-invoked `go-coding` **router** skill; the focused standards skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting`, `go-layout`; the read-only `go-reviewer` agent; the user-invoked `/go-explain` and `/go-lint-setup` skills; a shipped `references/golangci.v2.yml`; the `rules/go-context.mdc` Cursor rule; and host-agnostic `session-start` + `format-on-save` hooks. Do not assume a file is present because it is documented here — check first.
 
 ## Domain Context
 
