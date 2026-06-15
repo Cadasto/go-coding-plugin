@@ -9,6 +9,12 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- Docs: `docs/install.md` — "Host toolchain (minimal requirements)" section (Go 1.25.x plus `gofmt`/`gofumpt`/`goimports`/`gopls`, with install and verify commands); `README.md` gains a **Prerequisites** pointer to it.
+
+### Changed
+- Docs: pin the `gopls` install to `@v0.21.1` (verified against Go 1.25.x) in `docs/install.md`.
+
 ## [0.2.0] - 2026-06-14
 
 Adds automatic Go formatting on save, and renames the plugin to `go-coding` (install identifier now `go-coding@cadasto`; the repository stays `go-coding-plugin`).

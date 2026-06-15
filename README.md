@@ -15,6 +15,8 @@ Or from a local working copy: `claude plugin add /path/to/go-coding-plugin`.
 
 **Cursor**: add this repository as a plugin (Settings → Plugins). See [`docs/install.md`](docs/install.md) for both hosts.
 
+**Prerequisites** — the plugin installs without a Go toolchain, but its hooks and enforcement guidance expect **Go 1.25.x** plus `gofmt`, `gofumpt`, `goimports`, and `gopls` on the host `PATH`. See [Host toolchain (minimal requirements)](docs/install.md#host-toolchain-minimal-requirements) for what each tool drives and copy-paste install commands.
+
 ## Component surface
 
 | Component | Status | Purpose |
