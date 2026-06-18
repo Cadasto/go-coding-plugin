@@ -7,7 +7,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## [0.2.1] - 2026-06-18
 
 ### Added
 - Docs: `docs/install.md` — "Host toolchain (minimal requirements)" section (Go 1.25.x plus `gofmt`/`gofumpt`/`goimports`/`gopls`, with install and verify commands); `README.md` gains a **Prerequisites** pointer to it.
