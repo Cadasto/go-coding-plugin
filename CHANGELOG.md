@@ -15,6 +15,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Changed
 - Docs: pin the `gopls` install to `@v0.21.1` (verified against Go 1.25.x) in `docs/install.md`.
 
+### Fixed
+- Skills / Cursor rule: make the plugin-root `references/golangci.v2.yml` citation resolvable (`${CLAUDE_PLUGIN_ROOT}/references/…` / `../../` / Glob); the bare path failed a first Read. `go-lint-setup` inlines it, unchanged.
+
 ## [0.2.0] - 2026-06-14
 
 Adds automatic Go formatting on save, and renames the plugin to `go-coding` (install identifier now `go-coding@cadasto`; the repository stays `go-coding-plugin`).

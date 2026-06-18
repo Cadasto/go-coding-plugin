@@ -25,4 +25,4 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 
 Ground every judgment call in a cited source — Effective Go, Go Code Review Comments, the Google
 and Uber Go style guides, `pkg.go.dev`. Don't invent rules. Adopt the shipped golangci-lint v2
-config (`references/golangci.v2.yml`); run `golangci-lint run --fix` for auto-fixable findings.
+config (`references/golangci.v2.yml`, at the **plugin root** — resolve via `${CLAUDE_PLUGIN_ROOT}/references/…` or Glob the installed copy, not under this rule's dir); run `golangci-lint run --fix` for auto-fixable findings.

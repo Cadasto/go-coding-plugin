@@ -5,6 +5,8 @@ description: golangci-lint v2 setup and adoption for Go. This skill should be us
 
 # go-linting — golangci-lint v2
 
+> **Bundled `references/` is at the plugin root** (beside `skills/`, two levels above this file) — *not* under this skill. Read `references/golangci.v2.yml` as `${CLAUDE_PLUGIN_ROOT}/references/golangci.v2.yml` on Claude Code, or `../../references/golangci.v2.yml` from this skill's directory, or Glob for the installed `references/golangci.v2.yml` (host-agnostic).
+
 golangci-lint **v2** (Mar 2025) is the de-facto meta-linter and the deterministic core of this
 plugin. Its schema changed from v1 — **v1 config will not parse**:
 
