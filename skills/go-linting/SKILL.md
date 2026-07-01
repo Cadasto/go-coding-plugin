@@ -44,7 +44,11 @@ formatters:
 - **Pin the version in CI** for reproducibility (the Cadasto Go repos pin `v2.11.4`); a version
   drift silently changes the rule set.
 - `modernize` is the single highest-leverage linter — it operationalizes most `go-idioms` rules on
-  the same engine as gopls/`go fix`, so the plugin's advice stays consistent with the toolchain.
+  the same engine as gopls/`go fix`, so the plugin's advice stays consistent with the toolchain. As
+  of **Go 1.26** the rewritten `go fix ./...` runs that same modernizer suite from the toolchain
+  itself; keep `modernize` in golangci-lint for CI reproducibility and to cover toolchains older
+  than 1.26. Use golangci-lint built with a Go version ≥ the module's toolchain (Go 1.26 support
+  landed in the golangci-lint releases built with 1.26).
 - Adopt the shipped reference config `references/golangci.v2.yml`, or run `/go-lint-setup` to
   scaffold it into a repo (it won't overwrite an existing config without asking).
 

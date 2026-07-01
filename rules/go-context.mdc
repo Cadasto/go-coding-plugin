@@ -1,5 +1,5 @@
 ---
-description: Go coding standards — idiomatic Go (Go 1.25, golangci-lint v2) for .go files. Mirrors the go-coding router skill for Cursor.
+description: Go coding standards — idiomatic Go (Go 1.26, works with 1.25+; golangci-lint v2) for .go files. Mirrors the go-coding router skill for Cursor.
 globs: ["**/*.go"]
 alwaysApply: false
 ---
@@ -17,10 +17,10 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 |---|---|---|
 | Formatting | `gofmt`/`gofumpt` (+ `goimports`) — machine-enforced | — |
 | Static analysis / bugs | `go vet ./...`, `golangci-lint run` | `go-linting` |
-| Modern idioms | `golangci-lint run --enable-only=modernize`, `go fix ./...` | `go-idioms` |
+| Modern idioms | `go fix ./...` (Go 1.26 runs the modernizers natively), or `golangci-lint run --enable-only=modernize` | `go-idioms` |
 | Errors | `golangci-lint run --enable-only=errorlint` | `go-errors` |
 | Concurrency | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
-| Testing | `go test -race ./...`; `testing/synctest` (1.25) for time/concurrency | `go-testing` |
+| Testing | `go test -race ./...`; `testing/synctest` (since 1.25) for time/concurrency | `go-testing` |
 | Layout | judgment | `go-layout` |
 
 Ground every judgment call in a cited source — Effective Go, Go Code Review Comments, the Google
