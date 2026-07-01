@@ -23,7 +23,7 @@ a repo pinned to 1.25 or older.
 
 | Prefer | Over | Since |
 |---|---|---|
-| `new(expr)` — e.g. `Field: new(30)`, `new(int64(req.Limit))` | a named temp + `&tmp`, or a `ptr[T](v)` helper, for optional/pointer fields | 1.26 |
+| `new(expr)` — e.g. `Field: new(30)`, `new(int64(req.Limit))` | a `ptr[T](v)` helper (auto-rewritten by the `newexpr` fixer) or a hand-written `tmp := v; &tmp`, for optional/pointer fields | 1.26 |
 | `for i := range n` | `for i := 0; i < n; i++` | 1.22 |
 | `min(a, b)` / `max(a, b)` builtins | hand-rolled helpers | 1.21 |
 | *(drop)* `x := x` loop-var copy | pre-1.22 capture workaround | 1.22 |

@@ -8,7 +8,8 @@ description: Idiomatic, leak-free Go concurrency. This skill should be used when
 Deterministic backstop: `go test -race ./...`, `go vet ./...` (catches copylocks, lost cancel),
 and `go.uber.org/goleak`. The race detector is the source of truth — run it before reasoning.
 On **Go 1.26+** the runtime also ships an experimental `goroutineleak` profile in `runtime/pprof`
-that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts.
+that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (enable it
+with `GOEXPERIMENT=goroutineleakprofile` at build time).
 
 ## Rules
 
