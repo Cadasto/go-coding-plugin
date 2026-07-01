@@ -18,19 +18,25 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
 - **`-race` is non-negotiable** for any code touching goroutines; wire it into CI.
 - **Goroutine-leak detection:** `go.uber.org/goleak` — `goleak.VerifyTestMain(m)` or per-test
   `defer goleak.VerifyNone(t)`.
-- **`testing/synctest` (stable Go 1.25) is the default for time/concurrency tests** — timeouts,
+- **`testing/synctest` (stable since Go 1.25) is the default for time/concurrency tests** — timeouts,
   tickers, retries, `context` cancellation. It runs the bubble on a *fake clock* with deterministic
   scheduling, so "5-second" waits complete in microseconds and flakiness disappears. Wrap with
   `synctest.Test(t, func(t *testing.T){ … })`; `synctest.Wait()` blocks until every goroutine in the
-  bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling.
+  bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (The pre-1.25
+  `GOEXPERIMENT=synctest` API — `synctest.Run` — was removed in Go 1.26; use the stable `synctest.Test`.)
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
+- **Deterministic crypto tests (Go 1.26):** `testing/cryptotest.SetGlobalRandom(t, seed)` pins a
+  deterministic randomness source for the test's duration — reach for it instead of hand-injecting a
+  custom `io.Reader` when testing code that draws from `crypto/rand`. It's process-global, so it
+  can't run inside a `t.Parallel()` test (or one with a parallel ancestor).
 - **Assertions:** stdlib + small helpers (`t.Helper()`) is often enough; `testify` is fine — match
   the repo, don't mix styles.
 
 ## Sources
 - synctest — <https://go.dev/blog/synctest>; `testing.B.Loop` — <https://go.dev/blog/testing-b-loop>
-- `testing` package — <https://pkg.go.dev/testing>; Go 1.22/1.24/1.25 release notes
+- `testing` package — <https://pkg.go.dev/testing>; Go 1.22/1.24/1.25/1.26 release notes — <https://go.dev/doc/go1.26>
+- `testing/cryptotest` (Go 1.26) — <https://pkg.go.dev/testing/cryptotest>
 - `go.uber.org/goleak` — <https://pkg.go.dev/go.uber.org/goleak>
 
 ---

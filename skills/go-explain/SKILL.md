@@ -18,8 +18,9 @@ Cover, in a few lines:
 4. **Source** — cite one authoritative reference: Effective Go, Go Code Review Comments, the Google
    or Uber Go style guide, a `go.dev/blog` post, or `pkg.go.dev`.
 
-Tailor to the repo's Go version when a `go.mod` is present — don't recommend a Go 1.25 idiom for an
-older module. For a fuller treatment, route to the matching skill: `go-errors`, `go-concurrency`,
+Tailor to the repo's Go version when a `go.mod` is present — don't recommend a Go 1.26 idiom (e.g.
+`new(expr)`) for a module pinned to 1.25 or older. For a fuller treatment, route to the matching
+skill: `go-errors`, `go-concurrency`,
 `go-testing`, `go-idioms`, `go-linting`, or `go-layout`.
 
 Keep it tight — this is a lookup, not a lecture. If `$ARGUMENTS` is empty, ask what to explain.

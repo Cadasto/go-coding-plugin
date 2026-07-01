@@ -7,6 +7,9 @@ description: Idiomatic, leak-free Go concurrency. This skill should be used when
 
 Deterministic backstop: `go test -race ./...`, `go vet ./...` (catches copylocks, lost cancel),
 and `go.uber.org/goleak`. The race detector is the source of truth — run it before reasoning.
+On **Go 1.26+** the runtime also ships an experimental `goroutineleak` profile in `runtime/pprof`
+that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (enable it
+with `GOEXPERIMENT=goroutineleakprofile` at build time).
 
 ## Rules
 
@@ -28,11 +31,12 @@ and `go.uber.org/goleak`. The race detector is the source of truth — run it be
   a concurrent map write panics; `-race` catches it.
 - **Channels:** close on the *send* side, never the receive side; a `nil` channel blocks forever
   (useful for disabling a `select` arm, a bug everywhere else).
-- **Testing time/concurrency:** use **`testing/synctest`** (stable in Go 1.25) — fake clock +
+- **Testing time/concurrency:** use **`testing/synctest`** (stable since Go 1.25) — fake clock +
   deterministic scheduling. See `go-testing`.
 
 ## Sources
-- synctest — <https://go.dev/blog/synctest>; Go 1.25 release notes — <https://go.dev/doc/go1.25>
+- synctest — <https://go.dev/blog/synctest>; Go 1.25/1.26 release notes — <https://go.dev/doc/go1.26>
+- `goroutineleak` profile (Go 1.26, experimental) — <https://pkg.go.dev/runtime/pprof>
 - Code Review Comments (Goroutine Lifetimes, Contexts) — <https://go.dev/wiki/CodeReviewComments>
 - Uber Go Style Guide (Concurrency) — <https://github.com/uber-go/guide>
 

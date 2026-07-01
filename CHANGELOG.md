@@ -7,6 +7,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
+## [0.3.0] - 2026-07-01
+
+Retargets the standards baseline to **Go 1.26** (1.26.4+) while keeping version-gated guidance valid for 1.25 modules.
+
+### Added
+- Skills: `go-idioms` — `new(expr)` row (Go 1.26 pointer/optional-field initialization) and a note on self-referencing generic type parameters.
+- Skills: `go-testing` — `testing/cryptotest.SetGlobalRandom` for deterministic crypto tests (Go 1.26); note that the pre-1.25 `GOEXPERIMENT=synctest` (`synctest.Run`) API was removed in Go 1.26.
+- Skills: `go-concurrency` — experimental `goroutineleak` profile in `runtime/pprof` (Go 1.26) as a toolchain-native complement to `goleak`.
+
+### Changed
+- Skills / agent / Cursor rule: standards baseline moved from Go 1.25 to **Go 1.26** in `go-coding`, `go-idioms`, `go-linting`, `go-explain`, the `go-reviewer` agent, and `rules/go-context.mdc`; all keep working against 1.25 modules via the `Since`/`go.mod` version-gating already in `go-idioms`.
+- Skills: `go-idioms`, `go-linting`, `go-coding`, `rules/go-context.mdc` — frame `go fix ./...` as the canonical modernizer runner on Go 1.26 (rewritten atop the analysis framework), with `golangci-lint --enable-only=modernize` for CI reproducibility and older toolchains.
+- Docs: `docs/install.md` and `README.md` — minimum host toolchain raised to **Go 1.26.x** (1.26.4+); tarball example updated to `go1.26.4`; `gopls` pin moved to `v0.22.x` (the line that adds Go 1.26 support).
+- Manifests: `version` → `0.3.0` in both `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`.
+
 ## [0.2.1] - 2026-06-18
 
 ### Added
