@@ -7,6 +7,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
+## [Unreleased]
+
+### Added
+- Agents: `go-reviewer` — three review dimensions: **silent dispatch defaults** (pass-through `default` over an internal enum; paired dispatch sites maintained as independent switches), **sensitive-value echo in errors/logs** at a boundary (driver messages quoting stored values, request bodies in wrapped errors), and **comment–code drift** in the diff.
+- Skills: `go-errors` — fail-loudly-on-impossible-dispatch rule (loud `default` + `exhaustive` linter or enum-completeness test) and boundary-errors-carry-classification-not-payload rule (pass the class/code, keep the raw message internal).
+- Skills: `go-testing` — golden files pin *shape*, not behaviour: pair a golden of an externally executed artefact (SQL, wire requests, rendered configs) with at least one live-execution test.
+
 ## [0.3.0] - 2026-07-01
 
 Retargets the standards baseline to **Go 1.26** (1.26.4+) while keeping version-gated guidance valid for 1.25 modules.

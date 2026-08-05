@@ -1,6 +1,6 @@
 ---
 name: go-errors
-description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, inspecting via `errors.Is`/`errors.As`, sentinel vs typed errors, `errors.Join`, or chasing a silently-swallowed or context-losing error. Pair with the `errorlint` linter (set it up via `go-linting`). Not for panics-as-control-flow or non-Go languages.
+description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, inspecting via `errors.Is`/`errors.As`, sentinel vs typed errors, `errors.Join`, enum-switch dispatch defaults, keeping payload values out of boundary errors/logs, or chasing a silently-swallowed or context-losing error. Pair with the `errorlint` linter (set it up via `go-linting`). Not for panics-as-control-flow or non-Go languages.
 ---
 
 # go-errors — Go error handling
@@ -25,6 +25,14 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   — replaces manual concatenation and most third-party multierror use.
 - **Never swallow:** no `_ = f()` on an error you care about; no empty `if err != nil {}`. Handle,
   wrap-and-return, or (deliberately, with a comment) ignore.
+- **Fail loudly on impossible dispatch:** a `switch` over an internal enum/kind gets a `default`
+  that returns an error (panic only for the genuinely unreachable) — never a silent pass-through
+  that lets a later-added member ride the weakest arm. Pin exhaustiveness with the `exhaustive`
+  linter or a completeness test that iterates the enum.
+- **Boundary errors carry classification, not payload:** upstream messages can embed data values —
+  a database driver quoting the offending stored value, a validator echoing the request body. At a
+  logging or API boundary, pass the stable class/code (e.g. SQLSTATE) and keep the raw message
+  internal — the message-content analogue of severing an internal error *type* with `%v`.
 - **Add context at each layer, log once at the boundary.** Wrapping at every level *and* logging at
   every level produces duplicate noise — return wrapped, log at the top.
 - **Error strings:** lowercase, no trailing punctuation (they get wrapped): `"cannot parse %q"`.

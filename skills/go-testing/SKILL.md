@@ -26,6 +26,9 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   `GOEXPERIMENT=synctest` API — `synctest.Run` — was removed in Go 1.26; use the stable `synctest.Test`.)
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
+  A golden pins *shape*, not behaviour — when it records something another system executes (SQL,
+  wire requests, rendered configs), pair it with at least one test that executes the artefact for
+  real; a snapshot can be stable and wrong.
 - **Deterministic crypto tests (Go 1.26):** `testing/cryptotest.SetGlobalRandom(t, seed)` pins a
   deterministic randomness source for the test's duration — reach for it instead of hand-injecting a
   custom `io.Reader` when testing code that draws from `crypto/rand`. It's process-global, so it
