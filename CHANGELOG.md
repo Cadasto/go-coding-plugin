@@ -13,17 +13,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Agents: `go-reviewer` — three review dimensions: **silent dispatch defaults** (pass-through `default` over an internal enum; paired dispatch sites maintained as independent switches), **sensitive-value echo in errors/logs** at a boundary (driver messages quoting stored values, request bodies in wrapped errors), and **comment–code drift** in the diff.
 - Skills: `go-errors` — fail-loudly-on-impossible-dispatch rule (loud `default` + `exhaustive` linter or enum-completeness test) and boundary-errors-carry-classification-not-payload rule (pass the class/code, keep the raw message internal).
 - Skills: `go-testing` — golden files pin *shape*, not behaviour: pair a golden of an externally executed artefact (SQL, wire requests, rendered configs) with at least one live-execution test.
-- Skills: `go-errors` — `errors.AsType[E]` (Go 1.26) preferred over `errors.As` on 1.26+ modules (`errorsastype` fixer); `%w` goes last unless the sentinel is the sentence; check `Close` on written files (`errors.Join` into a named result); keep the happy path at minimal indentation; never let a panic cross a package boundary.
+- Skills: `go-errors` — `errors.AsType[E]` (Go 1.26) leads typed-error inspection, preferred over `errors.As` (`errorsastype` modernizer converts call sites); `%w` goes last unless the sentinel is the sentence; check `Close` on written files (`errors.Join` into a named result); keep the happy path at minimal indentation; never let a panic cross a package boundary.
 - Skills: `go-testing` — `t.Context` (1.24), `t.ArtifactDir` (1.26) vs `t.TempDir`, `t.Output`/`t.Attr` (1.25); `t.Setenv`/`t.Chdir`/`cryptotest.SetGlobalRandom` are process-global and unusable under `t.Parallel`; failure messages must carry call/input/got/want; helpers set up, the test body asserts.
 - Skills: `go-concurrency` — cancellation causes (`WithCancelCause` + `context.Cause`, `WithTimeoutCause`), `context.WithoutCancel` for work outliving a request, `context.AfterFunc`, prefer-synchronous-APIs, and explicit cleanup over `runtime.AddCleanup`/`SetFinalizer`.
-- Skills: `go-idioms` — **Fixer** column naming the owning `modernize` analyzer per row; rows for `any`, `errorsastype`, `omitzero`, `testingcontext`, `stringsseq`, `slicesbackward`, `reflecttypefor`; new "no fixer will do it for you" section (`os.OpenRoot`, `crypto/rand.Text`, nil slices, sorted map iteration).
+- Skills: `go-idioms` — **Fixer** column naming the owning analyzer per row, audited against Go 1.26.4 `go tool fix help` (plain = in the toolchain's `go fix`; **†** = x/tools/golangci-lint `modernize` only, e.g. `errorsastype`, `bloop`, `atomictypes`, `slicesbackward`); rows for `any`, `omitzero`, `testingcontext`, `stringsseq`, `reflecttypefor`, `fmt.Appendf`; a `go fix` recipe (`-diff` preview, per-fixer `-<name>`/`-<name>=false` selection); new "no fixer automates it" section (`os.OpenRoot`, `crypto/rand.Text`, nil slices, sorted map iteration).
 - Skills: `go-layout` — naming (initialism casing, `MixedCaps`, name-length-tracks-scope, receiver names, no `Get` prefix, `<pkg>test` doubles), signatures/API surface (receiver type, in-band errors, named results, option struct vs variadic options, accept interfaces/return concrete types, useful zero value), and doc-comment conventions.
 - Skills: `go-linting` — `golangci-lint migrate` for v1 configs, `golangci-lint fmt`, the `linters.exclusions`/`formatters.settings` moves, and `//nolint:<linter> // reason` discipline.
-- Lint config: `usetesting` + `nolintlint` in `references/golangci.v2.yml`, the `go-linting` block, and `/go-lint-setup`.
+- Lint config: `usetesting`, `nolintlint` + `exhaustive` in `references/golangci.v2.yml`, the `go-linting` block, and `/go-lint-setup` (`exhaustive` was taught by `go-errors`/`go-reviewer` but not shipped).
 - Agents: `go-reviewer` — **exported-surface & naming slips** dimension; discarded-`Close`-on-a-written-file folded into resource leaks; `errors.AsType` in sentinel/typed-error breakage.
 - Docs: `docs/authoring.md` — "Refreshing the standards baseline (source registry)": tiered source list plus the procedure for re-grounding the skills against current Go practice; **AGENTS.md** points at it for refresh requests.
-
-### Added
 - Skills: `go-errors` — terse wrap context (`"new store: %w"`, no `"failed to"` pile-up); `go-layout` — `main` owns process exit (`os.Exit`/`log.Fatal` only in `main`, `run() error` pattern) and `init()` restricted to cheap deterministic setup.
 - Skills: `go-coding` router — routes to the `/go-explain` and `/go-lint-setup` user-invoked skills.
 
@@ -34,8 +32,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Skills: `go-linting`, `/go-lint-setup`, `references/golangci.v2.yml` — no blessed golangci-lint version anywhere; replaced with a pin *policy* (exact version, one source of truth, `golangci-lint-action` `version:` input, automated bump PR, `--fix`-then-triage on bump) and upstream's warning against `go install`/`tool`-directive installs.
 - Docs: `docs/authoring.md` — refresh procedure gains the hard-floor rule and "never hardcode a tool version in a component".
 - Skills / Cursor rule: `go-layout` widens from project layout to layout **+ naming + API surface**; the `go-coding` router and `rules/go-context.mdc` route naming/doc-comment/API-shape questions there and name `revive` as the deterministic backstop.
-- Skills: labelled Go 1.27 forward notes (draft, expected Aug 2026) only where they change advice — `goroutineleak` on by default, `synctest.Sleep` + `httptest.NewTestServer`, new/renamed `go fix` modernizers, `encoding/json/v2`.
-- Skills: `go-linting` — note that upstream golangci-lint is on the `v2.12.x` line while the Cadasto repos pin `v2.11.4`.
+- Skills: labelled Go 1.27 forward notes (draft, expected Aug 2026) only where they change advice — `goroutineleak` on by default, `synctest.Sleep` + `httptest.NewTestServer`, † fixers graduating into `go fix`, `encoding/json/v2`.
 
 ## [0.3.0] - 2026-07-01
 

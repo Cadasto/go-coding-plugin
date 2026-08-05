@@ -40,8 +40,8 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   tickers, retries, `context` cancellation. It runs the bubble on a *fake clock* with deterministic
   scheduling, so "5-second" waits complete in microseconds and flakiness disappears. Wrap with
   `synctest.Test(t, func(t *testing.T){ … })`; `synctest.Wait()` blocks until every goroutine in the
-  bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (The pre-1.25
-  `GOEXPERIMENT=synctest` API — `synctest.Run` — was removed in Go 1.26; use the stable `synctest.Test`.)
+  bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (Always
+  `synctest.Test` — the pre-stable `synctest.Run` no longer exists.)
   *Go 1.27 (draft, expected Aug 2026) adds `synctest.Sleep` (`time.Sleep` + `Wait` in one) and
   `httptest.NewTestServer`, an in-memory server usable inside a bubble.*
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
