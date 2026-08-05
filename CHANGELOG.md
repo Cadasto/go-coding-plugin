@@ -23,6 +23,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Agents: `go-reviewer` — **exported-surface & naming slips** dimension; discarded-`Close`-on-a-written-file folded into resource leaks; `errors.AsType` in sentinel/typed-error breakage.
 - Docs: `docs/authoring.md` — "Refreshing the standards baseline (source registry)": tiered source list plus the procedure for re-grounding the skills against current Go practice; **AGENTS.md** points at it for refresh requests.
 
+### Added
+- Skills: `go-errors` — terse wrap context (`"new store: %w"`, no `"failed to"` pile-up); `go-layout` — `main` owns process exit (`os.Exit`/`log.Fatal` only in `main`, `run() error` pattern) and `init()` restricted to cheap deterministic setup.
+- Skills: `go-coding` router — routes to the `/go-explain` and `/go-lint-setup` user-invoked skills.
+
 ### Changed
 - Skills / agent / Cursor rule / docs: **Go 1.26.4+ is now a hard floor** — the "works with 1.25+" framing and the per-idiom "check `go.mod` before applying" hedging are gone from `go-coding`, `go-errors`, `go-idioms`, `go-explain`, `go-reviewer`, `rules/go-context.mdc`, `README.md` and `docs/install.md`. Version annotations (`Since`, "(Go 1.24)") stay as provenance.
 - Skills: `go-linting`, `/go-lint-setup`, `references/golangci.v2.yml` — no blessed golangci-lint version anywhere; replaced with a pin *policy* (exact version, one source of truth, `golangci-lint-action` `version:` input, automated bump PR, `--fix`-then-triage on bump) and upstream's warning against `go install`/`tool`-directive installs.

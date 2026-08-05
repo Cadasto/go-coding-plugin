@@ -42,5 +42,8 @@ tool in the middle column to enforce them. Don't invent rules: each skill cites 
 Dispatch the `go-reviewer` agent — a read-only, context-isolated reviewer that applies the
 review-heuristics catalog and returns severity-ranked findings on a diff or file.
 
+Two user-invoked skills round out the surface: `/go-explain <topic>` for a one-shot idiom lookup,
+and `/go-lint-setup` to scaffold the reference golangci-lint v2 config into a repo.
+
 ---
 *Top-level structure adapted from [`samber/cc-skills-golang`](https://github.com/samber/cc-skills-golang) (MIT © 2026 Samuel Berthe).*

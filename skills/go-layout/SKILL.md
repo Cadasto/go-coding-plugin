@@ -20,6 +20,11 @@ exported signature are part of the API — they are as reviewable as the code.
   no interface-for-everything.
 - **Hexagonal / ports-and-adapters / DDD is a tool, not a default** — justified for larger services
   with real external-boundary complexity, overkill for a CLI or a small service.
+- **`main` owns process exit.** Call `os.Exit`/`log.Fatal` only in `main` (ideally once, on the
+  error from a `run() error` function); everything else returns errors. A deep `log.Fatal` skips
+  deferred cleanup and makes the code path untestable. Same discipline for `init()`: only cheap,
+  deterministic setup — no I/O, no environment reads, no mutating global state; anything more is an
+  explicit constructor called from `main`.
 - **Files:** one package per directory; `package foo` for `foo.go` + `foo_test.go`; use
   `package foo_test` for black-box tests that exercise only the exported API.
 
@@ -84,7 +89,8 @@ exported signature are part of the API — they are as reviewable as the code.
 ## Sources
 - Effective Go — <https://go.dev/doc/effective_go>
 - Code Review Comments (Package/Variable/Receiver Names, Initialisms, Mixed Caps, In-Band Errors, Named Result Parameters, Pass Values, Interfaces, Doc Comments) — <https://go.dev/wiki/CodeReviewComments>
-- Google Go Style Guide (naming, option structs, documentation, test doubles) — <https://google.github.io/styleguide/go/best-practices>
+- Google Go Style Guide (naming, option structs, documentation, test doubles, program initialization) — <https://google.github.io/styleguide/go/best-practices>
+- Uber Go Style Guide (Exit in Main, Avoid init()) — <https://github.com/uber-go/guide>
 - Doc comment syntax — <https://go.dev/doc/comment>; `internal/` — <https://pkg.go.dev/cmd/go#hdr-Internal_Directories>
 
 ---

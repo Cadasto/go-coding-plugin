@@ -51,7 +51,9 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   logging or API boundary, pass the stable class/code (e.g. SQLSTATE) and keep the raw message
   internal — the message-content analogue of severing an internal error *type* with `%v`.
 - **Add context at each layer, log once at the boundary.** Wrapping at every level *and* logging at
-  every level produces duplicate noise — return wrapped, log at the top.
+  every level produces duplicate noise — return wrapped, log at the top. Keep the added context
+  terse: `"new store: %w"`, not `"failed to create new store: %w"` — "failed to" states the obvious
+  and piles up (`failed to x: failed to y: …`) as the error climbs the stack.
 - **Error strings:** lowercase, no trailing punctuation (they get wrapped): `"cannot parse %q"`.
 
 ## Sources
