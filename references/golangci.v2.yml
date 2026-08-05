@@ -5,8 +5,8 @@
 # config). Needs a golangci-lint v2 release recent enough to know every linter named below; if it
 # rejects one, bump the pin rather than dropping the line. Pin an exact version in CI in one place
 # (see `go-linting` — no version is blessed here on purpose). See the `go-linting` skill for what
-# each linter does and why. Keep this in sync with the block inlined in
-# `skills/go-lint-setup/SKILL.md`.
+# each linter does and why. Keep this in sync with BOTH inlined copies: the reference block in
+# `skills/go-linting/SKILL.md` and the scaffold block in `skills/go-lint-setup/SKILL.md`.
 version: "2"
 
 linters:
@@ -14,6 +14,7 @@ linters:
   enable:
     - modernize              # range-int, min/max, slices/maps, wg.Go, strings.Cut … (same engine as go fix)
     - errorlint              # %w + errors.Is/As discipline
+    - exhaustive             # a switch over an enum names every member (go-errors' loud-default rule)
     - bodyclose              # unclosed http.Response.Body
     - rowserrcheck           # unchecked sql.Rows.Err
     - sqlclosecheck          # unclosed sql.Rows/Stmt

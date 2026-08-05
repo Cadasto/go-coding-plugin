@@ -11,34 +11,37 @@ don't hand-audit. As of **Go 1.26** the rewritten `go fix` is the canonical runn
 modernizer suite in the toolchain itself:
 
 ```
-go fix ./...                                        # applies the toolchain's built-in modernizers
-golangci-lint run --enable-only=modernize --fix     # any toolchain (same analyzers, via golangci-lint)
+go fix -diff ./...                                  # preview the rewrite as a unified diff (clean tree first)
+go fix ./...                                        # apply; -<fixer> runs one, -<fixer>=false excludes one
+golangci-lint run --enable-only=modernize --fix     # the x/tools modernize suite — includes the † fixers below
 ```
 
-Both draw on the same `golang.org/x/tools` engine as gopls, so their fixes agree. This skill
-explains *why* and catches what review notices before the tool runs. The **baseline is Go 1.26.4+**,
-so every row below applies as written — the `Since` column is provenance: it explains why older code
-looks different, and what an older module would have to bump to before adopting the idiom.
+Both draw on the same `golang.org/x/tools` engine as gopls, but golangci-lint pins its own (usually
+newer) snapshot of it — that gap is what the **†** marker below tracks. This skill explains *why*
+and catches what review notices before the tool runs. The **baseline is Go 1.26.4+**, so every row
+below applies as written — the `Since` column is provenance: it explains why older code looks
+different, and what an older module would have to bump to before adopting the idiom.
 
 ## Prefer → over (since)
 
-The **Fixer** column names the `modernize` analyzer that owns each rewrite — cite it when explaining
-or attributing a change, and use `go tool fix help` to see which analyzers the installed toolchain
-actually ships (in golangci-lint the whole set is the single `modernize` linter). `—` means no fixer
-exists: review has to catch it.
+The **Fixer** column names the analyzer that owns each rewrite. Plain = registered in the Go 1.26.4
+toolchain's `go fix` (ground truth: `go tool fix help`; per-fixer docs: `go tool fix help <name>`).
+**†** = only in the newer `x/tools` suite so far — golangci-lint's `modernize` and gopls run it, the
+1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it.
 
 | Prefer | Over | Since | Fixer |
 |---|---|---|---|
 | `new(expr)` — e.g. `Field: new(30)`, `new(int64(req.Limit))` | a `ptr[T](v)` helper or a hand-written `tmp := v; &tmp`, for optional/pointer fields | 1.26 | `newexpr` |
-| `errors.AsType[E](err)` | `errors.As(err, &target)` → `go-errors` | 1.26 | `errorsastype` |
+| `errors.AsType[E](err)` | `errors.As(err, &target)` → `go-errors` | 1.26 | `errorsastype` † |
 | `for i := range n` | `for i := 0; i < n; i++` | 1.22 | `rangeint` |
 | `min(a, b)` / `max(a, b)` builtins | hand-rolled helpers | 1.21 | `minmax` |
 | *(drop)* `x := x` loop-var copy | pre-1.22 capture workaround | 1.22 | `forvar` |
 | `any` | `interface{}` | 1.18 | `any` |
-| `slices.Sort/Contains/Equal`, `slices.Collect`, `maps.Keys`, `slices.Concat` | hand-rolled sort/contains/dedup/append chains | 1.21–1.23 | `slices*`, `mapsloop`, `appendclipped` |
-| `for i, v := range slices.Backward(s)` | `for i := len(s)-1; i >= 0; i--` | 1.23 | `slicesbackward` |
+| `slices.Sort/Contains`, `slices.Collect`, `maps.Keys` | hand-rolled sort/contains/map loops | 1.21–1.23 | `slicescontains`, `slicessort`, `mapsloop` |
+| `for i, v := range slices.Backward(s)` | `for i := len(s)-1; i >= 0; i--` | 1.23 | `slicesbackward` † |
 | `strings.Cut` / `CutPrefix` / `CutSuffix` | `Index` + manual slicing | 1.18/1.20 | `stringscut`, `stringscutprefix` |
 | `strings.SplitSeq` / `FieldsSeq` | ranging over `strings.Split`/`Fields` (allocates a slice) | 1.24 | `stringsseq` |
+| `fmt.Appendf(b, …)` | `append(b, fmt.Sprintf(…)...)` / `[]byte(fmt.Sprintf(…))` | 1.19 | `fmtappendf` |
 | `omitzero` on a struct-typed json field | `omitempty`, which does **nothing** for struct fields — a zero `time.Time` still marshals | 1.24 | `omitzero` |
 | `t.Context()` in tests | `context.WithCancel(context.Background())` → `go-testing` | 1.24 | `testingcontext` |
 | `reflect.TypeFor[T]()` | `reflect.TypeOf((*T)(nil)).Elem()` | 1.22 | `reflecttypefor` |
@@ -47,9 +50,9 @@ exists: review has to catch it.
 | `iter.Seq[V]` / range-over-func | `Visit(callback)` patterns, exposing slices | 1.23 | `stditerators` |
 | `slog.LogAttrs(ctx, lvl, msg, attrs…)` on hot paths | key-value variadic `slog` (allocates) | 1.21 | — |
 | `errors.Join` | manual multi-error concat → `go-errors` | 1.20 | — |
-| `wg.Go(...)` | `wg.Add(1)`/`defer wg.Done()` → `go-concurrency` | 1.25 | `waitgroupgo` |
-| `for b.Loop()` | `for i := 0; i < b.N; i++` → `go-testing` | 1.24 | `bloop` |
-| typed `atomic.Int64` | bare-int `atomic.Add*` → `go-concurrency` | 1.19 | `atomictypes` |
+| `wg.Go(...)` | `wg.Add(1)`/`defer wg.Done()` → `go-concurrency` | 1.25 | `waitgroup` |
+| `for b.Loop()` | `for i := 0; i < b.N; i++` → `go-testing` | 1.24 | `bloop` † |
+| typed `atomic.Int64` | bare-int `atomic.Add*` → `go-concurrency` | 1.19 | `atomictypes` † |
 
 Idioms are a moving target — let the tool (pinned to the repo's toolchain) be the source of
 truth so advice never drifts from the user's `go fix`. Go 1.26 also lifts the ban on a generic type
@@ -70,11 +73,11 @@ something a modernizer rewrites.
 - **`slices.Sorted(maps.Keys(m))`** (1.23) when iterating a map for output — map order is random, and
   unstable output is a flaky-test and noisy-diff source.
 
-*Go 1.27 (draft, expected Aug 2026) adds the `atomictypes`, `embedlit`, `slicesbackward`, and
-`unsafefuncs` fixers to `go fix`, renames `waitgroup` → `waitgroupgo`, and drops `fmtappendf`; it also
-lands `encoding/json/v2` + `encoding/json/jsontext` (v1 is reimplemented on v2, opt out with
-`GOEXPERIMENT=nojsonv2`), `strings.CutLast`/`bytes.CutLast`, and a stdlib `uuid` package. A
-golangci-lint built against newer `x/tools` may carry those fixers before the toolchain does.*
+*Go 1.27 (draft, expected Aug 2026) graduates several † fixers into the toolchain's `go fix`
+(`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup` →
+`waitgroupgo`, and drops `fmtappendf`; it also lands `encoding/json/v2` + `encoding/json/jsontext`
+(v1 is reimplemented on v2, opt out with `GOEXPERIMENT=nojsonv2`), `strings.CutLast`/`bytes.CutLast`,
+and a stdlib `uuid` package.*
 
 ## Sources
 - `modernize` (per-fixer docs, the Fixer column) — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>

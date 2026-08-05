@@ -17,14 +17,13 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   *is* the sentence: `fmt.Errorf("%w: %s", ErrNotFound, key)`.
 - **The `%v`-where-`%w` trap:** formatting a cause with `%v` discards the chain, so downstream
   `errors.Is`/`errors.As` silently fail. `errorlint` flags it.
-- **Inspect with `errors.Is` (sentinel) / `errors.As` (typed)** — never `err == ErrX` or a type
-  assertion once any layer wraps, or the result is *sentinel breakage* (the comparison silently stops
-  matching). (Go 1.13; `errors.As` target must be a pointer.)
-- **Prefer `errors.AsType[E]` over `errors.As`** (Go 1.26):
-  `if perr, ok := errors.AsType[*fs.PathError](err); ok { … }`. It is the generic form —
-  compile-time-checked target, no pointer to prepare, no reflection, and it cannot panic on a
-  mistyped target the way `errors.As` can. `errors.As` is not deprecated, so existing call sites are
-  not bugs; the `errorsastype` modernizer converts them (`go fix ./...`).
+- **Inspect with `errors.Is` (sentinel) / `errors.AsType[E]` (typed)** — never `err == ErrX` or a
+  type assertion once any layer wraps, or the result is *sentinel breakage* (the comparison silently
+  stops matching). `if perr, ok := errors.AsType[*fs.PathError](err); ok { … }` (Go 1.26): the
+  generic form — compile-time-checked target, no pointer to prepare, no reflection, cannot panic on
+  a mistyped target. `errors.As` (Go 1.13) is not deprecated and existing call sites are not bugs —
+  the `errorsastype` modernizer converts them (via golangci-lint's `modernize`; not yet in the
+  1.26.4 toolchain's `go fix`).
 - **Sentinel errors** (`var ErrNotFound = errors.New("not found")`) for expected, comparable
   conditions that are part of the API contract — keep the set small and documented.
   **Typed errors** (a struct implementing `error`) when callers need fields (`*PathError`).
@@ -45,7 +44,7 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
 - **Fail loudly on impossible dispatch:** a `switch` over an internal enum/kind gets a `default`
   that returns an error (panic only for the genuinely unreachable) — never a silent pass-through
   that lets a later-added member ride the weakest arm. Pin exhaustiveness with the `exhaustive`
-  linter or a completeness test that iterates the enum.
+  linter (enabled in the reference config) or a completeness test that iterates the enum.
 - **Boundary errors carry classification, not payload:** upstream messages can embed data values —
   a database driver quoting the offending stored value, a validator echoing the request body. At a
   logging or API boundary, pass the stable class/code (e.g. SQLSTATE) and keep the raw message

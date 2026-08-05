@@ -33,6 +33,7 @@ linters:
   enable:
     - modernize
     - errorlint
+    - exhaustive
     - bodyclose
     - rowserrcheck
     - sqlclosecheck

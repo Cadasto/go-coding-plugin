@@ -31,6 +31,7 @@ linters:
   enable:
     - modernize       # highest value: range-int, min/max, slices/maps, wg.Go, strings.Cut…
     - errorlint       # %w + errors.Is/As discipline
+    - exhaustive      # a switch over an enum names every member
     - bodyclose       # unclosed http.Response.Body
     - rowserrcheck    # unchecked sql.Rows.Err
     - sqlclosecheck   # unclosed sql.Rows/Stmt

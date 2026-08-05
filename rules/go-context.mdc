@@ -18,7 +18,7 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 | Formatting | `gofmt`/`gofumpt` (+ `goimports`) — machine-enforced | — |
 | Static analysis / bugs | `go vet ./...`, `golangci-lint run` | `go-linting` |
 | Modern idioms | `go fix ./...` (the toolchain's modernizers), or `golangci-lint run --enable-only=modernize` | `go-idioms` |
-| Errors | `golangci-lint run --enable-only=errorlint` | `go-errors` |
+| Errors | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing | `go test -race ./...`; `testing/synctest` for time/concurrency | `go-testing` |
 | Layout, naming & API surface | `golangci-lint run --enable-only=revive`; rest is judgment | `go-layout` |

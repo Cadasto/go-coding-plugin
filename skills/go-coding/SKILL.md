@@ -20,7 +20,7 @@ Two principles from the project research drive it:
 | Formatting | `gofmt -l` / `gofumpt -l` (+ `goimports`) — machine-enforced, non-negotiable | — |
 | Static analysis / likely bugs | `go vet ./...`, `golangci-lint run` | `go-linting` |
 | Modern idioms (range-int, `min`/`max`, `slices`/`maps`, `wg.Go`, `strings.Cut`, `new(expr)`, `errors.AsType`) | `go fix ./...` (the toolchain's modernizer suite), or `golangci-lint run --enable-only=modernize` for CI reproducibility | `go-idioms` |
-| Errors (`%w`, `errors.Is`/`As`, `errors.Join`, sentinel/typed) | `golangci-lint run --enable-only=errorlint` | `go-errors` |
+| Errors (`%w`, `errors.Is`/`AsType`, `errors.Join`, sentinel/typed, enum dispatch) | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
 | Layout, naming & API surface (`internal/`, initialisms, receiver type, in-band errors, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
