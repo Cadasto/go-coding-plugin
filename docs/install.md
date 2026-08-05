@@ -41,13 +41,13 @@ Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or
 
 ## Host toolchain (minimal requirements)
 
-Installing the plugin itself needs no Go toolchain — it is pure Markdown + JSON. But its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`. The plugin targets **Go 1.26** + golangci-lint v2, and its version-gated idiom guidance still works against 1.25 modules.
+Installing the plugin itself needs no Go toolchain — it is pure Markdown + JSON. But its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`. The plugin targets **Go 1.26.4+** + golangci-lint v2 as a hard floor — it does not carry fallback guidance for 1.25 or older modules.
 
 At minimum the host should provide:
 
 | Tool | Provided by | Used for | If missing |
 |------|-------------|----------|------------|
-| **Go 1.26.x** (min 1.26.4) | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies `go.mod` `go 1.26.x` (and 1.25 modules); `go fix ./...` runs the modernizers | no toolchain at all |
+| **Go 1.26.x** (min 1.26.4) | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies `go.mod` `go 1.26.x`; `go fix ./...` runs the modernizers | no toolchain at all |
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a — always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |

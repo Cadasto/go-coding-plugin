@@ -16,9 +16,9 @@ golangci-lint run --enable-only=modernize --fix     # any toolchain (same analyz
 ```
 
 Both draw on the same `golang.org/x/tools` engine as gopls, so their fixes agree. This skill
-explains *why* and catches what review notices before the tool runs. **Check `go.mod` first** —
-gate each idiom on the module's Go version (the `Since` column below); don't apply a Go 1.26 idiom to
-a repo pinned to 1.25 or older.
+explains *why* and catches what review notices before the tool runs. The **baseline is Go 1.26.4+**,
+so every row below applies as written — the `Since` column is provenance: it explains why older code
+looks different, and what an older module would have to bump to before adopting the idiom.
 
 ## Prefer → over (since)
 
