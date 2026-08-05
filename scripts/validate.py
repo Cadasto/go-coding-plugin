@@ -11,7 +11,13 @@ Checks:
   * hook-config JSON validity when present;
   * SKILL.md / agent / command frontmatter — required keys, and ``name`` matching the
     directory/filename. Agents MUST declare ``tools:`` (never ``allowed-tools:``, which
-    Claude Code silently ignores so the agent inherits *all* tools — flagged as an error).
+    Claude Code silently ignores so the agent inherits *all* tools — flagged as an error);
+  * advice == tooling: every linter a component *teaches* (via ``--enable-only=...`` or
+    "the `<name>` linter") must be enabled in ``references/golangci.v2.yml`` — a skill must
+    not tell agents to rely on a linter no config copy ships;
+  * when a Go toolchain at the floor minor (``GO_FLOOR_MINOR``) is on PATH, the go-idioms
+    **Fixer** column is verified against ``go tool fix help``: plain names must be registered,
+    † names must not be. Soft-skips locally without Go; CI installs the floor toolchain.
 
 This plugin has no MCP backend, so there is intentionally no ``.mcp.json`` check.
 
@@ -20,11 +26,14 @@ reason it wouldn't run. Usage: python3 scripts/validate.py   (from the repo root
 """
 import json
 import re
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 errors = []
+notes = []
 
 PLUGIN_NAME_RE = re.compile(r"^[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$")
 KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -33,6 +42,13 @@ KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 MANIFEST_PATH_FIELDS = ("logo", "rules", "skills", "agents", "commands", "hooks")
 # Fields that must agree across the Claude and Cursor manifests.
 SYNCED_FIELDS = ("name", "version", "description", "author")
+# The golangci-lint v2 `linters.default: standard` set — enforced without an explicit
+# `enable:` entry (see references/golangci.v2.yml).
+STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
+# The plugin's Go hard floor (minor). The go-idioms Fixer column is verified against THIS
+# minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
+# floor, so the check skips on any other minor. Bump together with the documented baseline.
+GO_FLOOR_MINOR = "1.26"
 
 
 def err(msg):
@@ -143,6 +159,97 @@ def validate_rules():
             err(f"{rel}: frontmatter missing 'description'")
 
 
+def validate_linter_references():
+    """Advice == tooling: every linter a component *teaches* must be shipped by the reference
+    lint config. A linter counts as taught when a component names it as the enforcing tool —
+    in a ``--enable-only=...`` command, or in the phrase "the `<name>` linter". Guards against
+    the drift where a skill tells agents to lean on a linter (e.g. ``exhaustive``) that no
+    config copy actually enables. Deliberately narrow patterns: a passing mention of a linter
+    name without either signal is not flagged."""
+    ref = ROOT / "references" / "golangci.v2.yml"
+    if not ref.is_file():
+        return
+    # Only the `linters:` section — formatters are a different contract.
+    linters_section = ref.read_text().split("formatters:")[0]
+    allowed = set(re.findall(r"^\s+-\s+([a-z0-9-]+)", linters_section, re.MULTILINE))
+    allowed |= STANDARD_LINTERS
+    components = (
+        sorted((ROOT / "skills").glob("*/SKILL.md"))
+        + sorted((ROOT / "agents").glob("*.md"))
+        + sorted((ROOT / "rules").glob("*.mdc"))
+    )
+    for md in components:
+        body = md.read_text()
+        taught = set()
+        for group in re.findall(r"--enable-only=([a-z0-9,-]+)", body):
+            taught.update(group.split(","))
+        # \s+ so the phrase still matches when hard-wrapped across a line break.
+        taught.update(re.findall(r"[Tt]he\s+`([a-z0-9-]+)`\s+linter", body))
+        for name in sorted(taught - allowed):
+            err(f"{md.relative_to(ROOT)}: teaches the '{name}' linter but "
+                f"references/golangci.v2.yml does not enable it — enable it in all three "
+                f"config copies or stop naming it (advice == tooling)")
+
+
+def validate_fixer_column():
+    """Verify the go-idioms **Fixer** column against `go tool fix help` — the authority for
+    which fixers the floor toolchain's `go fix` ships. Plain fixer names must be registered;
+    names marked † (x/tools-only) must NOT be — a registered † fixer means the marker went
+    stale after a toolchain bump. Soft-skips (with a note) when `go` is absent or is not the
+    floor minor: another minor's list proves nothing about the floor. CI installs Go
+    {GO_FLOOR_MINOR}.x so the check is strict there."""
+    skill = ROOT / "skills" / "go-idioms" / "SKILL.md"
+    if not skill.is_file():
+        return
+    gobin = shutil.which("go")
+    if not gobin:
+        notes.append("Fixer-column check skipped: no `go` on PATH (CI runs it strictly)")
+        return
+    try:
+        ver_out = subprocess.run([gobin, "version"], capture_output=True, text=True,
+                                 timeout=30).stdout
+    except Exception as e:
+        err(f"`go version` failed: {e}")
+        return
+    ver = re.search(r"go(\d+\.\d+)", ver_out)
+    if not ver or ver.group(1) != GO_FLOOR_MINOR:
+        notes.append(f"Fixer-column check skipped: toolchain is go{ver.group(1) if ver else '?'}"
+                     f", floor is go{GO_FLOOR_MINOR} (another minor's list proves nothing)")
+        return
+    try:
+        help_out = subprocess.run([gobin, "tool", "fix", "help"], capture_output=True,
+                                  text=True, timeout=60)
+    except Exception as e:
+        err(f"`go tool fix help` failed: {e}")
+        return
+    section = help_out.stdout.split("Registered analyzers:")
+    if len(section) < 2:
+        err("`go tool fix help` output has no 'Registered analyzers:' section — "
+            "cannot verify the go-idioms Fixer column")
+        return
+    registered = set(re.findall(r"^\s+([a-z][a-z0-9]*)\b", section[1].split("By default")[0],
+                                re.MULTILINE))
+    # Fixer cells are the 4th column of the go-idioms table.
+    checked = 0
+    for line in skill.read_text().splitlines():
+        cells = line.split("|")
+        if len(cells) != 6 or "---" in cells[3] or cells[4].strip() == "Fixer":
+            continue
+        cell = cells[4]
+        daggered = "†" in cell
+        for name in re.findall(r"`([a-z][a-z0-9]*)`", cell):
+            checked += 1
+            if daggered and name in registered:
+                err(f"skills/go-idioms/SKILL.md: '{name} †' is stale — "
+                    f"go{ver.group(1)}'s `go fix` registers it; drop the †")
+            elif not daggered and name not in registered:
+                err(f"skills/go-idioms/SKILL.md: Fixer column names '{name}' as shipping in "
+                    f"`go fix`, but go{ver.group(1)} `go tool fix help` does not register it — "
+                    f"mark it † (x/tools only) or fix the name")
+    notes.append(f"Fixer column verified against go{ver.group(1)} `go tool fix help` "
+                 f"({checked} fixer cells)")
+
+
 def validate_manifest_paths(manifest: dict, label: str):
     for field in MANIFEST_PATH_FIELDS:
         value = manifest.get(field)
@@ -203,6 +310,8 @@ def main():
     validate_md_components("agents", require_name=True, is_agent=True)
     validate_md_components("commands", require_name=False)
     validate_rules()
+    validate_linter_references()
+    validate_fixer_column()
 
 
 if __name__ == "__main__":
@@ -213,4 +322,6 @@ if __name__ == "__main__":
             print(f"  - {e}")
         sys.exit(1)
     print("OK: manifests, dual-host parity, component paths, kebab-case names, "
-          "hook configs, skills, agents, commands, and rules are valid")
+          "hook configs, skills, agents, commands, rules, and taught-linter references are valid")
+    for note in notes:
+        print(f"  note: {note}")

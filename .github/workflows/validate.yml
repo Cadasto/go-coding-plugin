@@ -13,6 +13,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
+      # The floor-minor Go toolchain activates the validator's Fixer-column check
+      # (go tool fix help is the authority for what `go fix` ships). Keep this minor
+      # in step with GO_FLOOR_MINOR in scripts/validate.py and the documented baseline.
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26.x'
+          cache: false   # no go.mod — nothing to cache
       # CI is strict and deterministic: Python is guaranteed here, so run the
       # validator directly (the scripts/validate.sh graceful skip is for local use).
       - run: python3 scripts/validate.py

@@ -16,11 +16,13 @@ Steps:
    `.golangci.json`. If one exists, do **not** overwrite it: show how it differs from the reference
    and ask before changing anything. If it's a **v1** config (no `version` key and/or an
    `enable-all`/top-level `linters:` list), warn that v1 will not parse under golangci-lint v2 and
-   offer to migrate.
+   offer to migrate — the supported path is `golangci-lint migrate` (in-place, keeps a `.bck` backup,
+   drops comments), not a hand-port.
 2. **Write** the config below to `.golangci.yml` (or the path given in `$ARGUMENTS`).
 3. **Report how to run it:** `golangci-lint run`, and `golangci-lint run --fix` for the auto-fixable
-   findings (`modernize` + the formatters). Suggest pinning the `golangci-lint` version in CI so the
-   rule set is reproducible.
+   findings (`modernize` + the formatters). Suggest pinning an exact `golangci-lint` version in CI in
+   one place (the action's `version:` input) with an automated bump PR — see `go-linting`; don't
+   invent a version number here, point at the releases page.
 
 Config to write (mirrors `references/golangci.v2.yml` — keep the two in sync):
 
@@ -31,6 +33,7 @@ linters:
   enable:
     - modernize
     - errorlint
+    - exhaustive
     - bodyclose
     - rowserrcheck
     - sqlclosecheck
@@ -38,6 +41,8 @@ linters:
     - contextcheck
     - containedctx
     - perfsprint
+    - usetesting
+    - nolintlint
     - revive
 formatters:
   enable:
