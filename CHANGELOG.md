@@ -22,6 +22,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Lint config: `usetesting`, `nolintlint` + `exhaustive` in `references/golangci.v2.yml`, the `go-linting` block, and `/go-lint-setup` (`exhaustive` was taught by `go-errors`/`go-reviewer` but not shipped).
 - Agents: `go-reviewer` — **exported-surface & naming slips** dimension; discarded-`Close`-on-a-written-file folded into resource leaks; `errors.AsType` in sentinel/typed-error breakage.
 - Docs: `docs/authoring.md` — "Refreshing the standards baseline (source registry)": tiered source list plus the procedure for re-grounding the skills against current Go practice; **AGENTS.md** points at it for refresh requests.
+- Validation: `scripts/validate.py` — advice == tooling cross-check: every linter a component teaches (`--enable-only=…` or "the `<name>` linter") must be enabled in `references/golangci.v2.yml`; a taught-but-not-shipped linter now fails CI.
 - Skills: `go-errors` — terse wrap context (`"new store: %w"`, no `"failed to"` pile-up); `go-layout` — `main` owns process exit (`os.Exit`/`log.Fatal` only in `main`, `run() error` pattern) and `init()` restricted to cheap deterministic setup.
 - Skills: `go-coding` router — routes to the `/go-explain` and `/go-lint-setup` user-invoked skills.
 
@@ -30,7 +31,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Skills: `go-coding`/`go-explain` descriptions trimmed to the ~50–75-word always-on budget; skill bodies swept to imperative form (second-person phrasing removed).
 - Skills / agent / Cursor rule / docs: **Go 1.26.4+ is now a hard floor** — the "works with 1.25+" framing and the per-idiom "check `go.mod` before applying" hedging are gone from `go-coding`, `go-errors`, `go-idioms`, `go-explain`, `go-reviewer`, `rules/go-context.mdc`, `README.md` and `docs/install.md`. Version annotations (`Since`, "(Go 1.24)") stay as provenance.
 - Skills: `go-linting`, `/go-lint-setup`, `references/golangci.v2.yml` — no blessed golangci-lint version anywhere; replaced with a pin *policy* (exact version, one source of truth, `golangci-lint-action` `version:` input, automated bump PR, `--fix`-then-triage on bump) and upstream's warning against `go install`/`tool`-directive installs.
-- Docs: `docs/authoring.md` — refresh procedure gains the hard-floor rule and "never hardcode a tool version in a component".
+- Docs: `docs/authoring.md` — refresh procedure gains the hard-floor rule, "never hardcode a tool version in a component", and "run the tool, don't read about it" (floor-toolchain `go tool fix help` is the authority for shipped fixers; the Tier 3 registry now marks pkg.go.dev's modernize page as x/tools *tip* — source for † rows only).
 - Skills / Cursor rule: `go-layout` widens from project layout to layout **+ naming + API surface**; the `go-coding` router and `rules/go-context.mdc` route naming/doc-comment/API-shape questions there and name `revive` as the deterministic backstop.
 - Skills: labelled Go 1.27 forward notes (draft, expected Aug 2026) only where they change advice — `goroutineleak` on by default, `synctest.Sleep` + `httptest.NewTestServer`, † fixers graduating into `go fix`, `encoding/json/v2`.
 

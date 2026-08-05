@@ -72,10 +72,12 @@ citation. Everything the skills assert should be traceable to one of these.
 
 **Tier 3 — the enforcing tools (this is what keeps "advice == tooling" true)**
 
+- **`go tool fix help` on the floor-version toolchain** — the authority for which fixers `go fix`
+  actually ships (the plain rows in the `go-idioms` **Fixer** column); `go fix` blog —
+  <https://go.dev/blog/gofix>
 - `modernize` per-fixer docs — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>
-  — the authority for the `go-idioms` **Fixer** column; new fixers land here before the toolchain
-- `go fix` (rewritten in Go 1.26) — <https://go.dev/blog/gofix>; `go tool fix help` lists what the
-  *installed* toolchain ships
+  — tracks x/tools **tip**, usually ahead of the toolchain: the source for **†** rows, never
+  evidence that a fixer ships in `go fix`
 - golangci-lint docs — <https://golangci-lint.run/docs/> · v1→v2 migration —
   <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin) —
   <https://golangci-lint.run/docs/product/changelog/>
@@ -95,6 +97,12 @@ citation. Everything the skills assert should be traceable to one of these.
 3. Verify every version gate in `pkg.go.dev`'s "added in" annotation before writing a `Since` cell.
 4. Re-check the Tier 3 tool names — a renamed or dropped fixer/linter turns a rule into a wrong
    command (`waitgroup` → `waitgroupgo`).
+   **Run the tool, don't read about it:** when a floor-version toolchain is available,
+   `go tool fix help` settles fixer names in one command — pkg.go.dev's modernize page tracks
+   x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters
+   (`golangci-lint help linters` on the pinned build). `scripts/validate.py` cross-checks every
+   linter taught in components against `references/golangci.v2.yml`, so a
+   taught-but-not-shipped linter fails CI.
    **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
    weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
    source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the

@@ -11,7 +11,10 @@ Checks:
   * hook-config JSON validity when present;
   * SKILL.md / agent / command frontmatter — required keys, and ``name`` matching the
     directory/filename. Agents MUST declare ``tools:`` (never ``allowed-tools:``, which
-    Claude Code silently ignores so the agent inherits *all* tools — flagged as an error).
+    Claude Code silently ignores so the agent inherits *all* tools — flagged as an error);
+  * advice == tooling: every linter a component *teaches* (via ``--enable-only=...`` or
+    "the `<name>` linter") must be enabled in ``references/golangci.v2.yml`` — a skill must
+    not tell agents to rely on a linter no config copy ships.
 
 This plugin has no MCP backend, so there is intentionally no ``.mcp.json`` check.
 
@@ -33,6 +36,9 @@ KEBAB_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 MANIFEST_PATH_FIELDS = ("logo", "rules", "skills", "agents", "commands", "hooks")
 # Fields that must agree across the Claude and Cursor manifests.
 SYNCED_FIELDS = ("name", "version", "description", "author")
+# The golangci-lint v2 `linters.default: standard` set — enforced without an explicit
+# `enable:` entry (see references/golangci.v2.yml).
+STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 
 
 def err(msg):
@@ -143,6 +149,38 @@ def validate_rules():
             err(f"{rel}: frontmatter missing 'description'")
 
 
+def validate_linter_references():
+    """Advice == tooling: every linter a component *teaches* must be shipped by the reference
+    lint config. A linter counts as taught when a component names it as the enforcing tool —
+    in a ``--enable-only=...`` command, or in the phrase "the `<name>` linter". Guards against
+    the drift where a skill tells agents to lean on a linter (e.g. ``exhaustive``) that no
+    config copy actually enables. Deliberately narrow patterns: a passing mention of a linter
+    name without either signal is not flagged."""
+    ref = ROOT / "references" / "golangci.v2.yml"
+    if not ref.is_file():
+        return
+    # Only the `linters:` section — formatters are a different contract.
+    linters_section = ref.read_text().split("formatters:")[0]
+    allowed = set(re.findall(r"^\s+-\s+([a-z0-9-]+)", linters_section, re.MULTILINE))
+    allowed |= STANDARD_LINTERS
+    components = (
+        sorted((ROOT / "skills").glob("*/SKILL.md"))
+        + sorted((ROOT / "agents").glob("*.md"))
+        + sorted((ROOT / "rules").glob("*.mdc"))
+    )
+    for md in components:
+        body = md.read_text()
+        taught = set()
+        for group in re.findall(r"--enable-only=([a-z0-9,-]+)", body):
+            taught.update(group.split(","))
+        # \s+ so the phrase still matches when hard-wrapped across a line break.
+        taught.update(re.findall(r"[Tt]he\s+`([a-z0-9-]+)`\s+linter", body))
+        for name in sorted(taught - allowed):
+            err(f"{md.relative_to(ROOT)}: teaches the '{name}' linter but "
+                f"references/golangci.v2.yml does not enable it — enable it in all three "
+                f"config copies or stop naming it (advice == tooling)")
+
+
 def validate_manifest_paths(manifest: dict, label: str):
     for field in MANIFEST_PATH_FIELDS:
         value = manifest.get(field)
@@ -203,6 +241,7 @@ def main():
     validate_md_components("agents", require_name=True, is_agent=True)
     validate_md_components("commands", require_name=False)
     validate_rules()
+    validate_linter_references()
 
 
 if __name__ == "__main__":
@@ -213,4 +252,4 @@ if __name__ == "__main__":
             print(f"  - {e}")
         sys.exit(1)
     print("OK: manifests, dual-host parity, component paths, kebab-case names, "
-          "hook configs, skills, agents, commands, and rules are valid")
+          "hook configs, skills, agents, commands, rules, and taught-linter references are valid")
