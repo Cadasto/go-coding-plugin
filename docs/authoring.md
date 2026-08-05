@@ -47,6 +47,62 @@ with *empty* metadata (every field silently dropped). `claude plugin validate` c
 - Imperative voice; explain *why* a rule matters rather than relying on bare MUST/NEVER. Keep skill
   bodies focused — the always-on cost is the `description`; the body loads on use.
 
+## Refreshing the standards baseline (source registry)
+
+When asked to *refresh the skills against current Go practice*, re-read these sources in this order
+and update the affected skill bodies — do not refresh from memory, and do not add a rule without a
+citation. Everything the skills assert should be traceable to one of these.
+
+**Tier 1 — normative, always check first**
+
+| Source | URL | What it settles |
+|---|---|---|
+| Release notes for the baseline version | `https://go.dev/doc/go1.NN` | new APIs/idioms, experiments, removals |
+| Release history | <https://go.dev/doc/devel/release> | what is actually *released* vs. draft — the baseline claim in AGENTS.md depends on this |
+| Package docs | `https://pkg.go.dev/<pkg>` | exact signatures + the "added in go1.NN" annotation for every version gate |
+| Effective Go | <https://go.dev/doc/effective_go> | foundational idiom |
+| Go Code Review Comments | <https://go.dev/wiki/CodeReviewComments> | the review-rule catalogue (naming, errors, concurrency, API shape) |
+| Doc comment syntax | <https://go.dev/doc/comment> | `gofmt`-formatted doc comments, doc links |
+
+**Tier 2 — style guides (attribute when a rule comes from one)**
+
+- Google Go Style Guide — <https://google.github.io/styleguide/go/> (esp. `/best-practices`: naming,
+  error handling, panics, option structs, documentation, test structure)
+- Uber Go Style Guide — <https://github.com/uber-go/guide>
+
+**Tier 3 — the enforcing tools (this is what keeps "advice == tooling" true)**
+
+- `modernize` per-fixer docs — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>
+  — the authority for the `go-idioms` **Fixer** column; new fixers land here before the toolchain
+- `go fix` (rewritten in Go 1.26) — <https://go.dev/blog/gofix>; `go tool fix help` lists what the
+  *installed* toolchain ships
+- golangci-lint docs — <https://golangci-lint.run/docs/> · v1→v2 migration —
+  <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin) —
+  <https://golangci-lint.run/docs/product/changelog/>
+- `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`)
+
+**Procedure**
+
+1. Confirm the current *released* Go version (release history) — a draft `go1.NN` page is not a
+   baseline. Guidance for an unreleased version goes in as one *italic, explicitly labelled*
+   sentence (`*Go 1.NN (draft, expected …)*`), never as a rule.
+   **The baseline is a hard floor** (currently **Go 1.26.4+**): recommend the modern form flat, with
+   no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the
+   version annotation (`Since`, "(Go 1.24)") — that is provenance, and it tells a reader on an older
+   module what a bump would buy. When the floor moves, delete the guidance below it.
+2. Diff each `go-*` skill against Tier 1 for the baseline and the two prior versions — the common
+   miss is a stdlib API that landed *after* a skill was written (`errors.AsType`, `t.ArtifactDir`).
+3. Verify every version gate in `pkg.go.dev`'s "added in" annotation before writing a `Since` cell.
+4. Re-check the Tier 3 tool names — a renamed or dropped fixer/linter turns a rule into a wrong
+   command (`waitgroup` → `waitgroupgo`).
+   **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
+   weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
+   source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the
+   number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
+5. Keep the three copies of the reference lint config in sync: `references/golangci.v2.yml`, the
+   block in `go-linting`, and the block in `go-lint-setup`.
+6. Record the refresh in **CHANGELOG.md** under `## [Unreleased]`.
+
 ## Dual-host parity
 
 Skills, commands, and agents are shared by both hosts. The **Cursor** manifest

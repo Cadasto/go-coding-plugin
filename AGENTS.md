@@ -23,6 +23,8 @@ This plugin encodes **Go (golang) coding standards**. Guidance must be grounded 
 
 When a recommendation derives from one of the above, attribute it explicitly and distinguish cited rules from inference.
 
+**Refreshing the skills against current Go practice** (e.g. "check current Go best practices and update the skills"): follow the **source registry and procedure** in [docs/authoring.md](docs/authoring.md#refreshing-the-standards-baseline-source-registry) — it lists every source to re-read, in order, plus the version-gating rules. Re-read them; never refresh from memory. Two recurring traps: the *released* Go version is not whatever `go.dev/doc/go1.NN` renders (check the release history), and the stdlib APIs a skill is missing are usually the ones that landed *after* it was written.
+
 ## Repository Layout
 
 This repo supports **both Claude Code and Cursor**. Shared assets (skills, commands, agents) are consumed by both hosts; host-specific manifests and hook configs are kept separate.
