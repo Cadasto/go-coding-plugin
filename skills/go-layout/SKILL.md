@@ -13,7 +13,7 @@ exported signature are part of the API — they are as reviewable as the code.
 - **`internal/` is the one true consensus.** Packages under `internal/` cannot be imported from
   outside the module subtree — use it to keep implementation private while exporting a small surface.
 - **Start flat; grow as needed.** A new module is often one package at the root. Add
-  `cmd/<binary>/main.go` when you have multiple binaries and `internal/<pkg>/` when you need privacy
+  `cmd/<binary>/main.go` when there are multiple binaries and `internal/<pkg>/` when privacy is needed
   — not before. `golang-standards/project-layout` is community-made, **explicitly not official and
   contested**; don't treat its deep tree as a starting requirement.
 - **No Java/C# transplants:** no `*Manager`/`*Impl`/`*Factory` reflexes, no one-type-per-file rule,
@@ -67,9 +67,9 @@ exported signature are part of the API — they are as reviewable as the code.
   two booleans.
 - **Accept interfaces, return concrete types.** Define an interface in the package that *consumes*
   it, keep it to a method or three, and return the concrete type so callers get the full surface and
-  you can add methods without breaking them.
+  new methods don't break them.
 - **Prefer synchronous signatures** — let the caller add concurrency (→ `go-concurrency`).
-- **Make the zero value useful where you can** (`bytes.Buffer`, `sync.Mutex` need no constructor). If
+- **Make the zero value useful where possible** (`bytes.Buffer`, `sync.Mutex` need no constructor). If
   a type genuinely requires a `New…`, the doc comment must say so.
 
 ## Doc comments

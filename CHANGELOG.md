@@ -28,6 +28,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Skills: `go-coding` router — routes to the `/go-explain` and `/go-lint-setup` user-invoked skills.
 
 ### Changed
+- Agents: `go-reviewer` — frontmatter `description` converted to prose triggers (was ~313 words of `<example>` blocks); worked scenarios moved to a "When to invoke" body section.
+- Skills: `go-coding`/`go-explain` descriptions trimmed to the ~50–75-word always-on budget; skill bodies swept to imperative form (second-person phrasing removed).
 - Skills / agent / Cursor rule / docs: **Go 1.26.4+ is now a hard floor** — the "works with 1.25+" framing and the per-idiom "check `go.mod` before applying" hedging are gone from `go-coding`, `go-errors`, `go-idioms`, `go-explain`, `go-reviewer`, `rules/go-context.mdc`, `README.md` and `docs/install.md`. Version annotations (`Since`, "(Go 1.24)") stay as provenance.
 - Skills: `go-linting`, `/go-lint-setup`, `references/golangci.v2.yml` — no blessed golangci-lint version anywhere; replaced with a pin *policy* (exact version, one source of truth, `golangci-lint-action` `version:` input, automated bump PR, `--fix`-then-triage on bump) and upstream's warning against `go install`/`tool`-directive installs.
 - Docs: `docs/authoring.md` — refresh procedure gains the hard-floor rule and "never hardcode a tool version in a component".

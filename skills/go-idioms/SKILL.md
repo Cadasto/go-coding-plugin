@@ -6,7 +6,7 @@ description: Modern idiomatic Go (the `modernize` analyzer set). This skill shou
 # go-idioms — modern Go (modernize)
 
 **Advice == tooling.** The `modernize` analyzers flag and usually auto-fix most of what follows — the
-**Fixer** column says which, and the last section covers what no fixer will do for you. Run the tool,
+**Fixer** column says which, and the last section covers what no fixer automates. Run the tool,
 don't hand-audit. As of **Go 1.26** the rewritten `go fix` is the canonical runner — it ships the
 modernizer suite in the toolchain itself:
 
@@ -57,7 +57,7 @@ referencing itself in its own type-parameter list (e.g. `type Adder[A Adder[A]] 
 so self-referential constraints no longer need a workaround — but that's a hand-written pattern, not
 something a modernizer rewrites.
 
-## Modern, but no fixer will do it for you
+## Modern, but no fixer automates it
 
 - **`os.OpenRoot(dir)` → `*os.Root`** (1.24) for anything that opens a caller-supplied path: its
   methods cannot escape the directory, including via symlink. Replaces `filepath.Join` plus

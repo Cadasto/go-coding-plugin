@@ -18,7 +18,7 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
 - **The `%v`-where-`%w` trap:** formatting a cause with `%v` discards the chain, so downstream
   `errors.Is`/`errors.As` silently fail. `errorlint` flags it.
 - **Inspect with `errors.Is` (sentinel) / `errors.As` (typed)** — never `err == ErrX` or a type
-  assertion once any layer wraps, or you get *sentinel breakage* (the comparison silently stops
+  assertion once any layer wraps, or the result is *sentinel breakage* (the comparison silently stops
   matching). (Go 1.13; `errors.As` target must be a pointer.)
 - **Prefer `errors.AsType[E]` over `errors.As`** (Go 1.26):
   `if perr, ok := errors.AsType[*fs.PathError](err); ok { … }`. It is the generic form —
@@ -26,11 +26,11 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   mistyped target the way `errors.As` can. `errors.As` is not deprecated, so existing call sites are
   not bugs; the `errorsastype` modernizer converts them (`go fix ./...`).
 - **Sentinel errors** (`var ErrNotFound = errors.New("not found")`) for expected, comparable
-  conditions that are part of your API contract — keep the set small and documented.
+  conditions that are part of the API contract — keep the set small and documented.
   **Typed errors** (a struct implementing `error`) when callers need fields (`*PathError`).
 - **`errors.Join(err1, err2)`** (Go 1.20) to aggregate independent failures (cleanup, validation)
   — replaces manual concatenation and most third-party multierror use.
-- **Never swallow:** no `_ = f()` on an error you care about; no empty `if err != nil {}`. Handle,
+- **Never swallow:** no `_ = f()` on an error that matters; no empty `if err != nil {}`. Handle,
   wrap-and-return, or (deliberately, with a comment) ignore.
 - **Check `Close` on anything written to.** `defer f.Close()` discards a failed flush — the write
   looks successful and the file is truncated. Capture it into a named result:

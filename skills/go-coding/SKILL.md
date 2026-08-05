@@ -1,6 +1,6 @@
 ---
 name: go-coding
-description: Go coding-standards router and entry point for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool (gofmt/gofumpt, go vet, go fix / golangci-lint v2 modernize, go test -race), to the gopls-lsp plugin for code intelligence, and then to the focused go-* skill that owns it. For a single, already-identified topic prefer that skill directly (errors → go-errors, concurrency → go-concurrency, testing → go-testing, idioms/modernization → go-idioms, linter config → go-linting, layout/naming/API design → go-layout). Not for non-Go languages or domain/business rules.
+description: Go coding-standards router for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-linting, go-layout for layout/naming/API design). For a single, already-identified topic load that skill directly. Not for non-Go languages or domain/business rules.
 ---
 
 # go-coding — Go standards router

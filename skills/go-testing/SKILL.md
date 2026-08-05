@@ -16,7 +16,7 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
 - **Process-global helpers are incompatible with `t.Parallel()`** — `t.Setenv` (Go 1.17), `t.Chdir`
   (1.24), and `cryptotest.SetGlobalRandom` (1.26) all mutate process state, so they fail in a
   parallel test *or one with a parallel ancestor*. A table whose cases need env or cwd stays serial;
-  pass config explicitly instead where you can. The `usetesting` linter pushes `os.Setenv`/`os.Chdir`
+  pass config explicitly instead where possible. The `usetesting` linter pushes `os.Setenv`/`os.Chdir`
   in tests towards the `t.*` forms (which restore state via `Cleanup`).
 - **`t.Context()`** (Go 1.24) for any test needing a `ctx` — it is cancelled just before the test's
   `Cleanup` functions run, so goroutines under test shut down before teardown asserts on them. Use

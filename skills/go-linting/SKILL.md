@@ -60,7 +60,7 @@ formatters:
 - **Install the release binary, not from source.** Upstream states that `go install`/`go get`, the
   tools pattern, and `tool` directives "aren't guaranteed to work" — they compile golangci-lint with
   whatever local Go version is around. Use the binary, the action, or the Docker image, from a
-  release built with Go ≥ your module's toolchain (1.26+) so it can parse the language version.
+  release built with Go ≥ the module's toolchain (1.26+) so it can parse the language version.
 - **Bumping the pin:** run `--fix` first, then either land the leftover findings or add an explicit
   `linters.exclusions.rules` entry with a reason. If the pinned build rejects a linter name from the
   reference config, the pin is too old — bump it rather than deleting the linter.

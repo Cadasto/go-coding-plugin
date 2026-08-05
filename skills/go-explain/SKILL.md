@@ -1,6 +1,6 @@
 ---
 name: go-explain
-description: One-shot lookup/explanation of a single Go idiom, standard, or tool. This skill should be used when the user runs `/go-explain <topic>` or asks to "explain", "look up", or "what's the modern way to do" a specific Go construct (e.g. error wrapping, `synctest`, `wg.Go`, `min`/`max`, `internal/` layout) — returning the modern form, the enforcing linter, and a cited source. For applying a standard while writing or reviewing code, use the focused go-* skill (`go-errors`, `go-concurrency`, …). Not for non-Go languages.
+description: One-shot lookup/explanation of a single Go idiom, standard, or tool. This skill should be used when the user runs `/go-explain <topic>` or asks to "explain", "look up", or "what's the modern way to do" a specific Go construct (e.g. error wrapping, `synctest`, `wg.Go`, `internal/` layout) — returning the modern form, the enforcing linter, and a cited source. For applying a standard while writing or reviewing code, use the focused go-* skill instead. Not for non-Go languages.
 argument-hint: a Go topic (e.g. error wrapping, synctest, wg.Go, min/max, internal layout)
 allowed-tools: Read, Grep, Glob
 ---
