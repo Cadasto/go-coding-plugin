@@ -1,8 +1,11 @@
 # Reference golangci-lint v2 config for the go-coding plugin.
 #
 # Scaffold it into a repo with the `/go-lint-setup` command, or copy it to `.golangci.yml`.
-# Schema is golangci-lint v2 — a v1 config will NOT parse. See the `go-linting` skill for
-# what each linter does and why. Keep this in sync with the block inlined in
+# Schema is golangci-lint v2 — a v1 config will NOT parse (run `golangci-lint migrate` on a v1
+# config). Needs a golangci-lint v2 release recent enough to know every linter named below; if it
+# rejects one, bump the pin rather than dropping the line. Pin an exact version in CI in one place
+# (see `go-linting` — no version is blessed here on purpose). See the `go-linting` skill for what
+# each linter does and why. Keep this in sync with the block inlined in
 # `skills/go-lint-setup/SKILL.md`.
 version: "2"
 
@@ -18,6 +21,8 @@ linters:
     - contextcheck           # context not propagated through the call chain
     - containedctx           # context.Context stored in a struct field
     - perfsprint             # fmt.Sprintf where a cheaper call exists
+    - usetesting             # os.Setenv/os.Chdir/context.Background in tests → t.Setenv/t.Chdir/t.Context
+    - nolintlint             # a //nolint must name a linter and carry a reason
     - revive                 # configurable golint successor
 
 formatters:
