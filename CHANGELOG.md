@@ -22,7 +22,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Lint config: `usetesting`, `nolintlint` + `exhaustive` in `references/golangci.v2.yml`, the `go-linting` block, and `/go-lint-setup` (`exhaustive` was taught by `go-errors`/`go-reviewer` but not shipped).
 - Agents: `go-reviewer` — **exported-surface & naming slips** dimension; discarded-`Close`-on-a-written-file folded into resource leaks; `errors.AsType` in sentinel/typed-error breakage.
 - Docs: `docs/authoring.md` — "Refreshing the standards baseline (source registry)": tiered source list plus the procedure for re-grounding the skills against current Go practice; **AGENTS.md** points at it for refresh requests.
-- Validation: `scripts/validate.py` — advice == tooling cross-check: every linter a component teaches (`--enable-only=…` or "the `<name>` linter") must be enabled in `references/golangci.v2.yml`; a taught-but-not-shipped linter now fails CI.
+- Validation: `scripts/validate.py` — two advice == tooling cross-checks: every linter a component teaches (`--enable-only=…` or "the `<name>` linter") must be enabled in `references/golangci.v2.yml`, and the `go-idioms` **Fixer** column is verified against the floor toolchain's `go tool fix help` (plain names must be registered, † names must not be; soft-skips locally without Go). CI (`validate.yml`) now pins Go `1.26.x` alongside Python to run the Fixer check strictly.
 - Skills: `go-errors` — terse wrap context (`"new store: %w"`, no `"failed to"` pile-up); `go-layout` — `main` owns process exit (`os.Exit`/`log.Fatal` only in `main`, `run() error` pattern) and `init()` restricted to cheap deterministic setup.
 - Skills: `go-coding` router — routes to the `/go-explain` and `/go-lint-setup` user-invoked skills.
 
