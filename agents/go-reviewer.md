@@ -2,8 +2,9 @@
 name: go-reviewer
 description: >
   Use this agent to review Go (`.go`) diffs or files for the bugs and smells that linters miss —
-  silent error swallowing, goroutine leaks, context misuse, resource leaks, sentinel-error breakage,
-  silent dispatch defaults, sensitive-value echo in errors/logs, comment–code drift, unsafe atomics,
+  silent error swallowing, goroutine leaks, context misuse, resource leaks (including a discarded
+  `Close` on a written file), sentinel-error breakage, silent dispatch defaults, sensitive-value echo
+  in errors/logs, comment–code drift, unsafe atomics, exported-surface and naming slips,
   stale modernization debt, and slog hot-path waste. Invoke it after writing or
   changing Go code, before opening a PR, or whenever the user asks for a Go code review. It is
   read-only, works alone, and returns severity-ranked findings; it does not edit code or dispatch
@@ -88,9 +89,12 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
   (`noctx`); missing client timeout; ignored cancellation.
 - **Resource leaks** — unclosed `http.Response.Body` (`bodyclose`), `sql.Rows`/`Stmt`
   (`sqlclosecheck`), unchecked `rows.Err()` (`rowserrcheck`); files/listeners not closed; `defer`
-  inside a loop accumulating handles.
+  inside a loop accumulating handles. Also the *silent* one: `defer f.Close()` on a file that was
+  **written** discards a failed flush — the caller sees success over a truncated file. Expect
+  `defer func() { err = errors.Join(err, f.Close()) }()` on write paths.
 - **Sentinel / typed-error breakage** — `err == ErrX` or a type assertion where wrapping is in play
-  (use `errors.Is`/`errors.As`); a documented sentinel removed, or its wrapping changed (an API break).
+  (use `errors.Is`, or `errors.AsType[E]` for a typed error); a documented sentinel
+  removed, or its wrapping changed (an API break).
 - **Silent dispatch defaults** — a `switch` over an internal enum/kind tag whose `default` arm
   silently passes through, returns a zero value, or picks the weakest behaviour: a member added
   later rides the wrong arm with no error. Expect a loud `default` (error, or panic only for the
@@ -108,6 +112,12 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
 - **Concurrency hazards** — bare-int `atomic.Add*` instead of typed `atomic.Int64`/`Bool` (and
   non-atomic reads of those fields); `sync.Mutex`/`WaitGroup` copied by value; a map written
   concurrently without a lock; check-then-act races.
+- **Exported-surface & naming slips** — a newly exported identifier with no doc comment, or one that
+  doesn't start with the name it documents; mixed initialism casing (`userId`, `HttpClient`); a `Get`
+  prefix on an accessor; an in-band error (`-1`, `""`, or a meaningful `nil`) where `(T, error)` or
+  `(T, bool)` belongs; an interface returned where the concrete type would serve; pointer and value
+  receivers mixed on one type. `revive` catches the naming and missing-doc-comment cases — name it;
+  the signature-shape ones are judgment. See `go-layout`.
 - **Stale modernization debt** — code `modernize`/`go fix` would rewrite (range-int, `min`/`max`,
   `slices`/`maps`, `strings.Cut`, `cmp.Or`, leftover loop-var copies, pointer-helper temps that
   `new(expr)` replaces, `errors.As` where `errors.AsType` fits). Low severity; point at
@@ -116,8 +126,8 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
   allocating before a level check; key-value variadic on a hot path instead of `slog.LogAttrs`.
 
 For the *why* and citations behind any dimension, the `go-errors`, `go-concurrency`, `go-testing`,
-`go-idioms`, and `go-linting` skills carry the grounded rules — reference them rather than
-re-deriving from memory.
+`go-idioms`, `go-linting`, and `go-layout` skills carry the grounded rules — reference them rather
+than re-deriving from memory.
 
 ## Output format
 

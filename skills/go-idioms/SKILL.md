@@ -11,7 +11,7 @@ don't hand-audit. As of **Go 1.26** the rewritten `go fix` is the canonical runn
 modernizer suite in the toolchain itself:
 
 ```
-go fix ./...                                        # Go 1.26+: applies the built-in modernizers
+go fix ./...                                        # applies the toolchain's built-in modernizers
 golangci-lint run --enable-only=modernize --fix     # any toolchain (same analyzers, via golangci-lint)
 ```
 
