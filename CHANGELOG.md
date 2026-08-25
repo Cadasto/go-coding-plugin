@@ -7,7 +7,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## [0.4.1] - 2026-08-25
+
+Corrects three component defects and the docs that described them: a `PostToolUse` hook timeout that was five hours rather than twenty seconds, a reviewer agent calling itself read-only while holding `Bash`, and `go-lint-setup` offering a migration it had no tool grant to run.
 
 ### Changed
 - Docs: `README.md` — `go-reviewer` is described as **report-only**, not read-only. Its grant excludes `Write`/`Edit` but includes `Bash` so it can run the linters, which makes no-edit a contract the agent keeps rather than a sandbox that enforces it. `docs/authoring.md` follows. The same wording still stands in `agents/go-reviewer.md` and `skills/go-coding/SKILL.md`.
