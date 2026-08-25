@@ -41,11 +41,12 @@ release here does not ship it — users see nothing until the marketplace entry 
 
 After step 7, update the entry in `Cadasto/plugin-marketplace`:
 
-1. Bump that entry's `version` **and** `source.ref` to the new `vX.Y.Z` together (validation there
+1. Bump that entry's `version` to `X.Y.Z` and `source.ref` to `vX.Y.Z` together (validation there
    rejects a mismatch).
 2. Bump the catalog's own `metadata.version` — a plugin minor/major is a catalog **minor**, a plugin
    patch is a catalog **patch**.
-3. Add a `CHANGELOG.md` line and run `python3 scripts/validate.py --fix`.
+3. Add a dated `## [X.Y.Z] - YYYY-MM-DD` section in the catalog `CHANGELOG.md`, then run
+   `python3 scripts/validate.py --fix`.
 
 See the catalog's [docs/versioning.md](https://github.com/Cadasto/plugin-marketplace/blob/main/docs/versioning.md).
 
