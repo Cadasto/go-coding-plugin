@@ -10,9 +10,13 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Changed
+- Docs: `README.md` — `go-reviewer` is described as **report-only**, not read-only. Its grant excludes `Write`/`Edit` but includes `Bash` so it can run the linters, which makes no-edit a contract the agent keeps rather than a sandbox that enforces it. `docs/authoring.md` follows. The same wording still stands in `agents/go-reviewer.md` and `skills/go-coding/SKILL.md`.
+- Docs: `README.md` — the `validate.sh` comment claimed only "dual-host parity + frontmatter". The validator also checks component paths, kebab-case names, hook configs, that every linter a component teaches is reachable from the reference config, and — with a floor-minor Go toolchain on `PATH` — the `go-idioms` Fixer column against `go tool fix help`. Those last two are now described rather than left invisible.
+- Docs: sentence-case H1s in `docs/testing.md`, `docs/versioning.md`, `docs/authoring.md`; "for example" over "e.g."; `docs/testing.md` opens with its subject rather than "There is".
 - Docs: `docs/versioning.md`, `AGENTS.md` — release step 8: bump catalog `version` and `source.ref` after tagging.
 
 ### Fixed
+- Docs: `README.md` had no route to `docs/versioning.md` or `docs/authoring.md` — two of the four contributor documents were unreachable from it. Added a Documentation section listing all four.
 - Docs: `claude plugin add` is not a Claude Code command. `README.md`, `docs/install.md`, `docs/versioning.md` (the dogfood release step), and `AGENTS.md` load a local working copy with `claude --plugin-dir <path>`, which applies to that session only.
 
 ## [0.4.0] - 2026-08-05
