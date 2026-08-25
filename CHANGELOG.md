@@ -9,6 +9,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+- Docs: `docs/versioning.md`, `AGENTS.md` — release step 8: bump catalog `version` and `source.ref` after tagging.
+
 ## [0.4.0] - 2026-08-05
 
 Grounds the standards set on a **Go 1.26.4+ hard floor**, widens `go-layout` to naming + API surface, replaces the pinned golangci-lint version with a pin *policy*, and makes "advice == tooling" machine-checked (taught linters vs the reference config; the `go-idioms` Fixer column vs the floor toolchain's `go tool fix help`).

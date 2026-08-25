@@ -83,7 +83,7 @@ When adding or renaming components, update in lockstep: **AGENTS.md** (the layou
 ### Versioning
 
 - Keep `version` (and, for consistency, `description` and `author`) **in sync across both** `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`.
-- Follow **Semantic Versioning**; update both manifests and **CHANGELOG.md** (Keep a Changelog format) when releasing.
+- Follow **Semantic Versioning**; update both manifests and **CHANGELOG.md** (Keep a Changelog format) when releasing. See [docs/versioning.md](docs/versioning.md).
 
 ### CHANGELOG style
 
@@ -104,3 +104,4 @@ When adding or renaming components, update in lockstep: **AGENTS.md** (the layou
 - **The Cursor hook uses a workspace-relative command** (`bash hooks/session-start.sh`), *not* `${CLAUDE_PLUGIN_ROOT}` (a Claude-Code-only variable). Keep both hook configs in step; don't "fix" the Cursor one to use the variable.
 - **Shared command references live in top-level `references/`, not under `commands/`.** `claude plugin validate` treats every `commands/**/*.md` as a command and warns on missing frontmatter.
 - **Don't invent a companion MCP server.** This plugin has no MCP backend today; `.mcp.json` should only appear if one is genuinely added.
+- **Register in the marketplace separately — and repin it on every release.** Public availability requires an entry in the `cadasto` marketplace, maintained in `Cadasto/plugin-marketplace`. That entry is pinned to a release tag, so tagging here ships nothing until the entry's `version` and `source.ref` are bumped; see [docs/versioning.md](docs/versioning.md#marketplace).
