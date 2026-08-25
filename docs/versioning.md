@@ -27,10 +27,27 @@ bump.
    output ever lists components, keep that in step too.
 6. Commit (`chore(release): vX.Y.Z`) and tag: `git tag -a vX.Y.Z -m "go-coding-plugin vX.Y.Z"`.
 7. Push commits and the tag: `git push origin main --follow-tags`.
+8. **Update the marketplace entry** — the release is not live until this lands. See below.
 
-## No MCP or marketplace coupling
+## No MCP coupling
 
 This plugin has **no companion MCP server**, so there is no server-compatibility version to align.
-It is listed in the **Cadasto marketplace** (`cadasto/plugin-marketplace`); the marketplace tracks
-the repo's default branch, so update that entry only when `name`, `description`, or `repository`
-changes — there is no version pin to bump there.
+
+## Marketplace
+
+This plugin is listed in the [Cadasto marketplace](https://github.com/Cadasto/plugin-marketplace)
+as `go-coding@cadasto`. The catalog **pins every entry to a release tag**, so tagging and pushing a
+release here does not ship it — users see nothing until the marketplace entry moves.
+
+After step 7, update the entry in `Cadasto/plugin-marketplace`:
+
+1. Bump that entry's `version` **and** `source.ref` to the new `vX.Y.Z` together (validation there
+   rejects a mismatch).
+2. Bump the catalog's own `metadata.version` — a plugin minor/major is a catalog **minor**, a plugin
+   patch is a catalog **patch**.
+3. Add a `CHANGELOG.md` line and run `python3 scripts/validate.py --fix`.
+
+See the catalog's [docs/versioning.md](https://github.com/Cadasto/plugin-marketplace/blob/main/docs/versioning.md).
+
+The catalog copies `description`, `version`, and `keywords` verbatim from `.claude-plugin/plugin.json`,
+so update the entry whenever any of those change — not only on a release.

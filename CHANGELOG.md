@@ -9,6 +9,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Changed
+- Docs: `docs/versioning.md` — the marketplace no longer tracks this repo's default branch. The Cadasto catalog pins each entry to a release tag, so a release is not live until the entry in `Cadasto/plugin-marketplace` bumps `version` and `source.ref`; added as release step 8.
+
 ## [0.4.0] - 2026-08-05
 
 Grounds the standards set on a **Go 1.26.4+ hard floor**, widens `go-layout` to naming + API surface, replaces the pinned golangci-lint version with a pin *policy*, and makes "advice == tooling" machine-checked (taught linters vs the reference config; the `go-idioms` Fixer column vs the floor toolchain's `go tool fix help`).
