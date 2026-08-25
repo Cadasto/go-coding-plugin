@@ -39,7 +39,7 @@ tool in the middle column to enforce them. Don't invent rules: each skill cites 
 
 ## For a focused review
 
-Dispatch the `go-reviewer` agent — a read-only, context-isolated reviewer that applies the
+Dispatch the `go-reviewer` agent — a report-only, context-isolated reviewer that applies the
 review-heuristics catalog and returns severity-ranked findings on a diff or file.
 
 Two user-invoked skills round out the surface: `/go-explain <topic>` for a one-shot idiom lookup,
