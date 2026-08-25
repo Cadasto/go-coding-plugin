@@ -10,7 +10,18 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Changed
+- Docs: `README.md` — `go-reviewer` is described as **report-only**, not read-only. Its grant excludes `Write`/`Edit` but includes `Bash` so it can run the linters, which makes no-edit a contract the agent keeps rather than a sandbox that enforces it. `docs/authoring.md` follows. The same wording still stands in `agents/go-reviewer.md` and `skills/go-coding/SKILL.md`.
+- Docs: `README.md` — the `validate.sh` comment claimed only "dual-host parity + frontmatter". The validator also checks component paths, kebab-case names, hook configs, that every linter a component teaches is reachable from the reference config, and — with a floor-minor Go toolchain on `PATH` — the `go-idioms` Fixer column against `go tool fix help`. Those last two are now described rather than left invisible.
+- Docs: sentence-case H1s in `docs/testing.md`, `docs/versioning.md`, `docs/authoring.md`; "for example" over "e.g."; `docs/testing.md` opens with its subject rather than "There is".
 - Docs: `docs/versioning.md`, `AGENTS.md` — release step 8: bump catalog `version` and `source.ref` after tagging.
+
+### Fixed
+- Hooks: the `PostToolUse` formatter declared `"timeout": 20000`. Claude Code reads a hook timeout in **seconds** (`hook.timeout * 1000` internally), so that was 5 hours 33 minutes, not 20 seconds — a hung `gofumpt` would have stalled the session instead of being cut off. Now `20`.
+- Agents, Skills: `go-reviewer` described itself as **read-only** while declaring `Bash`, which writes. It is **report-only**: the body now says no-edit is a contract it keeps rather than a sandbox that keeps it, and adds an explicit ban on `-w` / `--fix` / any in-place formatter flag, which is the concrete way a reviewer holding `Bash` could edit by accident. `skills/go-coding/SKILL.md` follows.
+- Skills: `go-lint-setup` offers to run `golangci-lint migrate` but declared `allowed-tools: Read, Write, Glob` — no `Bash`, so it could not do what it offered. Added `Bash`, matching this repo's own advice-equals-tooling principle.
+
+- Docs: `README.md` had no route to `docs/versioning.md` or `docs/authoring.md` — two of the four contributor documents were unreachable from it. Added a Documentation section listing all four.
+- Docs: `claude plugin add` is not a Claude Code command. `README.md`, `docs/install.md`, `docs/versioning.md` (the dogfood release step), and `AGENTS.md` load a local working copy with `claude --plugin-dir <path>`, which applies to that session only.
 
 ## [0.4.0] - 2026-08-05
 

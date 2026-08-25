@@ -1,6 +1,6 @@
-# Testing and Validation
+# Testing and validation
 
-This is a pure-content repository — JSON manifests + Markdown components. There is no build
+This is a pure-content repository — JSON manifests + Markdown components, with no build
 step or package manager. Testing means validating structure, then installing locally and
 exercising the components.
 
@@ -18,7 +18,7 @@ Install from your working copy (see [install.md](install.md)), then exercise eac
 
 - **Session-start hook** — open a repo with a `go.mod`/`*.go`; one Go-standards line should print at session start (and nothing in a non-Go repo).
 - **`go-coding` router** — ask for a Go review or idiom help; it should route to the enforcing tool and the focused skill.
-- **Standards skills** — a topic prompt should engage the matching skill (e.g. error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-linting`).
+- **Standards skills** — a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-linting`).
 - **`go-reviewer` agent** — ask for a Go code review; it returns severity-ranked findings and does not spawn sub-agents.
 - **Slash commands (skills)** — `/go-explain <topic>` and `/go-lint-setup`.
 - **Cursor rule** — in Cursor, open a `.go` file and confirm `go-context.mdc` attaches.

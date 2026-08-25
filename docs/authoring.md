@@ -1,16 +1,16 @@
-# Skill, Command, Agent, and Rule Authoring Conventions
+# Skill, command, agent, and rule authoring conventions
 
 The detailed companion to [AGENTS.md](../AGENTS.md) (which is authoritative); this expands on the
 *how*. The shipped components are the reference examples.
 
 ## Naming & layout
 
-- **Components are kebab-case** and namespaced `<plugin>:<component>` (e.g.
+- **Components are kebab-case** and namespaced `<plugin>:<component>` (for example
   `go-coding:go-errors`) — don't repeat the plugin's words in a component name. A component's
   frontmatter `name` MUST equal its directory (skills) or filename stem (agents);
   `scripts/validate.py` enforces this.
 - `skills/<name>/SKILL.md` (includes user-invoked slash commands) · `agents/<name>.md` ·
-  `rules/<name>.mdc`. Shared reference material (e.g. `references/golangci.v2.yml`) lives in
+  `rules/<name>.mdc`. Shared reference material (for example `references/golangci.v2.yml`) lives in
   top-level `references/`. The legacy `commands/<name>.md` layout is not used.
 
 ## Skill vs agent vs rule
@@ -23,7 +23,7 @@ The detailed companion to [AGENTS.md](../AGENTS.md) (which is authoritative); th
   `/go-explain`, `/go-lint-setup`. (The legacy `commands/` folder is not used.)
 - **Agent** — a context-isolated specialist. Use **`tools:`** (a YAML block list), **never**
   `allowed-tools:` — in an agent that key is silently ignored and the agent inherits *all* tools.
-  See `go-reviewer` (read-only, no sub-agent dispatch).
+  See `go-reviewer` (report-only, no sub-agent dispatch).
 - **Cursor rule** — a Cursor-only `.mdc` with `description` / `globs` / `alwaysApply` that mirrors a
   skill for the Cursor host. See `rules/go-context.mdc`.
 
@@ -33,7 +33,7 @@ For skills the `description` is always-on metadata: keep it lean (~50–75 words
 *what + scope*, 3–5 representative triggers ("This skill should be used when…"), and a short
 "Not for …" anti-trigger. For commands it's the one-line palette entry; pair it with `argument-hint`.
 
-**YAML gotcha:** a `description` value with an unquoted `: ` (colon-space) — e.g. writing
+**YAML gotcha:** a `description` value with an unquoted `: ` (colon-space) — for example writing
 `version: "2"` inline — makes a real YAML parser read it as a nested mapping, so the component loads
 with *empty* metadata (every field silently dropped). `claude plugin validate` catches this, and
 `scripts/validate.py` guards against it too. Reword or quote the value.
