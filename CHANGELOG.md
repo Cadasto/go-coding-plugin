@@ -12,6 +12,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ### Changed
 - Docs: `docs/versioning.md`, `AGENTS.md` — release step 8: bump catalog `version` and `source.ref` after tagging.
 
+### Fixed
+- Docs: `claude plugin add` is not a Claude Code command. `README.md`, `docs/install.md`, `docs/versioning.md` (the dogfood release step), and `AGENTS.md` load a local working copy with `claude --plugin-dir <path>`, which applies to that session only.
+
 ## [0.4.0] - 2026-08-05
 
 Grounds the standards set on a **Go 1.26.4+ hard floor**, widens `go-layout` to naming + API surface, replaces the pinned golangci-lint version with a pin *policy*, and makes "advice == tooling" machine-checked (taught linters vs the reference config; the `go-idioms` Fixer column vs the floor toolchain's `go tool fix help`).

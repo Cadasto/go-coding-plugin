@@ -18,7 +18,7 @@ bump.
    `.cursor-plugin/plugin.json`. Keep `description` and `author` identical across both —
    `scripts/validate.py` enforces this parity.
 2. Run `./scripts/validate.sh` and `claude plugin validate .`.
-3. **Dogfood:** install from a working copy (`claude plugin add /path/to/go-coding-plugin`) and
+3. **Dogfood:** load the working copy (`claude --plugin-dir /path/to/go-coding-plugin`) and
    exercise the components against a real Go change on **both** hosts — see [testing.md](testing.md).
 4. Fold the accumulated `## [Unreleased]` notes into a dated `## [X.Y.Z] - YYYY-MM-DD` section in
    [CHANGELOG.md](../CHANGELOG.md) (Keep a Changelog — groups in order Added, Changed, Deprecated,

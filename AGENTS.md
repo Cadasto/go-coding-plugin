@@ -60,7 +60,7 @@ No build step — the plugin is pure Markdown + JSON. Validate and dogfood local
 ```bash
 ./scripts/validate.sh                    # dual-host parity / frontmatter (soft-skips if no python3)
 claude plugin validate .                 # manifest + component structure (no extra deps)
-claude plugin add /path/to/go-coding-plugin   # install locally for dogfooding
+claude --plugin-dir /path/to/go-coding-plugin # load locally for one session (dogfooding)
 ```
 
 `scripts/validate.sh` wraps `scripts/validate.py`; it warns and skips gracefully if Python is absent, while CI pins Python and runs the validator strictly. On Cursor, install via its plugin flow and verify the same skills/agents/rules load.

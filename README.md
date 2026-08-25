@@ -11,7 +11,7 @@ An AI plugin by **Cadasto B.V.** that teaches AI coding assistants **idiomatic G
 /plugin install go-coding@cadasto
 ```
 
-Or from a local working copy: `claude plugin add /path/to/go-coding-plugin`.
+Or load a local working copy for a single session: `claude --plugin-dir /path/to/go-coding-plugin`.
 
 **Cursor**: add this repository as a plugin (Settings → Plugins). See [`docs/install.md`](docs/install.md) for both hosts.
 
