@@ -96,9 +96,10 @@ These are **host-only** dev tools; the plugin still works without them (the form
 
 ## Hooks
 
-The plugin ships two host-agnostic hooks (Claude `hooks/hooks.json`, Cursor `hooks/cursor-hooks.json`):
+The plugin ships three host-agnostic hooks (Claude `hooks/hooks.json`, Cursor `hooks/cursor-hooks.json`):
 
 - **`session-start.sh`** — on session start, detects a Go workspace (`go.mod`/`*.go`) and prints one standards line.
 - **`format-on-save.sh`** — after each edit of a `*.go` file (Claude `PostToolUse` on `Write`/`Edit`; Cursor `afterFileEdit`), runs **`gofumpt -w`** on that file, or **`gofmt -w -s`** when `gofumpt` is not installed. It is **host-only** (no container round-trip), **edits the file in place**, and is a **silent no-op** when no Go formatter is on `PATH` — so install `gofmt` (ships with Go) or `gofumpt` to benefit. It never blocks an edit. This is per-file formatting only; run `golangci-lint` and your tests via CI/`make` for full-tree checks.
+- **`skill-nudge.sh`** — after each edit of a `*.go` file (same trigger as `format-on-save.sh`), names ONE matching go-coding skill for that edit (a `_test.go` file → `go-testing`; goroutine/channel/`sync`/`atomic`/`errgroup` content → `go-concurrency`; `fmt.Errorf`/`errors.*` → `go-errors`), once per skill per session. Delivered as a hook `systemMessage` under Claude Code (reaches the model's context on exit 0) or a plain line under Cursor. It never blocks an edit.
 
 > The Cursor wiring targets the `afterFileEdit` event; if your Cursor version exposes a different post-edit event or payload shape, adjust `hooks/cursor-hooks.json` and the path-extraction in `format-on-save.sh` accordingly.

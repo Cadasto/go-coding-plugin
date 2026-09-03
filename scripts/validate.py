@@ -187,7 +187,7 @@ def validate_linter_references():
         taught.update(re.findall(r"[Tt]he\s+`([a-z0-9-]+)`\s+linter", body))
         for name in sorted(taught - allowed):
             err(f"{md.relative_to(ROOT)}: teaches the '{name}' linter but "
-                f"references/golangci.v2.yml does not enable it — enable it in all three "
+                f"references/golangci.v2.yml does not enable it — enable it in both "
                 f"config copies or stop naming it (advice == tooling)")
 
 

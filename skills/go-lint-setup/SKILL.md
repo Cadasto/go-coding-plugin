@@ -5,12 +5,17 @@ argument-hint: optional target path (defaults to .golangci.yml)
 allowed-tools: Read, Write, Glob, Bash
 ---
 
-# go-lint-setup — scaffold golangci-lint v2
+# go-lint-setup — scaffold, adopt, or debug golangci-lint v2
 
 > **Bundled `references/` is at the plugin root** (beside `skills/`, two levels above this file) — *not* under this skill. Read `references/golangci.v2.yml` as `${CLAUDE_PLUGIN_ROOT}/references/golangci.v2.yml` on Claude Code, or `../../references/golangci.v2.yml` from this skill's directory, or Glob for the installed `references/golangci.v2.yml` (host-agnostic).
 
-Scaffold the plugin's reference **golangci-lint v2** config into the current repo so its linting
-matches the `go-coding` standards. Single interaction.
+Scaffold the plugin's reference **golangci-lint v2** config into a repo that has none, or adopt or
+debug an existing config already in the repo — schema questions, migration, which linters,
+`//nolint`, exclusions. Scaffolding is a single interaction.
+
+Asked to set up or scaffold a config → Steps 1–3 below. Asked about an existing config (rejected
+keys, migration, which linters, `//nolint`, exclusions) → skip to *Adopting or debugging an
+existing config*; do not write a file.
 
 Steps:
 

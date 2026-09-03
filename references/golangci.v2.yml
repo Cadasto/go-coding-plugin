@@ -4,9 +4,9 @@
 # Schema is golangci-lint v2 — a v1 config will NOT parse (run `golangci-lint migrate` on a v1
 # config). Needs a golangci-lint v2 release recent enough to know every linter named below; if it
 # rejects one, bump the pin rather than dropping the line. Pin an exact version in CI in one place
-# (see `go-lint-setup` — no version is blessed here on purpose). See the `go-lint-setup` skill for
-# what each linter does and why. Keep this in sync with the scaffold block in
-# `skills/go-lint-setup/SKILL.md`.
+# (see `go-lint-setup` — no version is blessed here on purpose). For what each linter does and why,
+# see the inline comments below; for adopting or debugging an existing config, see the
+# `go-lint-setup` skill. Keep this in sync with the scaffold block in `skills/go-lint-setup/SKILL.md`.
 version: "2"
 
 linters:

@@ -17,7 +17,7 @@ bump.
 1. Bump `version` in **both** manifests (they must agree): `.claude-plugin/plugin.json` and
    `.cursor-plugin/plugin.json`. Keep `description` and `author` identical across both —
    `scripts/validate.py` enforces this parity.
-2. Run `./scripts/validate.sh` and `claude plugin validate .`.
+2. Run `./scripts/validate.sh`, `./scripts/hooks-test.sh`, and `claude plugin validate .`.
 3. **Dogfood:** load the working copy (`claude --plugin-dir /path/to/go-coding-plugin`) and
    exercise the components against a real Go change on **both** hosts — see [testing.md](testing.md).
 4. Fold the accumulated `## [Unreleased]` notes into a dated `## [X.Y.Z] - YYYY-MM-DD` section in
