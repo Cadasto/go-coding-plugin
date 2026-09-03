@@ -18,7 +18,7 @@ if is_go_workspace; then
   for cfg in .golangci.yml .golangci.yaml .golangci.toml .golangci.json; do
     [ -e "$cfg" ] && lint="" && break
   done
-  echo "› Go workspace — go-coding: load go-coding then the skill for your diff (go-errors · go-testing · go-idioms · go-concurrency · go-layout); /go-explain <topic> for a one-shot idiom lookup; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2 + gopls-lsp recommended."
+  echo "› Go workspace — go-coding: load go-coding then the skill for your diff (go-errors · go-testing · go-idioms · go-concurrency · go-layout); go-reviewer for a diff review${lint}. gofmt/golangci-lint v2 + gopls-lsp recommended."
 fi
 
 exit 0
