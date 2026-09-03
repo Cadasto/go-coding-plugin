@@ -14,7 +14,11 @@ is_go_workspace() {
 }
 
 if is_go_workspace; then
-  echo "› Go workspace detected — go-coding standards available (ask for a Go review or idiom guidance; gofmt + golangci-lint v2 and the gopls-lsp plugin recommended)."
+  lint=" · /go-lint-setup scaffolds golangci-lint v2 (no config found)"
+  for cfg in .golangci.yml .golangci.yaml .golangci.toml .golangci.json; do
+    [ -e "$cfg" ] && lint="" && break
+  done
+  echo "› Go workspace — go-coding: load go-coding then the skill for your diff (go-errors · go-testing · go-idioms · go-concurrency · go-layout); go-reviewer for a diff review${lint}. gofmt/golangci-lint v2 + gopls-lsp recommended."
 fi
 
 exit 0

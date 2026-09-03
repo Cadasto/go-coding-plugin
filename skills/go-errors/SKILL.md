@@ -1,6 +1,6 @@
 ---
 name: go-errors
-description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, inspecting via `errors.Is`/`errors.AsType`, sentinel vs typed errors, `errors.Join`, unchecked `Close` errors, when panic is legitimate, enum-switch dispatch defaults, keeping payload values out of boundary errors/logs, or chasing a silently-swallowed or context-losing error. Pair with the `errorlint` linter (set it up via `go-linting`). Not for non-Go languages.
+description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, `errors.Is`/`errors.AsType`, sentinel vs typed errors, `errors.Join`, an unchecked `Close`, when panic is legitimate, enum-switch dispatch defaults, keeping payload values out of boundary errors and logs, or chasing a swallowed or context-losing error. Pair with the `errorlint` linter. Go only.
 ---
 
 # go-errors — Go error handling

@@ -1,6 +1,6 @@
 ---
 name: go-concurrency
-description: Idiomatic, leak-free Go concurrency. This skill should be used when the user writes or reviews Go goroutines, channels, `sync`/`atomic`, `context`, `errgroup`, or worker pools — goroutine lifetimes/leaks, context propagation, cancellation causes (`context.Cause`, `WithTimeoutCause`), work that must outlive a request (`context.WithoutCancel`, `AfterFunc`), typed atomics, mutex misuse, cleanup/finalizers, or data races. Pair with `go test -race`, `go vet`, and `goleak`. Defers time/concurrency *testing* mechanics to `go-testing` (synctest). Not for non-Go languages.
+description: Idiomatic, leak-free Go concurrency. This skill should be used when a diff or question contains go func, chan, select, sync.WaitGroup/Mutex/Once, atomic, errgroup, context.WithCancel/Timeout/Cause, a retry or backoff loop, a worker pool, per-request cancellation, or a Close on a goroutine-owned resource — goroutine lifetime and leaks, context propagation and cancel causes, work outliving a request, typed atomics, mutex misuse, data races. Pair with go test -race and goleak. Time-dependent tests belong to go-testing (synctest). Go only.
 ---
 
 # go-concurrency — Go concurrency
@@ -8,11 +8,12 @@ description: Idiomatic, leak-free Go concurrency. This skill should be used when
 Deterministic backstop: `go test -race ./...`, `go vet ./...` (catches copylocks, lost cancel),
 and `go.uber.org/goleak`. The race detector is the source of truth — run it before reasoning.
 The runtime also ships an experimental `goroutineleak` profile in `runtime/pprof` (Go 1.26)
-that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (enable it
-with `GOEXPERIMENT=goroutineleakprofile` at build time). The implementation is production-ready; the
-experiment flag is only about API feedback, and it costs nothing unless in use.
-*Go 1.27 (draft, expected Aug 2026) enables it by default — no `GOEXPERIMENT`, and
-`/debug/pprof/goroutineleak` via `net/http/pprof`.*
+that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (on Go
+1.26, enable it with `GOEXPERIMENT=goroutineleakprofile` at build time). The implementation is
+production-ready; the experiment flag is only about API feedback, and it costs nothing unless in use.
+*On Go 1.27 the profile is generally available with no build flag — read it via
+`pprof.Lookup("goroutineleak")` or the `net/http/pprof` endpoint `/debug/pprof/goroutineleak`. Source:
+<https://go.dev/doc/go1.27>; <https://pkg.go.dev/runtime/pprof>.*
 
 ## Rules
 

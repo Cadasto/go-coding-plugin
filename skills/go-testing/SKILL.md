@@ -1,6 +1,6 @@
 ---
 name: go-testing
-description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks, or fuzz targets — table-driven tests, `t.Parallel` (and what cannot run under it), `t.Context`, `t.Chdir`/`t.Setenv`, `t.TempDir` vs `t.ArtifactDir`, `t.Output`, `testing.B.Loop`, the race detector, goroutine-leak detection, `testing/synctest` for time/concurrency, fuzzing, golden files, or writing failure messages that actually diagnose. Pair with `go test -race`. Not for non-Go test frameworks; error-wrapping belongs to `go-errors`.
+description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks or fuzz targets — any _test.go file, table-driven `t.Run`, a can-fail control proving a guard is mutation-detectable, a refusal test asserting the operation-specific facet not a shared sentinel, `t.Parallel` (and what cannot run under it), `t.Context`, `t.Chdir`/`t.Setenv`, `t.TempDir` vs `t.ArtifactDir`, `t.Output`, `testing.B.Loop`, the race detector, goroutine-leak checks, `testing/synctest` for time and concurrency, fuzzing, golden files, or failure messages that actually diagnose. Pair with `go test -race`. Go only; error wrapping belongs to go-errors.
 ---
 
 # go-testing — Go testing
@@ -42,13 +42,19 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   `synctest.Test(t, func(t *testing.T){ … })`; `synctest.Wait()` blocks until every goroutine in the
   bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (Always
   `synctest.Test` — the pre-stable `synctest.Run` no longer exists.)
-  *Go 1.27 (draft, expected Aug 2026) adds `synctest.Sleep` (`time.Sleep` + `Wait` in one) and
-  `httptest.NewTestServer`, an in-memory server usable inside a bubble.*
+  *Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) adds `synctest.Sleep` (`time.Sleep` + `Wait`
+  in one) and `httptest.NewTestServer(t, handler)` — signature
+  `func NewTestServer(t testing.TB, handler http.Handler) *Server`, note the `testing.TB` first
+  argument that `httptest.NewServer` does not take — an in-memory server usable inside a bubble.
+  Sources: <https://go.dev/doc/go1.27>, <https://pkg.go.dev/net/http/httptest#NewTestServer>.*
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
   A golden pins *shape*, not behaviour — when it records something another system executes (SQL,
   wire requests, rendered configs), pair it with at least one test that executes the artefact for
-  real; a snapshot can be stable and wrong.
+  real; a snapshot can be stable and wrong. (Go 1.27) Never assert on compressed bytes verbatim —
+  `compress/flate`'s encoder changed, so `gzip`/`zip`/`zlib`/PNG output differs byte-for-byte from
+  1.26 even though decompression is unaffected; compare decompressed content or a stable digest of
+  it instead. Source: <https://go.dev/doc/go1.27>.
 - **Deterministic crypto tests (Go 1.26):** `testing/cryptotest.SetGlobalRandom(t, seed)` pins a
   deterministic randomness source for the test's duration — reach for it instead of hand-injecting a
   custom `io.Reader` when testing code that draws from `crypto/rand`. It's process-global, so it

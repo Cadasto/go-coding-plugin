@@ -21,14 +21,25 @@ Checks:
 
 This plugin has no MCP backend, so there is intentionally no ``.mcp.json`` check.
 
+  * dual-host hook parity: the same ``hooks/*.sh`` wired for the equivalent event on both
+    hosts, each wired script present and executable, and none left unwired;
+  * doc component inventories: every shipped skill, agent and hook named in the docs that
+    claim to list them. One-directional, so tombstones for removed components stay legal.
+
 Dependency-free (stdlib only) so the ``scripts/validate.sh`` soft-skip is the *only*
-reason it wouldn't run. Usage: python3 scripts/validate.py   (from the repo root)
+reason it wouldn't run.
+
+Usage:
+    python3 scripts/validate.py              # verify this tree
+    python3 scripts/validate.py --selftest   # verify the checks themselves still catch things
 """
 import json
+import os
 import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -49,6 +60,18 @@ STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 # minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
 # floor, so the check skips on any other minor. Bump together with the documented baseline.
 GO_FLOOR_MINOR = "1.26"
+# Hook events that mean the same thing on each host, so the same scripts must be wired for
+# both. Claude event -> Cursor event.
+EQUIVALENT_HOOK_EVENTS = {"SessionStart": "sessionStart", "PostToolUse": "afterFileEdit"}
+# Docs that inventory the component surface, and which kinds each one claims to cover.
+# install.md enumerates the hooks (it documents what they need on PATH) but is not a skill
+# catalogue, so it is held to the hook list only.
+INVENTORY_DOCS = {
+    "README.md": ("skills", "agents", "hooks"),
+    "AGENTS.md": ("skills", "agents", "hooks"),
+    "docs/testing.md": ("skills", "agents", "hooks"),
+    "docs/install.md": ("hooks",),
+}
 
 
 def err(msg):
@@ -187,7 +210,7 @@ def validate_linter_references():
         taught.update(re.findall(r"[Tt]he\s+`([a-z0-9-]+)`\s+linter", body))
         for name in sorted(taught - allowed):
             err(f"{md.relative_to(ROOT)}: teaches the '{name}' linter but "
-                f"references/golangci.v2.yml does not enable it — enable it in all three "
+                f"references/golangci.v2.yml does not enable it — enable it in both "
                 f"config copies or stop naming it (advice == tooling)")
 
 
@@ -274,6 +297,90 @@ def validate_json_file(path: Path, label: str):
         load_json(path, label)
 
 
+def _hook_scripts(config: dict) -> dict:
+    """Map each event name in a hook config to the set of `hooks/*.sh` scripts it wires.
+    Both host schemas nest differently (Claude groups by matcher, Cursor does not), so walk
+    whatever is under the event and collect every `command` string found."""
+    found = {}
+    for event, entries in (config.get("hooks") or {}).items():
+        scripts = set()
+        stack = [entries]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                cmd = node.get("command")
+                if isinstance(cmd, str):
+                    scripts.update(re.findall(r"hooks/([A-Za-z0-9._-]+\.sh)", cmd))
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+        found[event] = scripts
+    return found
+
+
+def validate_hook_parity():
+    """Dual-host hook parity: the same scripts must be wired for the equivalent event on both
+    hosts, every wired script must exist and be executable, and no `hooks/*.sh` may sit in the
+    tree unwired. Catches the drift where a new hook reaches Claude Code but never Cursor —
+    previously only findable by reading both configs side by side."""
+    claude_path, cursor_path = ROOT / "hooks" / "hooks.json", ROOT / "hooks" / "cursor-hooks.json"
+    if not (claude_path.is_file() and cursor_path.is_file()):
+        return
+    claude, cursor = load_json(claude_path, "Claude hooks"), load_json(cursor_path, "Cursor hooks")
+    if claude is None or cursor is None:
+        return
+    claude_events, cursor_events = _hook_scripts(claude), _hook_scripts(cursor)
+    wired = set()
+    for claude_event, cursor_event in EQUIVALENT_HOOK_EVENTS.items():
+        here, there = claude_events.get(claude_event, set()), cursor_events.get(cursor_event, set())
+        wired |= here | there
+        for name in sorted(here - there):
+            err(f"hooks/cursor-hooks.json: '{name}' is wired for Claude's {claude_event} but "
+                f"not for Cursor's {cursor_event} (dual-host parity)")
+        for name in sorted(there - here):
+            err(f"hooks/hooks.json: '{name}' is wired for Cursor's {cursor_event} but not for "
+                f"Claude's {claude_event} (dual-host parity)")
+    for event in set(claude_events) - set(EQUIVALENT_HOOK_EVENTS):
+        wired |= claude_events[event]
+    for event in set(cursor_events) - set(EQUIVALENT_HOOK_EVENTS.values()):
+        wired |= cursor_events[event]
+    for name in sorted(wired):
+        script = ROOT / "hooks" / name
+        if not script.is_file():
+            err(f"hooks: wired script 'hooks/{name}' does not exist")
+        elif not os.access(script, os.X_OK):
+            err(f"hooks/{name}: wired but not executable (chmod +x)")
+    for script in sorted((ROOT / "hooks").glob("*.sh")):
+        if script.name not in wired:
+            err(f"hooks/{script.name}: present in the tree but wired by neither host's hook config")
+
+
+def validate_doc_inventories():
+    """Every shipped component must appear in the docs that claim to inventory the surface.
+    A removed skill leaves stale rows behind and a new hook goes unmentioned — both happened in
+    this repo. The check is one-directional on purpose: it proves each component IS documented,
+    not that every name mentioned still exists, so deliberate tombstones ("removed in 0.5.0")
+    and cross-references stay legal."""
+    # Hooks are matched on the stem, since docs legitimately write "the format-on-save hook".
+    kinds = {
+        "skills": [d.name for d in sorted((ROOT / "skills").iterdir()) if (d / "SKILL.md").is_file()],
+        "agents": [m.stem for m in sorted((ROOT / "agents").glob("*.md"))],
+        "hooks": [s.stem for s in sorted((ROOT / "hooks").glob("*.sh"))],
+    }
+    for doc_name, covered in INVENTORY_DOCS.items():
+        doc = ROOT / doc_name
+        if not doc.is_file():
+            continue
+        body = doc.read_text()
+        for kind in covered:
+            for component in kinds[kind]:
+                # Bounded so a shorter name is not satisfied by a longer one that contains it
+                # ("go-test" must not be answered by "go-testing").
+                if not re.search(rf"(?<![\w-]){re.escape(component)}(?![\w-])", body):
+                    err(f"{doc_name}: does not mention the shipped {kind[:-1]} '{component}' — "
+                        f"its component inventory is stale")
+
+
 def main():
     manifests = {}
     for subdir, label in ((".claude-plugin", "Claude manifest"), (".cursor-plugin", "Cursor manifest")):
@@ -306,15 +413,106 @@ def main():
     validate_json_file(ROOT / "hooks" / "hooks.json", "Claude hooks")
     validate_json_file(ROOT / "hooks" / "cursor-hooks.json", "Cursor hooks")
 
+    validate_hook_parity()
     validate_skills()
     validate_md_components("agents", require_name=True, is_agent=True)
     validate_md_components("commands", require_name=False)
     validate_rules()
     validate_linter_references()
     validate_fixer_column()
+    validate_doc_inventories()
+
+
+SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
+    {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
+SELFTEST_HOOKS_CURSOR = {"hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
+
+
+def _selftest_tree(root: Path, *, break_it=None):
+    """Write a minimal but valid plugin tree, then apply one deliberate defect. Kept synthetic
+    rather than copied from the repo so a self-test never passes because the real tree happens
+    to be shaped a certain way."""
+    (root / "skills" / "go-thing").mkdir(parents=True)
+    (root / "agents").mkdir()
+    (root / "hooks").mkdir()
+    (root / "references").mkdir()
+    (root / "docs").mkdir()
+    desc = "a: colon" if break_it == "frontmatter_colon" else "does a thing"
+    name = "go-other" if break_it == "skill_name" else "go-thing"
+    (root / "skills" / "go-thing" / "SKILL.md").write_text(
+        f"---\nname: {name}\ndescription: {desc}\n---\n\nBody. "
+        + ("Run `golangci-lint run --enable-only=nosuchlinter`.\n"
+           if break_it == "taught_linter" else "\n"))
+    tools = "allowed-tools:" if break_it == "agent_tools" else "tools:"
+    (root / "agents" / "go-checker.md").write_text(
+        f"---\nname: go-checker\ndescription: checks\n{tools} Read\n---\n\nBody.\n")
+    script = root / "hooks" / "a.sh"
+    script.write_text("#!/usr/bin/env bash\nexit 0\n")
+    script.chmod(0o644 if break_it == "hook_not_executable" else 0o755)
+    if break_it == "hook_unwired":
+        stray = root / "hooks" / "stray.sh"
+        stray.write_text("#!/usr/bin/env bash\nexit 0\n")
+        stray.chmod(0o755)
+    (root / "hooks" / "hooks.json").write_text(json.dumps(SELFTEST_HOOKS_CLAUDE))
+    cursor = {"hooks": {"afterFileEdit": []}} if break_it == "hook_parity" else SELFTEST_HOOKS_CURSOR
+    (root / "hooks" / "cursor-hooks.json").write_text(json.dumps(cursor))
+    (root / "references" / "golangci.v2.yml").write_text("linters:\n  enable:\n    - revive\n")
+    inventory = "" if break_it == "doc_inventory" else "go-thing "
+    for doc in ("README.md", "AGENTS.md"):
+        (root / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+    for doc in ("testing.md", "install.md"):
+        (root / "docs" / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+
+
+SELFTEST_CASES = (
+    ("hook wired for one host only", "hook_parity", (validate_hook_parity,)),
+    ("wired hook not executable", "hook_not_executable", (validate_hook_parity,)),
+    ("hook script left unwired", "hook_unwired", (validate_hook_parity,)),
+    ("shipped skill missing from the docs", "doc_inventory", (validate_doc_inventories,)),
+    ("unquoted ': ' in a description", "frontmatter_colon", (validate_skills,)),
+    ("skill name != directory", "skill_name", (validate_skills,)),
+    ("agent declares allowed-tools", "agent_tools",
+     (lambda: validate_md_components("agents", require_name=True, is_agent=True),)),
+    ("taught linter not in the reference config", "taught_linter", (validate_linter_references,)),
+)
+
+
+def run_selftest() -> int:
+    """Every structural check, run against a tree built to break it. A check that has quietly
+    stopped checking — a renamed field, a regex that no longer matches — still exits 0 on a valid
+    tree, so 'the suite is green' proves nothing on its own. Each case is also run against the
+    same tree with the defect removed, so a check that always fires fails too."""
+    global ROOT, errors
+    real_root, real_errors, failures = ROOT, errors, 0
+    for label, defect, checks in SELFTEST_CASES:
+        outcomes = {}
+        for variant, break_it in (("broken", defect), ("clean", None)):
+            with tempfile.TemporaryDirectory() as tmp:
+                ROOT = Path(tmp)
+                _selftest_tree(ROOT, break_it=break_it)
+                errors = []
+                for check in checks:
+                    check()
+                outcomes[variant] = list(errors)
+        ROOT, errors = real_root, real_errors
+        if not outcomes["broken"]:
+            print(f"FAIL {label}: the check did not catch it")
+            failures += 1
+        elif outcomes["clean"]:
+            print(f"FAIL {label}: the check also fires on a clean tree: {outcomes['clean'][0]}")
+            failures += 1
+        else:
+            print(f"ok   {label}")
+    if failures:
+        print(f"FAIL: {failures} check(s) do not actually check")
+        return 1
+    print(f"OK: {len(SELFTEST_CASES)} structural checks each caught their own failure case")
+    return 0
 
 
 if __name__ == "__main__":
+    if "--selftest" in sys.argv[1:]:
+        sys.exit(run_selftest())
     main()
     if errors:
         print(f"FAIL: {len(errors)} problem(s)")
@@ -322,6 +520,7 @@ if __name__ == "__main__":
             print(f"  - {e}")
         sys.exit(1)
     print("OK: manifests, dual-host parity, component paths, kebab-case names, "
-          "hook configs, skills, agents, commands, rules, and taught-linter references are valid")
+          "hook configs and hook parity, skills, agents, commands, rules, taught-linter "
+          "references, and doc component inventories are valid")
     for note in notes:
         print(f"  note: {note}")
