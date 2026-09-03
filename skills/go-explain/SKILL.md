@@ -18,8 +18,10 @@ Cover, in a few lines:
 4. **Source** — cite one authoritative reference: Effective Go, Go Code Review Comments, the Google
    or Uber Go style guide, a `go.dev/blog` post, or `pkg.go.dev`.
 
-Answer against the **Go 1.26.4+** baseline. Name the version an idiom landed in (that's step 1) —
-that is provenance for the reader, not a gate on the recommendation. For a fuller treatment, route
+Answer against the **Go 1.26.4+** baseline (Go 1.27 is supported too; its additions are hints, not
+floor changes). Name the version an idiom landed in (that's step 1) — that is provenance for the
+reader, not a gate on the recommendation. When the user's toolchain is on Go 1.27+, the 1.27 form
+may be the better answer instead — say so explicitly and cite the source. For a fuller treatment, route
 to the matching skill: `go-errors`, `go-concurrency`,
 `go-testing`, `go-idioms`, `go-lint-setup`, or `go-layout`.
 

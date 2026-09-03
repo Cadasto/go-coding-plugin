@@ -84,6 +84,10 @@ reproducibly against the pinned version rather than whatever toolchain a develop
 `errorlint` pairs with it in the reference config (`%w` + `errors.Is`/`AsType` discipline — see
 `go-errors`).
 
+**Go 1.27 needs golangci-lint ≥ v2.13.0** (released 2026-08-19 — the same day as Go 1.27 itself) for
+Go 1.27 support; anything v2.12.x or earlier predates it. Source:
+<https://golangci-lint.run/docs/product/changelog/#2130>.
+
 ### Discipline once adopted
 
 - **Pin an exact version in CI, in exactly one place — and keep the pin moving.** Upstream's own

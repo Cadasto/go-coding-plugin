@@ -59,18 +59,18 @@ At minimum the host should provide:
 
 ### Install / upgrade Go (official tarball, Linux)
 
-Pick the latest **1.26.x** patch (1.26.4 or newer) from <https://go.dev/dl/> and the build matching your platform (`linux-amd64` shown):
+Pick the latest **1.27.x** patch (**go1.27.1** at time of writing) from <https://go.dev/dl/> and the build matching your platform (`linux-amd64` shown) — the plugin's floor is **Go 1.26.4 or newer**, so an existing 1.26.4+ toolchain also works and nothing below requires the upgrade:
 
 ```bash
-# replace the version with the current latest 1.26.x patch (1.26.4+)
-curl -fLO https://go.dev/dl/go1.26.4.linux-amd64.tar.gz
+# replace the version with the current latest 1.27.x patch (go1.27.1 at time of writing; 1.26.4+ also works)
+curl -fLO https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go                                  # remove any prior install (don't overlay)
-sudo tar -C /usr/local -xzf go1.26.4.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.27.1.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin                        # add to your shell profile if not already present
-go version                                                 # → go version go1.26.4 linux/amd64
+go version                                                 # → go version go1.27.1 linux/amd64
 ```
 
-> macOS/Windows or a package manager (Homebrew `go`, `winget`, distro packages) work equally well — the only requirement is that `go version` reports **1.26.x** (1.26.4+). `gofmt` is included in every Go distribution, so nothing extra is needed for the hook's fallback path.
+> macOS/Windows or a package manager (Homebrew `go`, `winget`, distro packages) work equally well — the only requirement is that `go version` reports **1.26.4 or newer** (1.27.x recommended). `gofmt` is included in every Go distribution, so nothing extra is needed for the hook's fallback path.
 
 ### Install the supporting tools
 
@@ -92,7 +92,7 @@ command -v goimports  # goimports has no --version flag
 gopls version        # → golang.org/x/tools/gopls v0.22.x
 ```
 
-These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately — often in a pinned container — so it does not depend on these host binaries.
+These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately — often in a pinned container — so it does not depend on these host binaries. On Go 1.27, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support) — see <https://golangci-lint.run/docs/product/changelog/#2130>; anything older predates 1.27 support.
 
 ## Hooks
 

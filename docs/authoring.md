@@ -88,7 +88,8 @@ citation. Everything the skills assert should be traceable to one of these.
 1. Confirm the current *released* Go version (release history) — a draft `go1.NN` page is not a
    baseline. Guidance for an unreleased version goes in as one *italic, explicitly labelled*
    sentence (`*Go 1.NN (draft, expected …)*`), never as a rule.
-   **The baseline is a hard floor** (currently **Go 1.26.4+**): recommend the modern form flat, with
+   **The baseline is a hard floor** (currently **Go 1.26.4+**; Go 1.27 is supported too, with its
+   additions flagged as hints rather than folded into the floor): recommend the modern form flat, with
    no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the
    version annotation (`Since`, "(Go 1.24)") — that is provenance, and it tells a reader on an older
    module what a bump would buy. When the floor moves, delete the guidance below it.
@@ -102,8 +103,8 @@ citation. Everything the skills assert should be traceable to one of these.
    x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters
    (`golangci-lint help linters` on the pinned build). `scripts/validate.py` enforces both
    halves: every linter taught in components must be enabled in `references/golangci.v2.yml`,
-   and — when a floor-minor Go toolchain is on PATH (CI installs `1.26.x`; locally it
-   soft-skips with a note) — the `go-idioms` Fixer column is verified against
+   and — when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and
+   `1.27.x`; locally it soft-skips with a note) — the `go-idioms` Fixer column is verified against
    `go tool fix help`: plain names must be registered, † names must not be. The floor minor
    lives in `GO_FLOOR_MINOR` in the script and in the workflow's `setup-go` pin — move all
    three (docs baseline included) together.

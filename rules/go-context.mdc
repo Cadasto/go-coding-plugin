@@ -1,5 +1,5 @@
 ---
-description: Go coding standards — idiomatic Go (Go 1.26.4+; golangci-lint v2) for .go files. Mirrors the go-coding router skill for Cursor.
+description: Go coding standards — idiomatic Go (Go 1.26.4+, Go 1.27 supported with hints; golangci-lint v2) for .go files. Mirrors the go-coding router skill for Cursor.
 globs: ["**/*.go"]
 alwaysApply: false
 ---

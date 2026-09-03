@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (the `modernize` analyzer set). This skill should be used when the user writes, reviews, or modernizes Go and wants current-version idioms — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)` and `errors.AsType` (Go 1.26), dropped loop-var copies — or asks which modernize fixer owns a rewrite. Framed so advice equals tooling (`go fix ./...`, or `golangci-lint --enable-only=modernize`). Not for golangci-lint configuration (use `go-lint-setup`) or non-Go languages.
+description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, with Go 1.27 additions noted. This skill should be used when the user writes, reviews, or modernizes Go and wants current-version idioms — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)` and `errors.AsType` (Go 1.26), dropped loop-var copies, or Go 1.27 additions (generic methods, json/v2-backed `encoding/json`, the `atomictypes`/`embedlit`/`slicesbackward`/`unsafefuncs` go fix modernizers) — or asks which modernize fixer owns a rewrite. Framed so advice equals tooling (`go fix ./...`, or `golangci-lint --enable-only=modernize`). Not for golangci-lint configuration (use `go-lint-setup`) or non-Go languages.
 ---
 
 # go-idioms — modern Go (modernize)
@@ -18,7 +18,8 @@ golangci-lint run --enable-only=modernize --fix     # the x/tools modernize suit
 
 Both draw on the same `golang.org/x/tools` engine as gopls, but golangci-lint pins its own (usually
 newer) snapshot of it — that gap is what the **†** marker below tracks. This skill explains *why*
-and catches what review notices before the tool runs. The **baseline is Go 1.26.4+**, so every row
+and catches what review notices before the tool runs. The **baseline is Go 1.26.4+** (Go 1.27 is
+supported too; its additions are flagged as hints in **Newer in Go 1.27** below), so every row
 below applies as written — the `Since` column is provenance: it explains why older code looks
 different, and what an older module would have to bump to before adopting the idiom.
 
@@ -27,7 +28,9 @@ different, and what an older module would have to bump to before adopting the id
 The **Fixer** column names the analyzer that owns each rewrite. Plain = registered in the Go 1.26.4
 toolchain's `go fix` (ground truth: `go tool fix help`; per-fixer docs: `go tool fix help <name>`).
 **†** = only in the newer `x/tools` suite so far — golangci-lint's `modernize` and gopls run it, the
-1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it.
+1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it. Two † rows
+below (`atomictypes`, `slicesbackward`) graduate into the stock `go fix` on Go 1.27 — see
+**Newer in Go 1.27** below rather than reading that as a change to this table.
 
 | Prefer | Over | Since | Fixer |
 |---|---|---|---|
@@ -73,17 +76,39 @@ something a modernizer rewrites.
 - **`slices.Sorted(maps.Keys(m))`** (1.23) when iterating a map for output — map order is random, and
   unstable output is a flaky-test and noisy-diff source.
 
-*Go 1.27 (draft, expected Aug 2026) graduates several † fixers into the toolchain's `go fix`
+*Go 1.27 (released 2026-08-19) graduates several † fixers into the toolchain's `go fix`
 (`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup` →
 `waitgroupgo`, and drops `fmtappendf`; it also lands `encoding/json/v2` + `encoding/json/jsontext`
-(v1 is reimplemented on v2, opt out with `GOEXPERIMENT=nojsonv2`), `strings.CutLast`/`bytes.CutLast`,
-and a stdlib `uuid` package.*
+(v1 is reimplemented on v2, opt out with `GOEXPERIMENT=nojsonv2`) and `strings.CutLast`/`bytes.CutLast`.
+See **Newer in Go 1.27** below for the hints these enable — none of it is required on the 1.26 floor.*
+
+## Newer in Go 1.27 (hints, not requirements)
+
+Go 1.27 is additive over 1.26 — every 1.26 rule above still applies unchanged, and nothing here is
+required while a module's `go` directive stays at 1.26. Once a repo's toolchain (and `go` directive)
+moves to 1.27, these are worth reaching for — phrased as "available from 1.27" / "prefer … once on
+1.27", never as a requirement.
+
+| Idiom (available from 1.27) | Supersedes / complements | Fixer / linter | Since | Source |
+|---|---|---|---|---|
+| Generic methods — a method may declare its own type parameters | a package-level generic helper function bound to the receiver type as a workaround for "methods can't be generic" | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| Prefer `encoding/json/v2` + `jsontext` for new/hot JSON paths once on 1.27 | v1 `encoding/json` (still works unchanged; only exact error-message text may shift) | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| `atomictypes` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | raw `sync/atomic` functions | `atomictypes` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| `slicesbackward` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | `for i := len(s)-1; i >= 0; i--` | `slicesbackward` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| `embedlit` — folds a field assignment right after a composite literal into the literal | `t := T{}; t.Field = v` builder pattern | `embedlit` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+
+- **`go test` now runs the `stdversion` vet check by default** (available from 1.27): it flags use of
+  stdlib symbols newer than the module's `go` directive — the guardrail that keeps a 1.26-floor
+  module from silently depending on a 1.27-only symbol. Trust it over manual review for this. Source:
+  [go.dev/doc/go1.27](https://go.dev/doc/go1.27).
 
 ## Sources
 - `modernize` (per-fixer docs, the Fixer column) — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>
 - `go fix` (rewritten in 1.26) — <https://go.dev/blog/gofix>; range-over-func — <https://go.dev/blog/range-functions>
 - `slog` — <https://go.dev/blog/slog>; Go 1.21–1.26 release notes (`new(expr)`, self-ref generics — <https://go.dev/doc/go1.26>)
 - `os.Root` / `omitzero` / `rand.Text` — <https://go.dev/doc/go1.24>; Code Review Comments (Declaring Empty Slices, Crypto Rand) — <https://go.dev/wiki/CodeReviewComments>
+- Go 1.27 release notes (generic methods, `stdversion`, `encoding/json/v2`, new `go fix` modernizers) — <https://go.dev/doc/go1.27>
+- `atomictypes` / `slicesbackward` / `embedlit` modernizer commits — <https://github.com/golang/tools/commit/17ee9acf0e54b52b93b8250245ea261f5e4a88ec>, <https://github.com/golang/tools/commit/b96d2a55a08943af1de2914a59fb88fe0acbb897>, <https://github.com/golang/tools/commit/c2a9c879aa8aea10399b942692b75107790bbcd7>
 
 ---
 *Decomposition inspired by [`samber/cc-skills-golang`](https://github.com/samber/cc-skills-golang) (MIT © 2026 Samuel Berthe); rules grounded in the sources above.*

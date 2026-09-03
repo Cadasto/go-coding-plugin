@@ -15,7 +15,7 @@ Or load a local working copy for a single session: `claude --plugin-dir /path/to
 
 **Cursor**: add this repository as a plugin (Settings → Plugins). See [`docs/install.md`](docs/install.md) for both hosts.
 
-**Prerequisites** — the plugin installs without a Go toolchain, but its hooks and enforcement guidance expect **Go 1.26.4+** plus `gofmt`, `gofumpt`, `goimports`, and `gopls` on the host `PATH`. See [Host toolchain (minimal requirements)](docs/install.md#host-toolchain-minimal-requirements) for what each tool drives and copy-paste install commands.
+**Prerequisites** — the plugin installs without a Go toolchain, but its hooks and enforcement guidance expect **Go 1.26.4+** (Go 1.27 supported; its additions are flagged as hints) plus `gofmt`, `gofumpt`, `goimports`, and `gopls` on the host `PATH`. See [Host toolchain (minimal requirements)](docs/install.md#host-toolchain-minimal-requirements) for what each tool drives and copy-paste install commands.
 
 ## Component surface
 

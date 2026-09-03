@@ -8,17 +8,22 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.26.x', '1.27.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      # The floor-minor Go toolchain activates the validator's Fixer-column check
-      # (go tool fix help is the authority for what `go fix` ships). Keep this minor
+      # The floor-minor (1.26.x) leg activates the validator's Fixer-column check
+      # (go tool fix help is the authority for what `go fix` ships); keep that minor
       # in step with GO_FLOOR_MINOR in scripts/validate.py and the documented baseline.
+      # The 1.27.x leg proves the plugin also validates on the next Go version — its
+      # Fixer-column check soft-skips (a note, not a failure) since it isn't the floor.
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.26.x'
+          go-version: ${{ matrix.go-version }}
           cache: false   # no go.mod — nothing to cache
       # CI is strict and deterministic: Python is guaranteed here, so run the
       # validator directly (the scripts/validate.sh graceful skip is for local use).
