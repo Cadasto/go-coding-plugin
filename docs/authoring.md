@@ -20,7 +20,7 @@ The detailed companion to [AGENTS.md](../AGENTS.md) (which is authoritative); th
   standards skills are the model.
 - **Skill (user-invoked / slash command)** — a thin one-shot `skills/<name>/SKILL.md` that also
   carries `argument-hint` + `allowed-tools`; use `$ARGUMENTS` in the body. Invoked as `/<name>`. See
-  `/go-explain`, `/go-lint-setup`. (The legacy `commands/` folder is not used.)
+  `/go-lint-setup`. (The legacy `commands/` folder is not used.)
 - **Agent** — a context-isolated specialist. Use **`tools:`** (a YAML block list), **never**
   `allowed-tools:` — in an agent that key is silently ignored and the agent inherits *all* tools.
   See `go-reviewer` (report-only, no sub-agent dispatch).

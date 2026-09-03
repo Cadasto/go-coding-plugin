@@ -22,7 +22,7 @@ Install from your working copy (see [install.md](install.md)), then exercise eac
 - **Standards skills** — a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-lint-setup`).
 - **Skill-nudge hook** — edit a `_test.go` file; the nudge should name `go-coding:go-testing` (as a systemMessage under Claude Code, a plain line under Cursor) and, critically, the model should ACT on it — load the skill — not merely have the line appear in the transcript. A second edit to a `_test.go` file in the same session should be silent (once per skill per session).
 - **`go-reviewer` agent** — ask for a Go code review; it returns severity-ranked findings and does not spawn sub-agents.
-- **Slash commands (skills)** — `/go-explain <topic>` and `/go-lint-setup`.
+- **Slash command (skill)** — `/go-lint-setup`.
 - **Cursor rule** — in Cursor, open a `.go` file and confirm `go-context.mdc` attaches.
 
 After editing content, reinstall (or restart the session) to pick up changes.

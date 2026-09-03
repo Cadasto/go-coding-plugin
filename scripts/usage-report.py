@@ -13,8 +13,8 @@ An event is counted when a transcript line is one of:
     ``name`` in (``Task``, ``Agent``) and
     ``input.subagent_type == "go-coding:go-reviewer"``;
   * a ``user`` message whose text contains a ``<command-name>...</command-name>``
-    invocation naming one of this plugin's skills (bare, e.g. ``/go-explain``,
-    or namespaced, e.g. ``/go-coding:go-explain``).
+    invocation naming one of this plugin's skills (bare, e.g. ``/go-lint-setup``,
+    or namespaced, e.g. ``/go-coding:go-lint-setup``).
 
 Session-start banner text and skill-body text echoed back inside tool results
 are NOT scanned for matches — only structured ``tool_use`` blocks and user
@@ -38,7 +38,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # Skill directory names this plugin ships (used to recognize a bare, unnamespaced
-# slash-command invocation such as "/go-explain" as a go-coding command).
+# slash-command invocation such as "/go-lint-setup" as a go-coding command).
+# "go-explain" and "go-linting" were removed in 0.5.0 but stay listed so a scan of
+# older transcripts still resolves the events they produced.
 GO_SKILL_SHORT_NAMES = {
     "go-coding", "go-concurrency", "go-errors", "go-explain", "go-idioms",
     "go-layout", "go-linting", "go-lint-setup", "go-testing",
@@ -263,7 +265,7 @@ Counting rules:
     - assistant tool_use block, name "Task" or "Agent", input.subagent_type
       == "go-coding:go-reviewer"
     - user <command-name> invocations naming a go-coding skill (bare, e.g.
-      "/go-explain", or namespaced, e.g. "/go-coding:go-explain")
+      "/go-lint-setup", or namespaced, e.g. "/go-coding:go-lint-setup")
   Not counted:
     - the SessionStart banner text
     - skill-body text echoed back inside tool results
