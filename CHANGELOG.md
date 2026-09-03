@@ -34,6 +34,9 @@ the existing Go 1.26.4+ floor, and ships a script for measuring adoption.
   the golangci-lint ≥ v2.13.0 floor for Go 1.27.
 - CI `.github/workflows/validate.yml` — Go matrix `1.26.x` + `1.27.x`, `fail-fast: false`; the
   floor leg keeps the strict `go-idioms` Fixer-column check.
+- Validation `scripts/validate.py` — hook parity (the same script wired for the equivalent event on
+  both hosts, existing and executable, none left unwired) and doc component inventories (every
+  shipped skill, agent and hook named where the docs claim to list them).
 
 ### Changed
 - Skills — descriptions rewritten trigger-first and shortened 11% (4,619 → 4,101 characters).
@@ -44,6 +47,9 @@ the existing Go 1.26.4+ floor, and ships a script for measuring adoption.
   `/go-lint-setup` only when the workspace has no golangci-lint config.
 - Agent `go-reviewer`, skill `go-coding` — one review seat per diff: where a workflow already has a
   reviewer, that reviewer loads the skills itself instead of `go-reviewer` being dispatched beside it.
+- Cursor rule `rules/go-context.mdc` — brought level with the router: the diff→skill mapping, the
+  minimum checklist, and the plain-English rule for anything a person reads.
+- Docs `docs/testing.md` — adds the missing `format-on-save` triggering check.
 - Skills, agent, Cursor rule, docs — Go 1.26.4+ remains the hard floor; Go 1.27 is supported and its
   additions are flagged as hints. `docs/install.md` recommends the latest 1.27.x patch.
 

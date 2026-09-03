@@ -53,7 +53,7 @@ Use `go-reviewer` directly when no such seat exists (an ad-hoc "review this file
 No build step — the plugin is pure Markdown + JSON. Validate locally:
 
 ```bash
-./scripts/validate.sh        # manifests, parity, paths, frontmatter, taught linters, fixers
+./scripts/validate.sh        # manifests, parity, paths, frontmatter, hooks, doc inventories, linters, fixers
 ./scripts/hooks-test.sh      # bash tests for hooks/session-start.sh + hooks/skill-nudge.sh
 claude plugin validate .     # manifest + component structure
 ```

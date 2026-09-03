@@ -20,6 +20,7 @@ Install from your working copy (see [install.md](install.md)), then exercise eac
 - **Session-start hook** — open a repo with a `go.mod`/`*.go`; one Go-standards line should print at session start (and nothing in a non-Go repo).
 - **`go-coding` router** — ask for a Go review or idiom help; it should route to the enforcing tool and the focused skill.
 - **Standards skills** — a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-lint-setup`).
+- **Format-on-save hook** — save a deliberately mis-formatted `*.go` file; `format-on-save.sh` should reformat that one file in place (`gofumpt -w`, or `gofmt -w -s` when `gofumpt` is absent) and say nothing when neither is installed.
 - **Skill-nudge hook** — edit a `_test.go` file; the nudge should name `go-coding:go-testing` (as a systemMessage under Claude Code, a plain line under Cursor) and, critically, the model should ACT on it — load the skill — not merely have the line appear in the transcript. A second edit to a `_test.go` file in the same session should be silent (once per skill per session), and so should an edit that does not itself touch the topic — a doc-comment fix in a file that defines a sentinel elsewhere must not claim the edit touches an error path.
 - **`go-reviewer` agent** — ask for a Go code review; it returns severity-ranked findings and does not spawn sub-agents.
 - **Slash command (skill)** — `/go-lint-setup`.

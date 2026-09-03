@@ -25,6 +25,7 @@ Dependency-free (stdlib only) so the ``scripts/validate.sh`` soft-skip is the *o
 reason it wouldn't run. Usage: python3 scripts/validate.py   (from the repo root)
 """
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -49,6 +50,18 @@ STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 # minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
 # floor, so the check skips on any other minor. Bump together with the documented baseline.
 GO_FLOOR_MINOR = "1.26"
+# Hook events that mean the same thing on each host, so the same scripts must be wired for
+# both. Claude event -> Cursor event.
+EQUIVALENT_HOOK_EVENTS = {"SessionStart": "sessionStart", "PostToolUse": "afterFileEdit"}
+# Docs that inventory the component surface, and which kinds each one claims to cover.
+# install.md enumerates the hooks (it documents what they need on PATH) but is not a skill
+# catalogue, so it is held to the hook list only.
+INVENTORY_DOCS = {
+    "README.md": ("skills", "agents", "hooks"),
+    "AGENTS.md": ("skills", "agents", "hooks"),
+    "docs/testing.md": ("skills", "agents", "hooks"),
+    "docs/install.md": ("hooks",),
+}
 
 
 def err(msg):
@@ -274,6 +287,88 @@ def validate_json_file(path: Path, label: str):
         load_json(path, label)
 
 
+def _hook_scripts(config: dict) -> dict:
+    """Map each event name in a hook config to the set of `hooks/*.sh` scripts it wires.
+    Both host schemas nest differently (Claude groups by matcher, Cursor does not), so walk
+    whatever is under the event and collect every `command` string found."""
+    found = {}
+    for event, entries in (config.get("hooks") or {}).items():
+        scripts = set()
+        stack = [entries]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                cmd = node.get("command")
+                if isinstance(cmd, str):
+                    scripts.update(re.findall(r"hooks/([A-Za-z0-9._-]+\.sh)", cmd))
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
+        found[event] = scripts
+    return found
+
+
+def validate_hook_parity():
+    """Dual-host hook parity: the same scripts must be wired for the equivalent event on both
+    hosts, every wired script must exist and be executable, and no `hooks/*.sh` may sit in the
+    tree unwired. Catches the drift where a new hook reaches Claude Code but never Cursor —
+    previously only findable by reading both configs side by side."""
+    claude_path, cursor_path = ROOT / "hooks" / "hooks.json", ROOT / "hooks" / "cursor-hooks.json"
+    if not (claude_path.is_file() and cursor_path.is_file()):
+        return
+    claude, cursor = load_json(claude_path, "Claude hooks"), load_json(cursor_path, "Cursor hooks")
+    if claude is None or cursor is None:
+        return
+    claude_events, cursor_events = _hook_scripts(claude), _hook_scripts(cursor)
+    wired = set()
+    for claude_event, cursor_event in EQUIVALENT_HOOK_EVENTS.items():
+        here, there = claude_events.get(claude_event, set()), cursor_events.get(cursor_event, set())
+        wired |= here | there
+        for name in sorted(here - there):
+            err(f"hooks/cursor-hooks.json: '{name}' is wired for Claude's {claude_event} but "
+                f"not for Cursor's {cursor_event} (dual-host parity)")
+        for name in sorted(there - here):
+            err(f"hooks/hooks.json: '{name}' is wired for Cursor's {cursor_event} but not for "
+                f"Claude's {claude_event} (dual-host parity)")
+    for event in set(claude_events) - set(EQUIVALENT_HOOK_EVENTS):
+        wired |= claude_events[event]
+    for event in set(cursor_events) - set(EQUIVALENT_HOOK_EVENTS.values()):
+        wired |= cursor_events[event]
+    for name in sorted(wired):
+        script = ROOT / "hooks" / name
+        if not script.is_file():
+            err(f"hooks: wired script 'hooks/{name}' does not exist")
+        elif not os.access(script, os.X_OK):
+            err(f"hooks/{name}: wired but not executable (chmod +x)")
+    for script in sorted((ROOT / "hooks").glob("*.sh")):
+        if script.name not in wired:
+            err(f"hooks/{script.name}: present in the tree but wired by neither host's hook config")
+
+
+def validate_doc_inventories():
+    """Every shipped component must appear in the docs that claim to inventory the surface.
+    A removed skill leaves stale rows behind and a new hook goes unmentioned — both happened in
+    this repo. The check is one-directional on purpose: it proves each component IS documented,
+    not that every name mentioned still exists, so deliberate tombstones ("removed in 0.5.0")
+    and cross-references stay legal."""
+    # Hooks are matched on the stem, since docs legitimately write "the format-on-save hook".
+    kinds = {
+        "skills": [d.name for d in sorted((ROOT / "skills").iterdir()) if (d / "SKILL.md").is_file()],
+        "agents": [m.stem for m in sorted((ROOT / "agents").glob("*.md"))],
+        "hooks": [s.stem for s in sorted((ROOT / "hooks").glob("*.sh"))],
+    }
+    for doc_name, covered in INVENTORY_DOCS.items():
+        doc = ROOT / doc_name
+        if not doc.is_file():
+            continue
+        body = doc.read_text()
+        for kind in covered:
+            for component in kinds[kind]:
+                if component not in body:
+                    err(f"{doc_name}: does not mention the shipped {kind[:-1]} '{component}' — "
+                        f"its component inventory is stale")
+
+
 def main():
     manifests = {}
     for subdir, label in ((".claude-plugin", "Claude manifest"), (".cursor-plugin", "Cursor manifest")):
@@ -306,12 +401,14 @@ def main():
     validate_json_file(ROOT / "hooks" / "hooks.json", "Claude hooks")
     validate_json_file(ROOT / "hooks" / "cursor-hooks.json", "Cursor hooks")
 
+    validate_hook_parity()
     validate_skills()
     validate_md_components("agents", require_name=True, is_agent=True)
     validate_md_components("commands", require_name=False)
     validate_rules()
     validate_linter_references()
     validate_fixer_column()
+    validate_doc_inventories()
 
 
 if __name__ == "__main__":
@@ -322,6 +419,7 @@ if __name__ == "__main__":
             print(f"  - {e}")
         sys.exit(1)
     print("OK: manifests, dual-host parity, component paths, kebab-case names, "
-          "hook configs, skills, agents, commands, rules, and taught-linter references are valid")
+          "hook configs and hook parity, skills, agents, commands, rules, taught-linter "
+          "references, and doc component inventories are valid")
     for note in notes:
         print(f"  note: {note}")

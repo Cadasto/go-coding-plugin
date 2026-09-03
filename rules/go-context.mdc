@@ -23,6 +23,41 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 | Testing | `go test -race ./...`; `testing/synctest` for time/concurrency | `go-testing` |
 | Layout, naming & API surface | `golangci-lint run --enable-only=revive`; rest is judgment | `go-layout` |
 
+## Route, then load
+
+This rule is an index, not the standard. Before writing or reviewing Go, open the focused skill
+matching the change — it carries the cited rules and the judgment:
+
+- any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim →
+  `go-testing`
+- `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `switch` over an enum → `go-errors`
+- a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)` →
+  `go-idioms`
+- `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned
+  resource → `go-concurrency`
+- a new package, an exported identifier, a `cmd/` or `internal/` decision, a doc comment on an API →
+  `go-layout`
+- `.golangci.y*ml`, a linter complaint you do not understand → `go-lint-setup`
+
+## Minimum checklist (when opening a skill is not affordable)
+
+- Wrap with `fmt.Errorf("…: %w", err)`; inspect with `errors.Is` / `errors.AsType` and guard the
+  result (`ok && v != nil` — a typed-nil pointer satisfies the match). Never swallow an error.
+- Every guard has a test that fails when the guard is deleted; a "temporarily broke it by hand"
+  check is not evidence — commit it as a can-fail test. Table-driven `t.Run` with got/want messages.
+- `range n`, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`; `go fix ./...` before hand-edits.
+- `ctx` first; no goroutine without an owner that waits for it; `t.Context()` in tests.
+- Run `gofmt`/`gofumpt` and `golangci-lint run` — never reason out what a tool decides.
+
+## Writing for the human
+
+Anything a person reads — a PR description, a review comment, a question, a design choice put to
+them — goes in plain English, not Go shorthand. State the effect before the mechanism ("the request
+keeps running after the caller gives up", not "ctx leak in the errgroup"), and expand a term the
+first time it appears or leave it out. Keep it short: a few sentences per point, and a decision they
+must make gets the options plus a recommendation. Identifiers, commands and linter names stay
+verbatim — it is the prose around them that must be plain.
+
 Ground every judgment call in a cited source — Effective Go, Go Code Review Comments, the Google
 and Uber Go style guides, `pkg.go.dev`. Don't invent rules. Adopt the shipped golangci-lint v2
 config (`references/golangci.v2.yml`, at the **plugin root** — resolve via `${CLAUDE_PLUGIN_ROOT}/references/…` or Glob the installed copy, not under this rule's dir); run `golangci-lint run --fix` for auto-fixable findings.
