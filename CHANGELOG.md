@@ -7,6 +7,96 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
+## [0.5.0] - 2026-09-03
+
+Makes the `go-coding` router route: a mandatory hop table and minimum checklist, trigger-first
+skill descriptions, a post-edit skill nudge, and a friendlier SessionStart banner close the gap a
+usage analysis showed between skills being loaded and skills actually being followed. Folds
+`go-linting` into `go-lint-setup` — the skill the router and banner actually point at — behind a
+deprecation stub, adds a script for measuring skill/agent adoption from local session transcripts,
+documents a one-review-seat-per-diff pattern for subagent orchestrators, and adds Go 1.27 support
+alongside the existing Go 1.26.4+ floor.
+
+### Added
+- Skill: `skills/go-coding/SKILL.md` — a "Route, then load" hop table mapping diff content to the
+  focused skill to load (a `_test.go`/benchmark/fuzz target → `go-testing`; `fmt.Errorf`/`errors.*`/a
+  sentinel/typed error/enum switch → `go-errors`; a loop/map/slice/string split/`interface{}`/a
+  struct literal → `go-idioms`; `go func`/`chan`/`sync.`/`atomic.`/`errgroup`/`context.With*` →
+  `go-concurrency`; a new package/exported identifier/`cmd`-`internal` decision/doc comment →
+  `go-layout`; `.golangci.y*ml`/an unclear linter complaint → `go-lint-setup`), plus a minimum
+  checklist to apply when a second skill load isn't affordable; its description now says loading the
+  router alone does not apply the standards. Orchestrators dispatching implementer/reviewer
+  subagents carry the table into every brief, since a subagent does not inherit the parent session's
+  skills.
+- Hooks: `hooks/skill-nudge.sh` — a `PostToolUse`/`afterFileEdit` hook that, after a Go file edit,
+  prints one nudge naming the go-coding skill the edit calls for (a `_test.go` file → `go-testing`;
+  goroutine/channel/`sync`/`atomic`/`errgroup` content → `go-concurrency`; `fmt.Errorf`/`errors.*` →
+  `go-errors`), once per skill per session; wired dual-host in `hooks/hooks.json` and
+  `hooks/cursor-hooks.json`. A usage analysis showed these focused skills load far less often than
+  the router itself.
+- Hooks: `hooks/session-start.sh` — the SessionStart banner now names the skill-loading hop, lists
+  the focused skills, points at `/go-explain` and `go-reviewer`, and adds a `/go-lint-setup` prompt
+  when no `.golangci.y*ml`/`.toml`/`.json` file is found in the workspace.
+- Scripts: `scripts/hooks-test.sh` — a test harness covering `hooks/skill-nudge.sh` and the
+  session-start banner, with a `chk_silent` helper that asserts exact emptiness for the no-nudge
+  cases instead of a vacuous non-match check, and a can-fail test control.
+- Docs: `README.md` — "Using with subagent orchestrators": implementer and reviewer brief templates
+  that carry the router's hop table into a dispatched subagent's instructions, so a plan runner's
+  implementers and reviewers apply the standards even though a subagent does not inherit the parent
+  session's skills; `go-reviewer` is dispatched directly only when no such reviewer seat exists.
+- Scripts, Docs: `scripts/usage-report.py`, `docs/testing.md` — a stdlib-only script that scans local
+  Claude Code session transcripts for go-coding skill/agent invocations (a `Skill`-tool call prefixed
+  `go-coding:`, a `go-coding:go-reviewer` subagent dispatch, or a user slash-command invocation) and
+  renders a monthly adoption report split into main-session, subagent, and user-invoked counts,
+  deduplicated by session; `docs/testing.md` gains a "Measuring adoption" section naming what is and
+  isn't counted and the adoption target. A usage analysis of local session transcripts shaped this
+  release's router and skill-description changes; this script reproduces that measurement so
+  adoption stays checkable going forward.
+- Skills: `skills/go-idioms/SKILL.md` — Go 1.27 forward hints: two † fixers (`atomictypes`,
+  `slicesbackward`) graduate into the stock `go fix`, alongside new `embedlit`/`unsafefuncs` fixers,
+  a `waitgroup` → `waitgroupgo` rename, and a dropped `fmtappendf`; a new "Newer in Go 1.27" section
+  covers generic methods, preferring `encoding/json/v2`/`jsontext` on new/hot paths once on 1.27, and
+  the default `stdversion` vet check — all framed as additive over the Go 1.26 floor, never as a
+  requirement.
+- Skills: `skills/go-lint-setup/SKILL.md` — a golangci-lint Go-1.27 compatibility note: Go 1.27
+  needs golangci-lint ≥ v2.13.0, stated as a compatibility floor rather than a version pin.
+- Validation: `.github/workflows/validate.yml` — a Go version matrix (`1.26.x`, `1.27.x`) with
+  `fail-fast: false`; the floor-minor (`1.26.x`) leg keeps running the strict `go-idioms`
+  Fixer-column check against `go tool fix help`, the `1.27.x` leg soft-skips it.
+
+### Changed
+- Skills: `skills/go-lint-setup/SKILL.md` — absorbs `go-linting`'s golangci-lint v2 config-schema,
+  adoption, and upgrade-breakage content under a new "Adopting or debugging an existing config"
+  heading, since `go-lint-setup` is the skill the router and session-start banner actually route to.
+- Agent, Skill: `agents/go-reviewer.md`, `skills/go-coding/SKILL.md` — one review seat per diff: when
+  an orchestrating workflow already provides a reviewer seat, `go-reviewer` is not dispatched beside
+  it; that reviewer loads `go-coding` and the focused skills for the diff itself and cites the rule
+  each finding rests on.
+- Skills: `skills/go-layout/SKILL.md`, `skills/go-concurrency/SKILL.md`, `skills/go-testing/SKILL.md`
+  — descriptions rewritten trigger-first, naming the concrete diff content that should load each
+  skill (a new package/exported identifier/doc comment for `go-layout`;
+  `go func`/`chan`/`sync.`/`atomic.`/`errgroup`/a retry loop for `go-concurrency`; any `_test.go`
+  file or can-fail control for `go-testing`), since a usage analysis showed the prior, more abstract
+  descriptions rarely triggered these skills.
+- Skills, Agent, Cursor rule, Docs: `skills/go-idioms/SKILL.md`, `skills/go-testing/SKILL.md`,
+  `skills/go-concurrency/SKILL.md`, `skills/go-coding/SKILL.md`, `skills/go-explain/SKILL.md`,
+  `agents/go-reviewer.md`, `rules/go-context.mdc`, `docs/authoring.md`, `docs/install.md`,
+  `README.md`, `AGENTS.md` — version-floor wording now states Go 1.26.4+ as the hard floor with Go
+  1.27 supported, its additions flagged as hints rather than folded into the floor;
+  `docs/install.md` recommends the latest 1.27.x patch while noting an existing 1.26.4+ toolchain
+  still satisfies the floor; earlier pre-release ("draft, expected Aug 2026") mentions of Go 1.27 in
+  `go-concurrency` and `go-testing` are corrected to the released feature set and dated to its actual
+  2026-08-19 release; `AGENTS.md` and `docs/authoring.md` describe the CI matrix's two legs instead
+  of a single pinned Go version.
+
+### Deprecated
+- Skill: `skills/go-linting/SKILL.md` — deprecated: reduced to a three-line stub redirecting to
+  `go-lint-setup`'s "Adopting or debugging an existing config" section, which now carries the
+  content that used to live here. Every other internal pointer (the router's routing table and
+  description, `README.md`, `AGENTS.md`'s inventory, `rules/go-context.mdc`,
+  `references/golangci.v2.yml`'s header comment, and cross-references from `go-errors`, `go-idioms`,
+  `go-explain`, and `go-reviewer`) now points at `go-lint-setup` instead. Removal in 0.6.0.
+
 ## [0.4.1] - 2026-08-25
 
 Corrects three component defects and the docs that described them: a `PostToolUse` hook timeout that was five hours rather than twenty seconds, a reviewer agent calling itself read-only while holding `Bash`, and `go-lint-setup` offering a migration it had no tool grant to run.

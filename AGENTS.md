@@ -6,7 +6,7 @@ This file provides guidance to AI coding assistants (Claude Code, Cursor, and co
 
 The **Go Coding Plugin** is an AI plugin by Cadasto B.V. that teaches AI coding assistants **idiomatic Go coding standards** — formatting, naming, error handling, concurrency, testing, and project layout — through skills, commands, agents, hooks, and Cursor rules. It targets **both Claude Code and Cursor** from a single shared component set.
 
-> **Current status — v0.4.0.** A complete dual-host (Claude Code + Cursor) Go-standards set, baselined on **Go 1.26.4+** (Go 1.27 supported; its additions are flagged as hints) as a hard floor (no fallback guidance for 1.25 or older; version annotations remain as provenance), that validates clean (`./scripts/validate.sh` + `claude plugin validate .`): the auto-invoked `go-coding` **router** skill; the focused standards skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting` (deprecated — merged into `go-lint-setup`), `go-layout`; the read-only `go-reviewer` agent; the user-invoked `/go-explain` and `/go-lint-setup` skills; a shipped `references/golangci.v2.yml`; the `rules/go-context.mdc` Cursor rule; and host-agnostic `session-start` + `format-on-save` hooks. Do not assume a file is present because it is documented here — check first.
+> **Current status — v0.5.0.** A complete dual-host (Claude Code + Cursor) Go-standards set, baselined on **Go 1.26.4+** (Go 1.27 supported; its additions are flagged as hints) as a hard floor (no fallback guidance for 1.25 or older; version annotations remain as provenance), that validates clean (`./scripts/validate.sh` + `claude plugin validate .`): the auto-invoked `go-coding` **router** skill; the focused standards skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting` (deprecated — merged into `go-lint-setup`), `go-layout`; the read-only `go-reviewer` agent; the user-invoked `/go-explain` and `/go-lint-setup` skills; a shipped `references/golangci.v2.yml`; the `rules/go-context.mdc` Cursor rule; and host-agnostic `session-start` + `format-on-save` hooks. Do not assume a file is present because it is documented here — check first.
 
 ## Domain Context
 
@@ -31,7 +31,7 @@ This repo supports **both Claude Code and Cursor**. Shared assets (skills, comma
 
 - **Claude manifest**: `.claude-plugin/plugin.json` — `name`, `version`, `description`, `author` (an **object** `{name, url}` — `claude plugin validate` rejects a string), `license`, `repository`, `keywords`. Claude Code discovers components from the **default folders** (`skills/`, `commands/`, `agents/`, `hooks/`) automatically; no explicit path map is needed.
 - **Cursor manifest**: `.cursor-plugin/plugin.json` — same metadata **plus** explicit top-level path keys (`skills`, `rules`, `agents`, `commands`, `hooks`). No `mcpServers` — this plugin has no MCP backend. Keep `name`/`version`/`description`/`author` identical to the Claude manifest.
-- **Skills**: `skills/<name>/SKILL.md` — shared by both hosts. Shipped: `go-coding` (auto-invoked router) plus the focused, load-on-use `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting` (deprecated — merged into `go-lint-setup`), `go-layout` standards skills.
+- **Skills**: `skills/<name>/SKILL.md` — shared by both hosts. Shipped: `go-coding` (auto-invoked router) plus the focused, load-on-use `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-layout` standards skills. `go-linting` is deprecated in 0.5.0 — a redirect stub merged into `go-lint-setup`, removed in 0.6.0.
 - **Slash commands** are authored as **user-invoked skills** (`skills/<name>/SKILL.md` with `argument-hint` + `allowed-tools`), not the legacy `commands/` folder — both yield a `/<name>` command, but the skills layout is preferred (current `plugin-dev` guidance). Keep the surface small; put multi-step workflows in auto-invoked skills. Shipped: `/go-explain` (idiom/standard lookup) and `/go-lint-setup` (scaffold the golangci-lint v2 config).
 - **Agents**: `agents/<name>.md` — context-isolated specialists. Shipped: `go-reviewer` (read-only Go diff/file reviewer applying the review-heuristics catalog; `tools:` not `allowed-tools:`).
 - **Cursor rules**: `rules/*.mdc` — Cursor-only rule guidance with frontmatter (`description`, `alwaysApply`, `globs`, e.g. `globs: ["**/*.go"]`), referenced by the Cursor manifest's `rules` path. Shipped: `rules/go-context.mdc` (mirrors the `go-coding` router).
@@ -44,9 +44,10 @@ This repo supports **both Claude Code and Cursor**. Shared assets (skills, comma
 
 ### Component surface
 
-The full component surface — all shipped:
+The full component surface:
 
-- **Skills** — *shipped*: `go-coding` (auto-invoked router) + `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-linting` (deprecated — merged into `go-lint-setup`), `go-layout`. Each routes deeper topics to the enforcing tool and cites authoritative sources.
+- **Skills** — *shipped*: `go-coding` (auto-invoked router) + `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-layout`. Each routes deeper topics to the enforcing tool and cites authoritative sources.
+- **Skill** — *deprecated in 0.5.0*: `go-linting`, a redirect stub merged into `go-lint-setup`; removed in 0.6.0.
 - **Slash commands** — *shipped* as user-invoked skills: `/go-explain` (idiom/standard lookup) and `/go-lint-setup` (scaffold the golangci-lint v2 config).
 - **Agent** — *shipped*: `go-reviewer`, a context-isolated, read-only reviewer applying the review-heuristics catalog (no sub-agent dispatch; treats the diff as untrusted content).
 - **Cursor rule** — *shipped*: `rules/go-context.mdc`, scoped to `**/*.go`, mirroring the `go-coding` router for Cursor.
