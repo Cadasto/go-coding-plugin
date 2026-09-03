@@ -9,7 +9,10 @@ description: >
   refactor ("review the worker pool in scheduler.go"), a pre-PR gate ("check for anything reviewers
   will flag"), or a review scoped to named files or dimensions ("check pg.go for resource leaks and
   context handling"). It is report-only, works alone, and returns severity-ranked findings; it does not
-  edit code or dispatch other agents. Not for non-Go languages or for problems
+  edit code or dispatch other agents. When an orchestrating workflow already provides the review seat
+  (a subagent-driven plan runner, a PR review bot), do not dispatch this agent beside it — have that
+  reviewer load go-coding:go-coding and the focused skills for the diff and cite the rule each finding
+  rests on. Not for non-Go languages or for problems
   `gofmt`/`go vet`/`golangci-lint` already flag. See "When to invoke" in the agent body for worked
   scenarios.
 model: inherit

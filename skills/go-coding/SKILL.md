@@ -72,6 +72,10 @@ Apply these even if you load nothing else; they are the rules the focused skills
 Dispatch the `go-reviewer` agent — a report-only, context-isolated reviewer that applies the
 review-heuristics catalog and returns severity-ranked findings on a diff or file.
 
+If a workflow already owns the reviewer seat, that reviewer loads the focused skills itself instead —
+one review seat per diff. Orchestrators: put the "Route, then load" table into every implementer and
+reviewer brief.
+
 Two user-invoked skills round out the surface: `/go-explain <topic>` for a one-shot idiom lookup,
 and `/go-lint-setup` to scaffold the reference golangci-lint v2 config into a repo.
 

@@ -32,6 +32,20 @@ Or load a local working copy for a single session: `claude --plugin-dir /path/to
 
 Guidance is grounded in authoritative sources — [Effective Go](https://go.dev/doc/effective_go), [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments), the [Google](https://google.github.io/styleguide/go/) and [Uber](https://github.com/uber-go/guide) style guides — and the standard toolchain (`gofmt`/`gofumpt`, `go vet`, `staticcheck`, `golangci-lint`, `go test -race`).
 
+## Using with subagent orchestrators
+
+Subagents do not inherit the parent session's skills. A plan runner that dispatches implementers
+and reviewers must say so in every brief:
+
+- **Implementer brief:** "Before writing code, invoke the Skill tool with `go-coding:go-coding`, then
+  the focused skills matching your diff (see its *Route, then load* table). Run `golangci-lint run`
+  on every touched package before committing."
+- **Reviewer brief:** "Before reading the diff, load `go-coding:go-coding` plus `go-errors`,
+  `go-testing` and the skills the diff calls for; cite the rule a finding rests on. Do not dispatch
+  `go-reviewer` — you are the review seat."
+
+Use `go-reviewer` directly when no such seat exists (an ad-hoc "review this file" request).
+
 ## Development
 
 No build step — the plugin is pure Markdown + JSON. Validate locally:
