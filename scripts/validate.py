@@ -21,8 +21,17 @@ Checks:
 
 This plugin has no MCP backend, so there is intentionally no ``.mcp.json`` check.
 
+  * dual-host hook parity: the same ``hooks/*.sh`` wired for the equivalent event on both
+    hosts, each wired script present and executable, and none left unwired;
+  * doc component inventories: every shipped skill, agent and hook named in the docs that
+    claim to list them. One-directional, so tombstones for removed components stay legal.
+
 Dependency-free (stdlib only) so the ``scripts/validate.sh`` soft-skip is the *only*
-reason it wouldn't run. Usage: python3 scripts/validate.py   (from the repo root)
+reason it wouldn't run.
+
+Usage:
+    python3 scripts/validate.py              # verify this tree
+    python3 scripts/validate.py --selftest   # verify the checks themselves still catch things
 """
 import json
 import os
@@ -30,6 +39,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -364,7 +374,9 @@ def validate_doc_inventories():
         body = doc.read_text()
         for kind in covered:
             for component in kinds[kind]:
-                if component not in body:
+                # Bounded so a shorter name is not satisfied by a longer one that contains it
+                # ("go-test" must not be answered by "go-testing").
+                if not re.search(rf"(?<![\w-]){re.escape(component)}(?![\w-])", body):
                     err(f"{doc_name}: does not mention the shipped {kind[:-1]} '{component}' — "
                         f"its component inventory is stale")
 
@@ -411,7 +423,96 @@ def main():
     validate_doc_inventories()
 
 
+SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
+    {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
+SELFTEST_HOOKS_CURSOR = {"hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
+
+
+def _selftest_tree(root: Path, *, break_it=None):
+    """Write a minimal but valid plugin tree, then apply one deliberate defect. Kept synthetic
+    rather than copied from the repo so a self-test never passes because the real tree happens
+    to be shaped a certain way."""
+    (root / "skills" / "go-thing").mkdir(parents=True)
+    (root / "agents").mkdir()
+    (root / "hooks").mkdir()
+    (root / "references").mkdir()
+    (root / "docs").mkdir()
+    desc = "a: colon" if break_it == "frontmatter_colon" else "does a thing"
+    name = "go-other" if break_it == "skill_name" else "go-thing"
+    (root / "skills" / "go-thing" / "SKILL.md").write_text(
+        f"---\nname: {name}\ndescription: {desc}\n---\n\nBody. "
+        + ("Run `golangci-lint run --enable-only=nosuchlinter`.\n"
+           if break_it == "taught_linter" else "\n"))
+    tools = "allowed-tools:" if break_it == "agent_tools" else "tools:"
+    (root / "agents" / "go-checker.md").write_text(
+        f"---\nname: go-checker\ndescription: checks\n{tools} Read\n---\n\nBody.\n")
+    script = root / "hooks" / "a.sh"
+    script.write_text("#!/usr/bin/env bash\nexit 0\n")
+    script.chmod(0o644 if break_it == "hook_not_executable" else 0o755)
+    if break_it == "hook_unwired":
+        stray = root / "hooks" / "stray.sh"
+        stray.write_text("#!/usr/bin/env bash\nexit 0\n")
+        stray.chmod(0o755)
+    (root / "hooks" / "hooks.json").write_text(json.dumps(SELFTEST_HOOKS_CLAUDE))
+    cursor = {"hooks": {"afterFileEdit": []}} if break_it == "hook_parity" else SELFTEST_HOOKS_CURSOR
+    (root / "hooks" / "cursor-hooks.json").write_text(json.dumps(cursor))
+    (root / "references" / "golangci.v2.yml").write_text("linters:\n  enable:\n    - revive\n")
+    inventory = "" if break_it == "doc_inventory" else "go-thing "
+    for doc in ("README.md", "AGENTS.md"):
+        (root / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+    for doc in ("testing.md", "install.md"):
+        (root / "docs" / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+
+
+SELFTEST_CASES = (
+    ("hook wired for one host only", "hook_parity", (validate_hook_parity,)),
+    ("wired hook not executable", "hook_not_executable", (validate_hook_parity,)),
+    ("hook script left unwired", "hook_unwired", (validate_hook_parity,)),
+    ("shipped skill missing from the docs", "doc_inventory", (validate_doc_inventories,)),
+    ("unquoted ': ' in a description", "frontmatter_colon", (validate_skills,)),
+    ("skill name != directory", "skill_name", (validate_skills,)),
+    ("agent declares allowed-tools", "agent_tools",
+     (lambda: validate_md_components("agents", require_name=True, is_agent=True),)),
+    ("taught linter not in the reference config", "taught_linter", (validate_linter_references,)),
+)
+
+
+def run_selftest() -> int:
+    """Every structural check, run against a tree built to break it. A check that has quietly
+    stopped checking — a renamed field, a regex that no longer matches — still exits 0 on a valid
+    tree, so 'the suite is green' proves nothing on its own. Each case is also run against the
+    same tree with the defect removed, so a check that always fires fails too."""
+    global ROOT, errors
+    real_root, real_errors, failures = ROOT, errors, 0
+    for label, defect, checks in SELFTEST_CASES:
+        outcomes = {}
+        for variant, break_it in (("broken", defect), ("clean", None)):
+            with tempfile.TemporaryDirectory() as tmp:
+                ROOT = Path(tmp)
+                _selftest_tree(ROOT, break_it=break_it)
+                errors = []
+                for check in checks:
+                    check()
+                outcomes[variant] = list(errors)
+        ROOT, errors = real_root, real_errors
+        if not outcomes["broken"]:
+            print(f"FAIL {label}: the check did not catch it")
+            failures += 1
+        elif outcomes["clean"]:
+            print(f"FAIL {label}: the check also fires on a clean tree: {outcomes['clean'][0]}")
+            failures += 1
+        else:
+            print(f"ok   {label}")
+    if failures:
+        print(f"FAIL: {failures} check(s) do not actually check")
+        return 1
+    print(f"OK: {len(SELFTEST_CASES)} structural checks each caught their own failure case")
+    return 0
+
+
 if __name__ == "__main__":
+    if "--selftest" in sys.argv[1:]:
+        sys.exit(run_selftest())
     main()
     if errors:
         print(f"FAIL: {len(errors)} problem(s)")

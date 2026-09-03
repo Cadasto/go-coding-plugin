@@ -6,8 +6,9 @@ exercising the components.
 
 ## Validation
 
-- **Manifest / component validation** — `./scripts/validate.sh` (also run by CI on every PR): checks both `plugin.json` manifests, dual-host parity (name/version/description/author agree), declared component paths, kebab-case names, hook-config JSON, and SKILL.md / agent / command frontmatter (including `name` == directory/filename, and that agents declare `tools:` not `allowed-tools:`). The wrapper runs `scripts/validate.py`; if Python 3 isn't installed it prints a warning and skips (exit 0) rather than failing — install `python3` for the full local check, or rely on `claude plugin validate .` and CI. CI pins Python so the deep check always runs there.
-- **Hook tests** — `./scripts/hooks-test.sh` (also run by CI on every PR): bash tests for `hooks/session-start.sh` and `hooks/skill-nudge.sh`, including a can-fail self-test block that proves the negative-case helpers actually fail on bad input.
+- **Manifest / component validation** — `./scripts/validate.sh`: checks both `plugin.json` manifests, dual-host parity (name/version/description/author agree), declared component paths, kebab-case names, hook-config JSON, hook parity (the same `hooks/*.sh` wired for the equivalent event on both hosts, each existing and executable, none left unwired), doc component inventories (every shipped skill, agent and hook named where the docs claim to list them), and SKILL.md / agent / command frontmatter (including `name` == directory/filename, and that agents declare `tools:` not `allowed-tools:`). The wrapper runs `scripts/validate.py`; if Python 3 isn't installed it prints a warning and skips (exit 0) rather than failing — install `python3` for the full local check, or rely on `claude plugin validate .` and CI. CI pins Python and calls `python3 scripts/validate.py` directly, so the deep check can never silently skip there.
+- **Validator self-test** — `python3 scripts/validate.py --selftest` (also run by CI): rebuilds each structural check's failure case in a temporary tree and requires the check to catch it, so a check that has quietly stopped checking cannot pass as green.
+- **Hook tests** — `./scripts/hooks-test.sh` (also run by CI on every PR): bash tests for all three hook scripts (`hooks/session-start.sh`, `hooks/format-on-save.sh`, `hooks/skill-nudge.sh`), including a can-fail self-test block that proves the negative-case helpers actually fail on bad input.
 - **Official validator** — `claude plugin validate .`: checks the manifest and component structure (no extra dependencies).
 - **Structural review** — run the `plugin-dev:plugin-validator` agent after creating or modifying components.
 - **Skill quality review** — run the `plugin-dev:skill-reviewer` agent: description-triggering quality, progressive disclosure, content structure.
@@ -54,6 +55,8 @@ sessions table: (sessions loading a given focused skill) / (sessions loading
 
 **Not counted:** the SessionStart banner line, or skill-body text echoed back inside
 tool results — only structured tool invocations and explicit slash-command text count.
+Nor is Cursor: the script reads Claude Code transcripts (`~/.claude/projects`) only, so
+the numbers describe adoption on one of the two hosts.
 
 **Target:** the focused standards skills (`go-errors`, `go-testing`, `go-idioms`,
 `go-lint-setup`, `go-layout`, `go-concurrency`) should load on at least 50% of sessions

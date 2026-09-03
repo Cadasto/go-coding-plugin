@@ -1,6 +1,6 @@
 # Go Coding Plugin
 
-An AI plugin by **Cadasto B.V.** that teaches AI coding assistants **idiomatic Go coding standards** — formatting, naming, error handling, concurrency, testing, and project layout — through skills, an agent, session-start and format-on-save hooks, and a Cursor rule. It targets **both Claude Code and Cursor** from a single shared component set.
+An AI plugin by **Cadasto B.V.** that teaches AI coding assistants **idiomatic Go coding standards** — formatting, naming, error handling, concurrency, testing, and project layout — through skills, an agent, three hooks (session-start, format-on-save, skill-nudge), and a Cursor rule. It targets **both Claude Code and Cursor** from a single shared component set.
 
 ## Install
 

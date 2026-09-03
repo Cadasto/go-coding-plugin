@@ -55,7 +55,7 @@ At minimum the host should provide:
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a — always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |
-| **`gopls`** (v0.22.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck) | no code intelligence |
+| **`gopls`** (v0.23.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck) | no code intelligence |
 
 ### Install / upgrade Go (official tarball, Linux)
 
@@ -79,7 +79,7 @@ go version                                                 # → go version go1.
 ```bash
 go install mvdan.cc/gofumpt@latest                    # stricter gofmt superset (hook primary)
 go install golang.org/x/tools/cmd/goimports@latest    # import grouping / pruning
-go install golang.org/x/tools/gopls@v0.22.0           # language server for the gopls-lsp plugin (pinned: v0.22.x — the gopls line that adds Go 1.26 support; use @latest for the newest patch)
+go install golang.org/x/tools/gopls@v0.23.0           # language server for the gopls-lsp plugin (pinned: v0.23.x — the gopls line that adds Go 1.27 support; use @latest for the newest patch)
 ```
 
 Verify:
@@ -89,7 +89,7 @@ go version            # → 1.27.x (or 1.26.4+ on the floor)
 command -v gofmt      # ships with Go (in GOROOT/bin)
 gofumpt --version
 command -v goimports  # goimports has no --version flag
-gopls version        # → golang.org/x/tools/gopls v0.22.x
+gopls version        # → golang.org/x/tools/gopls v0.23.x
 ```
 
 These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately — often in a pinned container — so it does not depend on these host binaries. On Go 1.27, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support) — see <https://golangci-lint.run/docs/product/changelog/#2130>; anything older predates 1.27 support.

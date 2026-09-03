@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, Go 1.27 additions noted. This skill should be used when the user writes, reviews, or modernizes Go, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)`, `errors.AsType`, dropped loop-var copies, and the Go 1.27 additions (generic methods, json/v2-backed `encoding/json`, the `atomictypes`/`embedlit`/`slicesbackward`/`unsafefuncs` fixers). Advice equals tooling — `go fix ./...` or `golangci-lint --enable-only=modernize`. Not for linter configuration (go-lint-setup). Go only.
+description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, Go 1.27 additions noted. This skill should be used when a diff or question contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)`, `errors.AsType`, dropped loop-var copies, and the Go 1.27 additions (generic methods, json/v2-backed `encoding/json`, the `atomictypes`/`embedlit`/`slicesbackward`/`unsafefuncs` fixers). Advice equals tooling — `go fix ./...` or `golangci-lint --enable-only=modernize`. Not for linter configuration (go-lint-setup). Go only.
 ---
 
 # go-idioms — modern Go (modernize)

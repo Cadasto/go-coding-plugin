@@ -29,5 +29,7 @@ jobs:
       # CI is strict and deterministic: Python is guaranteed here, so run the
       # validator directly (the scripts/validate.sh graceful skip is for local use).
       - run: python3 scripts/validate.py
+      # A green validator proves the tree is valid, not that the checks still check.
+      - run: python3 scripts/validate.py --selftest
       # Bash-only hook test harness; runs on both matrix legs.
       - run: ./scripts/hooks-test.sh

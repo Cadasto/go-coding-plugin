@@ -109,6 +109,39 @@ case "$out" in
 esac
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*
 
+# --- format-on-save ----------------------------------------------------------------------------
+# Needs a formatter; without gofmt or gofumpt on PATH the hook is a deliberate no-op and there is
+# nothing to assert beyond "exits 0", which the last case covers.
+fmt_hook() { # PAYLOAD -> exit status recorded, stdout dropped
+  printf '%s' "$1" | bash "$here/hooks/format-on-save.sh" >/dev/null 2>&1
+}
+if command -v gofmt >/dev/null 2>&1 || command -v gofumpt >/dev/null 2>&1; then
+  printf 'package a\nfunc  f( ) {\n}\n' > "$t/messy.go"
+  before="$(cat "$t/messy.go")"
+  fmt_hook "$(p_write "$s-fmt" "$t/messy.go" 'x')"; st=$?
+  after="$(cat "$t/messy.go")"
+  if [ "$st" -ne 0 ]; then echo "FAIL format-on-save exits 0: exited $st"; fails=$((fails+1));
+  elif [ "$before" = "$after" ]; then echo "FAIL format-on-save reformats a messy Go file: file unchanged"; fails=$((fails+1));
+  else echo "ok   format-on-save reformats a messy Go file"; fi
+
+  # A second run must be a fixpoint — a formatter that keeps rewriting an already-formatted file
+  # would churn every save.
+  fmt_hook "$(p_write "$s-fmt" "$t/messy.go" 'x')"
+  if [ "$(cat "$t/messy.go")" = "$after" ]; then echo "ok   format-on-save is idempotent"; else echo "FAIL format-on-save is idempotent: second run changed the file"; fails=$((fails+1)); fi
+
+  printf 'not  go  source\n' > "$t/keep.md"
+  fmt_hook "$(p_write "$s-fmt" "$t/keep.md" 'x')"
+  if [ "$(cat "$t/keep.md")" = 'not  go  source' ]; then echo "ok   format-on-save leaves a non-go file alone"; else echo "FAIL format-on-save leaves a non-go file alone: file was rewritten"; fails=$((fails+1)); fi
+else
+  echo "ok   format-on-save cases skipped (no gofmt/gofumpt on PATH)"
+fi
+
+# No formatter on PATH at all: the hook must stay silent and still exit 0. CLAUDE_FILE_PATH is set
+# so the hook never needs cat/grep/sed, which an empty PATH would also take away — this case is
+# about the missing formatter, not about a crippled shell.
+out="$(CLAUDE_FILE_PATH="$t/plain.go" PATH=/nonexistent "$BASH" "$here/hooks/format-on-save.sh" </dev/null 2>&1)"; st=$?
+if [ "$st" -eq 0 ] && [ -z "$out" ]; then echo "ok   format-on-save is a silent no-op without a formatter"; else echo "FAIL format-on-save is a silent no-op without a formatter: exit $st, output '$out'"; fails=$((fails+1)); fi
+
 # Can-fail control (F3): prove chk_silent and run_case_absent actually fail on bad input, so a
 # broken helper (e.g. always echoing "ok") can't hide a real regression above. Each probe runs in a
 # `$(...)` subshell — already isolated from this shell's `fails` — with its own `fails=0` so the

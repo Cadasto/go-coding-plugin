@@ -20,11 +20,14 @@ the existing Go 1.26.4+ floor, and ships a script for measuring adoption.
   minimum checklist for when a second load is not affordable.
 - Skill `go-coding`, agent `go-reviewer` — "Writing for the human": anything a person reads (PR
   text, review findings, a question) states the effect before the mechanism, in plain English, short.
-- Hook `hooks/skill-nudge.sh` — after a Go edit, names one skill the edit calls for, classified from
-  the edit rather than the whole file. Once per skill per session, so at most three per session;
-  a `systemMessage` under Claude Code, a plain line under Cursor.
-- Script `scripts/hooks-test.sh` — 18 bash tests for both hooks, including can-fail controls that
-  prove the silence assertions can actually fail. Runs in CI.
+- Hook `hooks/skill-nudge.sh` — after a Go edit, names one skill the edit calls for. Under Claude
+  Code it matches only the text the edit adds (`tool_input.new_string`, or `content` for a write),
+  not the file and not the deleted text; Cursor passes a path alone, so there it matches the file
+  and says so. Once per skill per session, at most three per session; a `systemMessage` under
+  Claude Code, a plain line under Cursor.
+- Script `scripts/hooks-test.sh` — 28 bash tests over all three hooks, on production-shaped
+  payloads, asserting exit status as well as output, with can-fail controls proving the silence
+  assertions can actually fail. Runs in CI.
 - Script `scripts/usage-report.py` — stdlib-only adoption report from local session transcripts;
   counting rules and the 50% target in `docs/testing.md`.
 - Docs `README.md` — implementer and reviewer brief templates for orchestrators, since a subagent
@@ -37,10 +40,14 @@ the existing Go 1.26.4+ floor, and ships a script for measuring adoption.
 - Validation `scripts/validate.py` — hook parity (the same script wired for the equivalent event on
   both hosts, existing and executable, none left unwired) and doc component inventories (every
   shipped skill, agent and hook named where the docs claim to list them).
+- Validation `scripts/validate.py --selftest` — rebuilds each structural check's failure case in a
+  temporary tree and requires the check to catch it, and to stay quiet once the defect is removed.
+  Runs in CI, because a green run over a valid tree says nothing about whether a check still checks.
 
 ### Changed
-- Skills — descriptions rewritten trigger-first and shortened 11% (4,619 → 4,101 characters).
-  Always-on context competes with the session's real work.
+- Skills — descriptions rewritten trigger-first and shortened 10% (4,619 → 4,163 characters).
+  Always-on context competes with the session's real work. `go-idioms` in particular no longer
+  triggers on "writes or reviews Go", which was nearly every Go turn.
 - Skill `go-lint-setup` — absorbs `go-linting`'s config-schema, adoption and upgrade-breakage
   content; re-fronted as "scaffold, adopt, or debug".
 - Hook `hooks/session-start.sh` — the banner names the hop and the focused skills, and offers
@@ -48,7 +55,15 @@ the existing Go 1.26.4+ floor, and ships a script for measuring adoption.
 - Agent `go-reviewer`, skill `go-coding` — one review seat per diff: where a workflow already has a
   reviewer, that reviewer loads the skills itself instead of `go-reviewer` being dispatched beside it.
 - Cursor rule `rules/go-context.mdc` — brought level with the router: the diff→skill mapping, the
-  minimum checklist, and the plain-English rule for anything a person reads.
+  minimum checklist, and the plain-English rule for anything a person reads. Drops the Claude-only
+  `${CLAUDE_PLUGIN_ROOT}` reference from a Cursor-only file.
+- Skills `go-idioms`, `go-testing` — four Go 1.27 claims corrected against their sources: v1
+  `encoding/json` stays the default (the release notes say users are not required to migrate);
+  `embedlit` folds a promoted field into the parent literal rather than a post-literal assignment;
+  `unsafefuncs` gains the table row its prose already assumed; `stdversion` is dated to when `go
+  test` starts running it by default, not to the check's existence. `httptest.NewTestServer` now
+  carries its signature.
+- Docs `docs/install.md` — `gopls` pin moves to v0.23.x, the line that adds Go 1.27 support.
 - Docs `docs/testing.md` — adds the missing `format-on-save` triggering check.
 - Skills, agent, Cursor rule, docs — Go 1.26.4+ remains the hard floor; Go 1.27 is supported and its
   additions are flagged as hints. `docs/install.md` recommends the latest 1.27.x patch.
