@@ -114,7 +114,7 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
   allocating before a level check; key-value variadic on a hot path instead of `slog.LogAttrs`.
 
 For the *why* and citations behind any dimension, the `go-errors`, `go-concurrency`, `go-testing`,
-`go-idioms`, `go-linting`, and `go-layout` skills carry the grounded rules — reference them rather
+`go-idioms`, `go-lint-setup`, and `go-layout` skills carry the grounded rules — reference them rather
 than re-deriving from memory.
 
 ## Output format

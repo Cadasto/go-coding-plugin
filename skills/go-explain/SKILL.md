@@ -21,6 +21,6 @@ Cover, in a few lines:
 Answer against the **Go 1.26.4+** baseline. Name the version an idiom landed in (that's step 1) —
 that is provenance for the reader, not a gate on the recommendation. For a fuller treatment, route
 to the matching skill: `go-errors`, `go-concurrency`,
-`go-testing`, `go-idioms`, `go-linting`, or `go-layout`.
+`go-testing`, `go-idioms`, `go-lint-setup`, or `go-layout`.
 
 Keep it tight — this is a lookup, not a lecture. If `$ARGUMENTS` is empty, ask what to explain.

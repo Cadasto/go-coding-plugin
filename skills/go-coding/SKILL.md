@@ -1,6 +1,6 @@
 ---
 name: go-coding
-description: Go coding-standards router for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-linting, go-layout for layout/naming/API design). For a single, already-identified topic load that skill directly. Loading this router alone does not apply the standards — it names the focused skill to load next. Not for non-Go languages or domain/business rules.
+description: Go coding-standards router for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-lint-setup, go-layout for layout/naming/API design). For a single, already-identified topic load that skill directly. Loading this router alone does not apply the standards — it names the focused skill to load next. Not for non-Go languages or domain/business rules.
 ---
 
 # go-coding — Go standards router
@@ -18,7 +18,7 @@ Two principles from the project research drive it:
 | Topic | Run now (deterministic) | Deeper skill |
 |---|---|---|
 | Formatting | `gofmt -l` / `gofumpt -l` (+ `goimports`) — machine-enforced, non-negotiable | — |
-| Static analysis / likely bugs | `go vet ./...`, `golangci-lint run` | `go-linting` |
+| Static analysis / likely bugs | `go vet ./...`, `golangci-lint run` | `go-lint-setup` |
 | Modern idioms (range-int, `min`/`max`, `slices`/`maps`, `wg.Go`, `strings.Cut`, `new(expr)`, `errors.AsType`) | `go fix ./...` (the toolchain's modernizer suite), or `golangci-lint run --enable-only=modernize` for CI reproducibility | `go-idioms` |
 | Errors (`%w`, `errors.Is`/`AsType`, `errors.Join`, sentinel/typed, enum dispatch) | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |

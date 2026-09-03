@@ -16,7 +16,7 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 | Topic | Run (deterministic) | Deeper skill |
 |---|---|---|
 | Formatting | `gofmt`/`gofumpt` (+ `goimports`) — machine-enforced | — |
-| Static analysis / bugs | `go vet ./...`, `golangci-lint run` | `go-linting` |
+| Static analysis / bugs | `go vet ./...`, `golangci-lint run` | `go-lint-setup` |
 | Modern idioms | `go fix ./...` (the toolchain's modernizers), or `golangci-lint run --enable-only=modernize` | `go-idioms` |
 | Errors | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency | `go test -race ./...`, `go vet ./...` | `go-concurrency` |

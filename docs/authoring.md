@@ -111,8 +111,8 @@ citation. Everything the skills assert should be traceable to one of these.
    weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
    source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the
    number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
-5. Keep the three copies of the reference lint config in sync: `references/golangci.v2.yml`, the
-   block in `go-linting`, and the block in `go-lint-setup`.
+5. Keep the two copies of the reference lint config in sync: `references/golangci.v2.yml` and the
+   scaffold block in `go-lint-setup`.
 6. Record the refresh in **CHANGELOG.md** under `## [Unreleased]`.
 
 ## Dual-host parity

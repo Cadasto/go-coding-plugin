@@ -18,7 +18,7 @@ Install from your working copy (see [install.md](install.md)), then exercise eac
 
 - **Session-start hook** — open a repo with a `go.mod`/`*.go`; one Go-standards line should print at session start (and nothing in a non-Go repo).
 - **`go-coding` router** — ask for a Go review or idiom help; it should route to the enforcing tool and the focused skill.
-- **Standards skills** — a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-linting`).
+- **Standards skills** — a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-lint-setup`).
 - **`go-reviewer` agent** — ask for a Go code review; it returns severity-ranked findings and does not spawn sub-agents.
 - **Slash commands (skills)** — `/go-explain <topic>` and `/go-lint-setup`.
 - **Cursor rule** — in Cursor, open a `.go` file and confirm `go-context.mdc` attaches.

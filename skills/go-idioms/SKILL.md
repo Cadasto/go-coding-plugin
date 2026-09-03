@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (the `modernize` analyzer set). This skill should be used when the user writes, reviews, or modernizes Go and wants current-version idioms — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)` and `errors.AsType` (Go 1.26), dropped loop-var copies — or asks which modernize fixer owns a rewrite. Framed so advice equals tooling (`go fix ./...`, or `golangci-lint --enable-only=modernize`). Not for golangci-lint configuration (use `go-linting`) or non-Go languages.
+description: Modern idiomatic Go (the `modernize` analyzer set). This skill should be used when the user writes, reviews, or modernizes Go and wants current-version idioms — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)` and `errors.AsType` (Go 1.26), dropped loop-var copies — or asks which modernize fixer owns a rewrite. Framed so advice equals tooling (`go fix ./...`, or `golangci-lint --enable-only=modernize`). Not for golangci-lint configuration (use `go-lint-setup`) or non-Go languages.
 ---
 
 # go-idioms — modern Go (modernize)
