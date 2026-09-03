@@ -51,7 +51,7 @@ At minimum the host should provide:
 
 | Tool | Provided by | Used for | If missing |
 |------|-------------|----------|------------|
-| **Go 1.26.x** (min 1.26.4) | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies `go.mod` `go 1.26.x`; `go fix ./...` runs the modernizers | no toolchain at all |
+| **Go 1.26.4+ (1.27.x recommended)** | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies a `go.mod` `go 1.26.x` or `1.27.x` directive; `go fix ./...` runs the modernizers | no toolchain at all |
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a — always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |
@@ -74,7 +74,7 @@ go version                                                 # → go version go1.
 
 ### Install the supporting tools
 
-`go install` drops binaries in `$(go env GOPATH)/bin` (default `~/go/bin`) — make sure that directory is on your `PATH`. Run these **after** Go is in place so they compile against your 1.26 toolchain:
+`go install` drops binaries in `$(go env GOPATH)/bin` (default `~/go/bin`) — make sure that directory is on your `PATH`. Run these **after** Go is in place so they compile against your installed toolchain (1.26.4+ or 1.27.x):
 
 ```bash
 go install mvdan.cc/gofumpt@latest                    # stricter gofmt superset (hook primary)
@@ -85,7 +85,7 @@ go install golang.org/x/tools/gopls@v0.22.0           # language server for the 
 Verify:
 
 ```bash
-go version            # → 1.26.x (1.26.4+)
+go version            # → 1.27.x (or 1.26.4+ on the floor)
 command -v gofmt      # ships with Go (in GOROOT/bin)
 gofumpt --version
 command -v goimports  # goimports has no --version flag

@@ -106,8 +106,8 @@ citation. Everything the skills assert should be traceable to one of these.
    and — when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and
    `1.27.x`; locally it soft-skips with a note) — the `go-idioms` Fixer column is verified against
    `go tool fix help`: plain names must be registered, † names must not be. The floor minor
-   lives in `GO_FLOOR_MINOR` in the script and in the workflow's `setup-go` pin — move all
-   three (docs baseline included) together.
+   lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.26.x`) — move
+   all three (docs baseline included) together.
    **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
    weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
    source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the

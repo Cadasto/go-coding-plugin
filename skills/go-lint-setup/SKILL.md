@@ -85,8 +85,8 @@ reproducibly against the pinned version rather than whatever toolchain a develop
 `go-errors`).
 
 **Go 1.27 needs golangci-lint ≥ v2.13.0** (released 2026-08-19 — the same day as Go 1.27 itself) for
-Go 1.27 support; anything v2.12.x or earlier predates it. Source:
-<https://golangci-lint.run/docs/product/changelog/#2130>.
+Go 1.27 support; anything v2.12.x or earlier predates it — a compatibility floor, not a pin (see
+*Discipline once adopted*). Source: <https://golangci-lint.run/docs/product/changelog/#2130>.
 
 ### Discipline once adopted
 

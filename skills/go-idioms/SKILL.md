@@ -29,7 +29,8 @@ The **Fixer** column names the analyzer that owns each rewrite. Plain = register
 toolchain's `go fix` (ground truth: `go tool fix help`; per-fixer docs: `go tool fix help <name>`).
 **†** = only in the newer `x/tools` suite so far — golangci-lint's `modernize` and gopls run it, the
 1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it. Two † rows
-below (`atomictypes`, `slicesbackward`) graduate into the stock `go fix` on Go 1.27 — see
+below (`atomictypes`, `slicesbackward`) graduate into the stock `go fix` on 1.27, which also renames
+`waitgroup` → `waitgroupgo` and drops `fmtappendf` (<https://go.dev/doc/go1.27>) — see
 **Newer in Go 1.27** below rather than reading that as a change to this table.
 
 | Prefer | Over | Since | Fixer |
@@ -76,22 +77,22 @@ something a modernizer rewrites.
 - **`slices.Sorted(maps.Keys(m))`** (1.23) when iterating a map for output — map order is random, and
   unstable output is a flaky-test and noisy-diff source.
 
-*Go 1.27 (released 2026-08-19) graduates several † fixers into the toolchain's `go fix`
-(`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup` →
-`waitgroupgo`, and drops `fmtappendf`; it also lands `encoding/json/v2` + `encoding/json/jsontext`
+*Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) graduates several † fixers into the toolchain's
+`go fix` (`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup`
+→ `waitgroupgo`, and drops `fmtappendf`; it also lands `encoding/json/v2` + `encoding/json/jsontext`
 (v1 is reimplemented on v2, opt out with `GOEXPERIMENT=nojsonv2`) and `strings.CutLast`/`bytes.CutLast`.
-See **Newer in Go 1.27** below for the hints these enable — none of it is required on the 1.26 floor.*
+Source: <https://go.dev/doc/go1.27>. See **Newer in Go 1.27** below for the hints these enable — none
+of it is required on the 1.26 floor.*
 
 ## Newer in Go 1.27 (hints, not requirements)
 
 Go 1.27 is additive over 1.26 — every 1.26 rule above still applies unchanged, and nothing here is
 required while a module's `go` directive stays at 1.26. Once a repo's toolchain (and `go` directive)
-moves to 1.27, these are worth reaching for — phrased as "available from 1.27" / "prefer … once on
-1.27", never as a requirement.
+moves to 1.27, these are worth reaching for.
 
 | Idiom (available from 1.27) | Supersedes / complements | Fixer / linter | Since | Source |
 |---|---|---|---|---|
-| Generic methods — a method may declare its own type parameters | a package-level generic helper function bound to the receiver type as a workaround for "methods can't be generic" | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| Generic methods — a method may declare its own type parameters (interface methods still may not declare type parameters, nor be implemented by generic methods) | a package-level generic helper function bound to the receiver type as a workaround for "methods can't be generic" | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | Prefer `encoding/json/v2` + `jsontext` for new/hot JSON paths once on 1.27 | v1 `encoding/json` (still works unchanged; only exact error-message text may shift) | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `atomictypes` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | raw `sync/atomic` functions | `atomictypes` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `slicesbackward` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | `for i := len(s)-1; i >= 0; i--` | `slicesbackward` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
