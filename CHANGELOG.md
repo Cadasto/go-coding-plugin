@@ -29,17 +29,20 @@ alongside the existing Go 1.26.4+ floor.
   subagents carry the table into every brief, since a subagent does not inherit the parent session's
   skills.
 - Hooks: `hooks/skill-nudge.sh` — a `PostToolUse`/`afterFileEdit` hook that, after a Go file edit,
-  prints one nudge naming the go-coding skill the edit calls for (a `_test.go` file → `go-testing`;
+  delivers one nudge naming the go-coding skill the edit calls for (a `_test.go` file → `go-testing`;
   goroutine/channel/`sync`/`atomic`/`errgroup` content → `go-concurrency`; `fmt.Errorf`/`errors.*` →
-  `go-errors`), once per skill per session; wired dual-host in `hooks/hooks.json` and
-  `hooks/cursor-hooks.json`. A usage analysis showed these focused skills load far less often than
-  the router itself.
+  `go-errors`), once per skill per session, via the hook `systemMessage` channel under Claude Code
+  (reaches the model's context on exit 0) and a plain line under Cursor; wired dual-host in
+  `hooks/hooks.json` and `hooks/cursor-hooks.json`. A usage analysis showed these focused skills load
+  far less often than the router itself.
 - Hooks: `hooks/session-start.sh` — the SessionStart banner now names the skill-loading hop, lists
   the focused skills, points at `/go-explain` and `go-reviewer`, and adds a `/go-lint-setup` prompt
   when no `.golangci.y*ml`/`.toml`/`.json` file is found in the workspace.
 - Scripts: `scripts/hooks-test.sh` — a test harness covering `hooks/skill-nudge.sh` and the
   session-start banner, with a `chk_silent` helper that asserts exact emptiness for the no-nudge
-  cases instead of a vacuous non-match check, and a can-fail test control.
+  cases instead of a vacuous non-match check, and a can-fail test control: self-tests proving the
+  negative-case helpers (`chk_silent`, `run_case_absent`) actually fail on bad input rather than
+  passing vacuously. Runs in CI (`.github/workflows/validate.yml`) alongside `scripts/validate.py`.
 - Docs: `README.md` — "Using with subagent orchestrators": implementer and reviewer brief templates
   that carry the router's hop table into a dispatched subagent's instructions, so a plan runner's
   implementers and reviewers apply the standards even though a subagent does not inherit the parent

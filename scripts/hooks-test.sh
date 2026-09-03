@@ -32,6 +32,11 @@ s="test-$$"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$s."*
 : > "$t/a_test.go"; printf 'package a\nfunc f(){ go func(){}() }\n' > "$t/w.go"; printf 'package a\nimport "fmt"\nvar e = fmt.Errorf("x")\n' > "$t/e.go"; : > "$t/plain.go"; : > "$t/readme.md"
 chk() { local name="$1" got="$2" expect="$3"; case "$got" in *"$expect"*) echo "ok   $name";; *) echo "FAIL $name: got '$got'"; fails=$((fails+1));; esac; }
 chk_silent() { local name="$1" got="$2"; if [ -z "$got" ]; then echo "ok   $name"; else echo "FAIL $name: expected silence, got '$got'"; fails=$((fails+1)); fi; }
+# chk matches by substring, which is delivery-channel-agnostic: the nudge text appears whether
+# wrapped as {"systemMessage":"..."} (Claude Code) or printed as a plain line (Cursor). These six
+# cases therefore exercise whichever path is active for the ambient CLAUDE_PLUGIN_ROOT (unset in a
+# plain shell, so normally the Cursor/plain path); the two delivery-channel cases below force each
+# path explicitly.
 chk "test file nudges go-testing"         "$(nudge "$t/a_test.go" "$s")" "go-coding:go-testing"
 chk_silent "second test file is silent"   "$(nudge "$t/a_test.go" "$s")"
 chk "goroutine nudges go-concurrency"     "$(nudge "$t/w.go" "$s")" "go-coding:go-concurrency"
@@ -39,5 +44,31 @@ chk "fmt.Errorf nudges go-errors"         "$(nudge "$t/e.go" "$s")" "go-coding:g
 chk_silent "plain go file is silent"      "$(nudge "$t/plain.go" "$s")"
 chk_silent "non-go file is silent"        "$(nudge "$t/readme.md" "$s")"
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$s."*
+
+# Delivery channel (F4): a fresh fixture + session per case so dedupe cannot silence it, and each
+# host path forced explicitly rather than relying on the ambient CLAUDE_PLUGIN_ROOT.
+: > "$t/e2.go"; printf 'package a\nimport "fmt"\nvar e = fmt.Errorf("x")\n' > "$t/e2.go"
+sjson="$s-json"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sjson."*
+chk "nudge is a systemMessage under Claude" "$(CLAUDE_PLUGIN_ROOT=/x nudge "$t/e2.go" "$sjson")" '{"systemMessage":'
+rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sjson."*
+
+scursor="$s-cursor"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*
+# Built directly (not via nudge()) per the sketch: env -u only strips CLAUDE_PLUGIN_ROOT from an
+# external-command invocation, and nudge's payload already lacks hook_event_name.
+out="$(printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$scursor" "$t/e2.go" | env -u CLAUDE_PLUGIN_ROOT bash "$here/hooks/skill-nudge.sh")"
+case "$out" in
+  '{'*) echo "FAIL nudge is a plain line under Cursor: got JSON '$out'"; fails=$((fails+1));;
+  *"go-coding:go-errors"*) echo "ok   nudge is a plain line under Cursor";;
+  *) echo "FAIL nudge is a plain line under Cursor: got '$out'"; fails=$((fails+1));;
+esac
+rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*
+
+# Can-fail control (F3): prove chk_silent and run_case_absent actually fail on bad input, so a
+# broken helper (e.g. always echoing "ok") can't hide a real regression above. Each probe runs in a
+# `$(...)` subshell — already isolated from this shell's `fails` — with its own `fails=0` so the
+# probe's internal increment never has a chance to leak into the suite's real count.
+selftest() { local name="$1" out="$2"; case "$out" in FAIL*) echo "ok   $name";; *) echo "FAIL $name: helper did not fail on bad input: '$out'"; fails=$((fails+1));; esac; }
+selftest "can-fail: chk_silent rejects non-empty"     "$( fails=0; chk_silent "probe" "not-empty" )"
+selftest "can-fail: run_case_absent rejects presence" "$( fails=0; run_case_absent "probe" "$t/go-no-lint" "/go-lint-setup" )"
 
 [ "$fails" -eq 0 ] || exit 1
