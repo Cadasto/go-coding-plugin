@@ -1,6 +1,6 @@
 ---
 name: go-lint-setup
-description: Scaffold the reference golangci-lint v2 config into a Go repo. This skill should be used when the user runs `/go-lint-setup` or asks to "set up", "scaffold", "add", or "bootstrap" golangci-lint or a `.golangci.yml` for a Go project — it writes the plugin's reference v2 config (modernize + stack linters) and will not overwrite an existing config unprompted, or asks why golangci-lint v2 rejects a config, about migrating a v1 config, which linters the default set enables, how to adopt modernize/errorlint in an existing repo, what `golangci-lint fmt` does, how to write a `linters.exclusions` rule, or how to suppress a finding with `//nolint`. Not for non-Go projects.
+description: Scaffold, adopt, or debug the golangci-lint v2 config in a Go repo. This skill should be used when the user runs `/go-lint-setup`, asks to "set up", "scaffold", "add" or "bootstrap" golangci-lint or a `.golangci.yml`, or asks why golangci-lint v2 rejects a config, how to migrate a v1 config, which linters the default set enables, how to adopt modernize/errorlint in an existing repo, what `golangci-lint fmt` does, how to write a `linters.exclusions` rule, or how to suppress a finding with `//nolint`. Writes the reference v2 config (modernize + stack linters); never overwrites an existing one unprompted. Go only.
 argument-hint: optional target path (defaults to .golangci.yml)
 allowed-tools: Read, Write, Glob, Bash
 ---

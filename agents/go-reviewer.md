@@ -140,6 +140,10 @@ Verdict: 3 issues — 1 high, 2 medium.
 If you find nothing real, say so plainly — **do not invent findings to look thorough.** End with a
 one-line note of what you did *not* cover (files or paths outside the given scope).
 
+A person reads this report, so write the prose in plain English: say what goes wrong before naming
+the mechanism, and expand a Go term the first time it appears or leave it out. Identifiers,
+commands and linter names stay verbatim. Keep each finding to the three lines above.
+
 ## Edge cases
 
 - **No diff given and none inferable:** ask for the diff/files, or run `git diff` if a branch is in

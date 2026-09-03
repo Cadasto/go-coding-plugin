@@ -1,6 +1,6 @@
 ---
 name: go-coding
-description: This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-lint-setup, go-layout for layout/naming/API design). Go coding-standards router for idiomatic Go — Go 1.26.4+ (Go 1.27 supported; its additions are flagged as hints), golangci-lint v2. For a single, already-identified topic load that skill directly. Loading this router alone does not apply the standards — it names the focused skill to load next. Not for non-Go languages or domain/business rules.
+description: Go coding-standards router — Go 1.26.4+ (1.27 supported, its additions flagged as hints), golangci-lint v2. This skill should be used when a Go task spans several areas, is unspecified, or the question is which tool or standard applies — it names the deterministic tool to run, then the focused skill that owns the topic (go-errors, go-concurrency, go-testing, go-idioms, go-layout, go-lint-setup). Loading the router alone does not apply the standards — load the skill it names next. For one already-identified topic, load that skill directly. Go only; not for business rules.
 ---
 
 # go-coding — Go standards router
@@ -59,6 +59,15 @@ Apply these even if you load nothing else; they are the rules the focused skills
 - `ctx` first; no goroutine without an owner that waits for it; `t.Context()` in tests.
 - Run `gofmt`/`gofumpt` and `golangci-lint run` — never reason out what a tool decides.
 
+## Writing for the human
+
+Anything a person reads — a PR description, a review comment, a question, a design choice put to
+them — goes in plain English, not Go shorthand. State the effect before the mechanism ("the request
+keeps running after the caller gives up", not "ctx leak in the errgroup"), and expand a term the
+first time it appears or leave it out. Keep it short: a few sentences per point, and a decision they
+must make gets the options plus a recommendation, not an essay. Identifiers, commands and linter
+names stay verbatim — it is the prose around them that must be plain.
+
 ## Authoritative sources (cite, don't guess)
 
 - Effective Go — <https://go.dev/doc/effective_go>
@@ -76,8 +85,7 @@ If a workflow already owns the reviewer seat, that reviewer loads the focused sk
 one review seat per diff. Orchestrators: put the "Route, then load" table into every implementer and
 reviewer brief.
 
-Two user-invoked skills round out the surface: `/go-explain <topic>` for a one-shot idiom lookup,
-and `/go-lint-setup` to scaffold the reference golangci-lint v2 config into a repo.
+`/go-lint-setup` scaffolds the reference golangci-lint v2 config into a repo.
 
 ---
 *Top-level structure adapted from [`samber/cc-skills-golang`](https://github.com/samber/cc-skills-golang) (MIT © 2026 Samuel Berthe).*
