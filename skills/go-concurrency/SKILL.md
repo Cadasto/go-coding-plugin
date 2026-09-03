@@ -1,6 +1,6 @@
 ---
 name: go-concurrency
-description: Idiomatic, leak-free Go concurrency. This skill should be used when the user writes or reviews Go goroutines, channels, `sync`/`atomic`, `context`, `errgroup`, or worker pools — goroutine lifetimes/leaks, context propagation, cancellation causes (`context.Cause`, `WithTimeoutCause`), work that must outlive a request (`context.WithoutCancel`, `AfterFunc`), typed atomics, mutex misuse, cleanup/finalizers, or data races. Pair with `go test -race`, `go vet`, and `goleak`. Defers time/concurrency *testing* mechanics to `go-testing` (synctest). Not for non-Go languages.
+description: Idiomatic, leak-free Go concurrency. This skill should be used when a diff or question contains go func, chan, select, sync.WaitGroup/Mutex/Once, atomic, errgroup, context.WithCancel/Timeout/Cause, a retry or backoff loop, a worker pool, an HTTP client with per-request cancellation, or a Close on a goroutine-owned resource — goroutine lifetimes and leaks, context propagation and cancellation causes, work that must outlive a request, typed atomics, mutex misuse, data races. Pair with go test -race, go vet and goleak. Time/concurrency testing mechanics live in go-testing (synctest). Not for non-Go languages.
 ---
 
 # go-concurrency — Go concurrency
