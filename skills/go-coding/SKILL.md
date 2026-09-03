@@ -1,6 +1,6 @@
 ---
 name: go-coding
-description: Go coding-standards router for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-linting, go-layout for layout/naming/API design). For a single, already-identified topic load that skill directly. Not for non-Go languages or domain/business rules.
+description: Go coding-standards router for idiomatic Go (Go 1.26.4+; golangci-lint v2). This skill should be used when a Go task spans multiple areas, is unspecified, or the question is which tool or standard applies — it routes each topic to the deterministic tool, then to the focused go-* skill that owns it (go-errors, go-concurrency, go-testing, go-idioms, go-linting, go-layout for layout/naming/API design). For a single, already-identified topic load that skill directly. Loading this router alone does not apply the standards — it names the focused skill to load next. Not for non-Go languages or domain/business rules.
 ---
 
 # go-coding — Go standards router
@@ -28,6 +28,36 @@ Two principles from the project research drive it:
 
 Open the focused `go-*` skill for the topic — it carries the cited rules and the judgment; run the
 tool in the middle column to enforce them. Don't invent rules: each skill cites its sources.
+
+## Route, then load
+
+The router is an index, not the standard. Before writing or reviewing Go you MUST load the focused
+skill matching the change — with the Skill tool (`go-coding:go-errors`, …), not by recalling it:
+
+| The diff touches… | Load |
+|---|---|
+| any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim | `go-testing` |
+| `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `switch` over an enum | `go-errors` |
+| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)` | `go-idioms` |
+| `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned resource | `go-concurrency` |
+| a new package, an exported identifier, a `cmd/` or `internal/` decision, a doc comment on an API | `go-layout` |
+| `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |
+
+One load per skill per session is enough; the skill stays in context. Orchestrators dispatching
+implementer or reviewer subagents carry this table into every brief — a subagent does not inherit
+the parent session's skills.
+
+## Minimum checklist (when a second load is not affordable)
+
+Apply these even if you load nothing else; they are the rules the focused skills most often catch:
+
+- Wrap with `fmt.Errorf("…: %w", err)`; inspect with `errors.Is` / `errors.AsType` and guard the
+  result (`ok && v != nil` — a typed-nil pointer satisfies the match). Never swallow an error.
+- Every guard has a test that fails when the guard is deleted; a "temporarily broke it by hand"
+  check is not evidence — commit it as a can-fail test. Table-driven `t.Run` with got/want messages.
+- `range n`, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`; `go fix ./...` before hand-edits.
+- `ctx` first; no goroutine without an owner that waits for it; `t.Context()` in tests.
+- Run `gofmt`/`gofumpt` and `golangci-lint run` — never reason out what a tool decides.
 
 ## Authoritative sources (cite, don't guess)
 
