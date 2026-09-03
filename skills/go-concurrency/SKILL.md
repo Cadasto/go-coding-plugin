@@ -11,8 +11,8 @@ The runtime also ships an experimental `goroutineleak` profile in `runtime/pprof
 that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (enable it
 with `GOEXPERIMENT=goroutineleakprofile` at build time). The implementation is production-ready; the
 experiment flag is only about API feedback, and it costs nothing unless in use.
-*Go 1.27 (draft, expected Aug 2026) enables it by default — no `GOEXPERIMENT`, and
-`/debug/pprof/goroutineleak` via `net/http/pprof`.*
+*Go 1.27 (released 2026-08-19) deletes the `goroutineleakprofile` GOEXPERIMENT flag. Source:
+<https://go.dev/doc/go1.27>.*
 
 ## Rules
 

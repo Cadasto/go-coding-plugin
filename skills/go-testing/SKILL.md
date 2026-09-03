@@ -42,8 +42,9 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   `synctest.Test(t, func(t *testing.T){ … })`; `synctest.Wait()` blocks until every goroutine in the
   bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (Always
   `synctest.Test` — the pre-stable `synctest.Run` no longer exists.)
-  *Go 1.27 (draft, expected Aug 2026) adds `synctest.Sleep` (`time.Sleep` + `Wait` in one) and
-  `httptest.NewTestServer`, an in-memory server usable inside a bubble.*
+  *Go 1.27 (released 2026-08-19) adds `synctest.Sleep` (`time.Sleep` + `Wait` in one) and
+  `httptest.NewTestServer`, an in-memory server usable inside a bubble. Source:
+  <https://go.dev/doc/go1.27>.*
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
   A golden pins *shape*, not behaviour — when it records something another system executes (SQL,
