@@ -8,6 +8,9 @@
     "afterFileEdit": [
       {
         "command": "bash hooks/format-on-save.sh"
+      },
+      {
+        "command": "bash hooks/skill-nudge.sh"
       }
     ]
   }

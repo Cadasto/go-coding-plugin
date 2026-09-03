@@ -24,4 +24,19 @@ run_case "go repo with lint config names /go-explain"  "$t/go-with-lint" "/go-ex
 run_case_absent "go repo with lint config omits lint-setup" "$t/go-with-lint" "/go-lint-setup"
 run_case "go repo without lint config offers setup"    "$t/go-no-lint"   "/go-lint-setup"
 run_case "non-go repo is silent"                        "$t/not-go"       ""
+
+nudge() { # FILE SESSION -> stdout
+  printf '{"session_id":"%s","tool_name":"Edit","tool_input":{"file_path":"%s"}}' "$2" "$1" | bash "$here/hooks/skill-nudge.sh"
+}
+s="test-$$"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$s."*
+: > "$t/a_test.go"; printf 'package a\nfunc f(){ go func(){}() }\n' > "$t/w.go"; printf 'package a\nimport "fmt"\nvar e = fmt.Errorf("x")\n' > "$t/e.go"; : > "$t/plain.go"; : > "$t/readme.md"
+chk() { local name="$1" got="$2" expect="$3"; case "$got" in *"$expect"*) echo "ok   $name";; *) echo "FAIL $name: got '$got'"; fails=$((fails+1));; esac; }
+chk "test file nudges go-testing"         "$(nudge "$t/a_test.go" "$s")" "go-coding:go-testing"
+chk "second test file is silent"          "$(nudge "$t/a_test.go" "$s")x" "x"
+chk "goroutine nudges go-concurrency"     "$(nudge "$t/w.go" "$s")" "go-coding:go-concurrency"
+chk "fmt.Errorf nudges go-errors"         "$(nudge "$t/e.go" "$s")" "go-coding:go-errors"
+chk "plain go file is silent"             "$(nudge "$t/plain.go" "$s")x" "x"
+chk "non-go file is silent"               "$(nudge "$t/readme.md" "$s")x" "x"
+rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$s."*
+
 [ "$fails" -eq 0 ] || exit 1
