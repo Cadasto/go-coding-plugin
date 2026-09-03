@@ -24,3 +24,32 @@ Install from your working copy (see [install.md](install.md)), then exercise eac
 - **Cursor rule** — in Cursor, open a `.go` file and confirm `go-context.mdc` attaches.
 
 After editing content, reinstall (or restart the session) to pick up changes.
+
+## Measuring adoption
+
+The layout and concurrency skills, and the router's dispatch behavior, were shaped by
+a usage analysis of local Claude Code session transcripts. `scripts/usage-report.py`
+(stdlib-only) reproduces that measurement so adoption stays checkable over time:
+
+```
+python3 scripts/usage-report.py --since YYYY-MM-DD --out report.md
+```
+
+Run with no arguments to scan `~/.claude/projects` from the beginning and print the
+report to stdout; `--since` narrows to a start date, `--out` writes the report to a
+file instead. `--help` repeats the counting rules.
+
+**Counted:** a `Skill` tool invocation whose `skill` input starts with `go-coding:`; a
+`Task`/`Agent` tool invocation with `subagent_type` `go-coding:go-reviewer`; a user
+`<command-name>` invocation naming a go-coding skill. Events are split into main-session,
+subagent, and user-invoked, per month, and deduplicated by session.
+
+**Not counted:** the SessionStart banner line, or skill-body text echoed back inside
+tool results — only structured tool invocations and explicit slash-command text count.
+
+**Target:** the focused standards skills (`go-errors`, `go-testing`, `go-idioms`,
+`go-linting`, `go-lint-setup`, `go-layout`, `go-concurrency`) should load on at least
+50% of sessions where the `go-coding` router itself loads, and `go-layout` /
+`go-concurrency` specifically should show non-zero counts in any period where the
+corresponding work (project layout/API design, or goroutines/channels/context) is
+actually touched.
