@@ -1,11 +1,13 @@
 ---
 name: go-lint-setup
-description: Scaffold the reference golangci-lint v2 config into a Go repo. This skill should be used when the user runs `/go-lint-setup` or asks to "set up", "scaffold", "add", or "bootstrap" golangci-lint or a `.golangci.yml` for a Go project — it writes the plugin's reference v2 config (modernize + stack linters) and will not overwrite an existing config unprompted, or asks why golangci-lint v2 rejects a config, which linters the default set enables, how to adopt modernize/errorlint in an existing repo, or how to suppress a finding with `//nolint`. Not for non-Go projects.
+description: Scaffold the reference golangci-lint v2 config into a Go repo. This skill should be used when the user runs `/go-lint-setup` or asks to "set up", "scaffold", "add", or "bootstrap" golangci-lint or a `.golangci.yml` for a Go project — it writes the plugin's reference v2 config (modernize + stack linters) and will not overwrite an existing config unprompted, or asks why golangci-lint v2 rejects a config, about migrating a v1 config, which linters the default set enables, how to adopt modernize/errorlint in an existing repo, what `golangci-lint fmt` does, how to write a `linters.exclusions` rule, or how to suppress a finding with `//nolint`. Not for non-Go projects.
 argument-hint: optional target path (defaults to .golangci.yml)
 allowed-tools: Read, Write, Glob, Bash
 ---
 
 # go-lint-setup — scaffold golangci-lint v2
+
+> **Bundled `references/` is at the plugin root** (beside `skills/`, two levels above this file) — *not* under this skill. Read `references/golangci.v2.yml` as `${CLAUDE_PLUGIN_ROOT}/references/golangci.v2.yml` on Claude Code, or `../../references/golangci.v2.yml` from this skill's directory, or Glob for the installed `references/golangci.v2.yml` (host-agnostic).
 
 Scaffold the plugin's reference **golangci-lint v2** config into the current repo so its linting
 matches the `go-coding` standards. Single interaction.
@@ -70,6 +72,18 @@ golangci-lint **v2** (Mar 2025) changed the config schema from v1 — **a v1 con
   takes `--format {yml,yaml,toml,json}` — it drops comments and unknown/deprecated keys, so re-add
   comments and diff the result.
 
+**Common breakage when bumping the pin:** run `--fix` first, then either land the leftover findings
+or add an explicit `linters.exclusions.rules` entry with a reason. If the pinned build rejects a
+linter name from the reference config, the pin is too old — bump it rather than deleting the linter.
+
+**Adopting `modernize`:** it is the single highest-leverage linter in the reference set — it
+operationalizes most `go-idioms` rules on the same engine as gopls/`go fix`, so the plugin's advice
+stays consistent with the toolchain. As of **Go 1.26** the rewritten `go fix ./...` runs that same
+modernizer suite from the toolchain itself; keep `modernize` in golangci-lint so CI enforces it
+reproducibly against the pinned version rather than whatever toolchain a developer happens to have.
+`errorlint` pairs with it in the reference config (`%w` + `errors.Is`/`AsType` discipline — see
+`go-errors`).
+
 ### Discipline once adopted
 
 - **Pin an exact version in CI, in exactly one place — and keep the pin moving.** Upstream's own
@@ -88,18 +102,6 @@ golangci-lint **v2** (Mar 2025) changed the config schema from v1 — **a v1 con
   — never a bare `//nolint` (it disables every linter on that line) and never a blanket
   file-level disable where a `linters.exclusions.rules` entry with a path pattern is the honest
   answer. `nolintlint` enforces the specific-and-explained form.
-
-**Common breakage when bumping the pin:** run `--fix` first, then either land the leftover findings
-or add an explicit `linters.exclusions.rules` entry with a reason. If the pinned build rejects a
-linter name from the reference config, the pin is too old — bump it rather than deleting the linter.
-
-**Adopting `modernize`:** it is the single highest-leverage linter in the reference set — it
-operationalizes most `go-idioms` rules on the same engine as gopls/`go fix`, so the plugin's advice
-stays consistent with the toolchain. As of **Go 1.26** the rewritten `go fix ./...` runs that same
-modernizer suite from the toolchain itself; keep `modernize` in golangci-lint so CI enforces it
-reproducibly against the pinned version rather than whatever toolchain a developer happens to have.
-`errorlint` pairs with it in the reference config (`%w` + `errors.Is`/`AsType` discipline — see
-`go-errors`).
 
 ## Sources
 - golangci-lint docs — <https://golangci-lint.run/docs/>; v1→v2 migration guide (`migrate`, key moves) — <https://golangci-lint.run/docs/product/migration-guide/>
