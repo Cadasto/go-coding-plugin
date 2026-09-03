@@ -93,14 +93,16 @@ moves to 1.27, these are worth reaching for.
 | Idiom (available from 1.27) | Supersedes / complements | Fixer / linter | Since | Source |
 |---|---|---|---|---|
 | Generic methods — a method may declare its own type parameters (interface methods still may not declare type parameters, nor be implemented by generic methods) | a package-level generic helper function bound to the receiver type as a workaround for "methods can't be generic" | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
-| Prefer `encoding/json/v2` + `jsontext` for new/hot JSON paths once on 1.27 | v1 `encoding/json` (still works unchanged; only exact error-message text may shift) | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| `encoding/json/v2` + `jsontext` when you want v2's stricter semantics (invalid UTF-8 and duplicate object names rejected) or its `Options` | v1 `encoding/json` — **keep it**: it now runs on the v2 implementation underneath, keeps its behaviour (only exact error text may shift), gets the faster unmarshal for free, and stays supported. The release notes are explicit: "users are not required to migrate". Opt out of the new backend with `GOEXPERIMENT=nojsonv2` | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `atomictypes` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | raw `sync/atomic` functions | `atomictypes` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `slicesbackward` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | `for i := len(s)-1; i >= 0; i--` | `slicesbackward` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
-| `embedlit` — folds a field assignment right after a composite literal into the literal | `t := T{}; t.Field = v` builder pattern | `embedlit` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
+| `embedlit` — initialise a field promoted from an embedded struct directly in the parent literal: `T{U: U{x: 1}}` → `T{x: 1}` | the nested literal an embedded struct used to require | `embedlit` | 1.27 | [modernize](https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize) |
+| `unsafefuncs` — `unsafe.Pointer(uintptr(ptr) + uintptr(n))` → `unsafe.Add(ptr, n)` | hand-rolled unsafe pointer arithmetic (`unsafe.Add` itself is 1.17; the fixer is new) | `unsafefuncs` | 1.27 | [modernize](https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize) |
 
-- **`go test` now runs the `stdversion` vet check by default** (available from 1.27): it flags use of
-  stdlib symbols newer than the module's `go` directive — the guardrail that keeps a 1.26-floor
-  module from silently depending on a 1.27-only symbol. Trust it over manual review for this. Source:
+- **`go test` runs the `stdversion` vet check by default from 1.27.** The check itself is not new —
+  what changes is that it becomes automatic. It flags stdlib symbols newer than the `go` directive in
+  force for the file, which is the guardrail that keeps a 1.26-floor module from silently depending on
+  a 1.27-only symbol. Trust it over manual review for this. Source:
   [go.dev/doc/go1.27](https://go.dev/doc/go1.27).
 
 ## Sources

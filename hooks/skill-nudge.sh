@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # PostToolUse / afterFileEdit hook: after a Go file is edited, name ONE go-coding skill the edit
-# calls for — once per skill per session — printed as a hook systemMessage (Claude Code) or a
-# plain line (Cursor). Deterministic trigger for the focused skills a usage analysis showed are
-# rarely loaded. Always exits 0; never blocks an edit.
+# calls for — printed as a hook systemMessage (Claude Code) or a plain line (Cursor). Deterministic
+# trigger for three focused skills a usage analysis showed load far less often than the router:
+# go-testing, go-concurrency, go-errors. Always exits 0; never blocks an edit.
 #
-# At most three nudges reach a session (one per skill), each on its first match.
+# A test file always routes to go-testing, even when it also spawns goroutines — the test skill
+# owns how to test concurrency. At most three nudges reach a session, one per skill.
 set -u
 f="${CLAUDE_FILE_PATH:-}"; sid=""; payload=""
 if [ ! -t 0 ]; then
@@ -17,18 +18,23 @@ case "$f" in *.go) ;; *) exit 0 ;; esac
 [ -f "$f" ] || exit 0
 [ -n "$sid" ] || sid="ppid$PPID"
 
-# What gets matched: the edit itself where the host hands it over (a Claude Code PostToolUse
-# payload carries the new text in tool_input, plus a few lines of surrounding context in
-# tool_response), otherwise the whole file (Cursor's afterFileEdit passes only a path). Matching
-# the edit is what keeps the message honest — grepping a whole file says "this edit touches an
-# error path" for any file that merely happens to define a sentinel somewhere.
+# Pull one JSON string field out of the payload. The body pattern `(\\.|[^"\\])*` matches an
+# escaped character or an ordinary one, so an embedded \" does not end the match early.
+json_field() { printf '%s' "$payload" | grep -oE "\"$1\"[[:space:]]*:[[:space:]]*\"(\\\\.|[^\"\\\\])*\""; }
+
+# What gets matched: the text the edit ADDS, where the host hands it over — Edit's new_string,
+# Write's content. old_string and tool_response are deliberately excluded: deleting an fmt.Errorf
+# is not an error path this edit introduces, and tool_response echoes surrounding lines the edit
+# never touched. Cursor's afterFileEdit passes only a path, so that host matches the whole file
+# and the message says so. No fallback from one to the other — falling back to the file on an
+# empty extraction would restore exactly the false positives this avoids.
 case "$payload" in
-  *'"tool_input"'*) subject="$payload"; what="this edit";;
+  *'"tool_input"'*) subject="$(json_field new_string; json_field content)"; what="this edit";;
   *)                subject="$(cat "$f")"; what="this file";;
 esac
 
 skill=""; topic=""
-case "$f" in *_test.go) skill="go-testing"; topic="a test file"; what="this edit";; esac
+case "$f" in *_test.go) skill="go-testing"; topic="a test file";; esac
 if [ -z "$skill" ] && printf '%s' "$subject" | grep -qE 'go func|chan |<-chan|chan<-|sync\.|atomic\.|errgroup\.'; then skill="go-concurrency"; topic="goroutines, channels or sync"; fi
 if [ -z "$skill" ] && printf '%s' "$subject" | grep -qE 'fmt\.Errorf|errors\.(Is|As|AsType|New|Join)'; then skill="go-errors"; topic="an error path"; fi
 [ -n "$skill" ] || exit 0
