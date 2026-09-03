@@ -7,7 +7,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
-## [0.5.0] - 2026-09-03
+## [0.5.0] - 2026-09-04
 
 Makes the `go-coding` router route. A usage analysis of local session transcripts found the router
 loading often and the focused skills almost never, so this release adds a hop table, a post-edit
