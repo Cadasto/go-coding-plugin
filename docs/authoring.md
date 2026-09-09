@@ -64,10 +64,21 @@ citation. Everything the skills assert should be traceable to one of these.
 | Go Code Review Comments | <https://go.dev/wiki/CodeReviewComments> | the review-rule catalogue (naming, errors, concurrency, API shape) |
 | Doc comment syntax | <https://go.dev/doc/comment> | `gofmt`-formatted doc comments, doc links |
 
-**Tier 2 — style guides (attribute when a rule comes from one)**
+**Tier 2 — style guides (attribute when a rule comes from one, and name the document)**
 
-- Google Go Style Guide — <https://google.github.io/styleguide/go/> (esp. `/best-practices`: naming,
-  error handling, panics, option structs, documentation, test structure)
+- Google Go Style Guide — three documents of different weight, ranked by Google itself; a citation
+  names which one:
+  - the *Guide* — <https://google.github.io/styleguide/go/guide> — **normative and canonical**: the five ordered readability principles
+    (clarity, simplicity, concision, maintainability, consistency) and, under simplicity, *least mechanism*. The
+    tie-break order the router, the Cursor rule and the reviewer use — one identical sentence in all
+    three, checked by `scripts/validate.py`.
+  - *Style Decisions* — <https://google.github.io/styleguide/go/decisions> — **normative, not canonical**: the reviewer rulebook — naming,
+    commentary, imports, errors, language, common libraries, useful test failures. The main Google
+    source for skill rules.
+  - *Best Practices* — <https://google.github.io/styleguide/go/best-practices> — **advisory**: patterns with trade-offs (test doubles, option structs,
+    error structure, shadowing, table-test literals).
+  Google-internal guidance is not adopted: flag conventions, Google's own logging library and
+  verbosity levels, protocol-buffer stubs, and CLI library choices.
 - Uber Go Style Guide — <https://github.com/uber-go/guide>
 
 **Tier 3 — the enforcing tools (this is what keeps "advice == tooling" true)**
@@ -81,7 +92,24 @@ citation. Everything the skills assert should be traceable to one of these.
 - golangci-lint docs — <https://golangci-lint.run/docs/> · v1→v2 migration —
   <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin) —
   <https://golangci-lint.run/docs/product/changelog/>
-- `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`)
+- `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`,
+  `examples`)
+- **Linter rule catalogues** — when a skill says a tool catches something, the rule id or name comes
+  from here, not from memory: `go vet` analyzers <https://pkg.go.dev/cmd/vet>; staticcheck checks
+  <https://staticcheck.dev/docs/checks/>; revive rules <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; errorlint
+  <https://github.com/polyfloyd/go-errorlint>; gofumpt rules <https://github.com/mvdan/gofumpt#added-rules>;
+  the golangci-lint linters index <https://golangci-lint.run/docs/linters/>
+
+**Revision record** — the mutable sources, as last read. A refresh diffs each against its recorded
+revision first, so it reads what changed rather than everything, then updates this table.
+
+| Source | Revision read | Checked |
+|---|---|---|
+| Go Code Review Comments (`golang/wiki` mirror, `CodeReviewComments.md`) | `228ca0b` (2026-09-01) | 2026-09-09 |
+| Google Go Style Guide (`google/styleguide`, `go/`) | `c098353` (2026-03-18) | 2026-09-09 |
+| Uber Go Style Guide (`uber-go/guide`) | `1d60a91` (2026-04-15) | 2026-09-09 |
+| revive rule descriptions (`mgechev/revive`, `RULES_DESCRIPTIONS.md`) | `803cd04` (2026-09-03) | 2026-09-09 |
+| Effective Go, doc comment syntax, `cmd/vet`, package docs | versioned with the Go release — read at go1.27.1 | 2026-09-09 |
 
 **Procedure**
 
@@ -105,16 +133,21 @@ citation. Everything the skills assert should be traceable to one of these.
    halves: every linter taught in components must be enabled in `references/golangci.v2.yml`,
    and — when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and
    `1.27.x`; locally it soft-skips with a note) — the `go-idioms` Fixer column is verified against
-   `go tool fix help`: plain names must be registered, † names must not be. The floor minor
-   lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.26.x`) — move
-   all three (docs baseline included) together.
+   `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill
+   teaches as *opt-in* — `shadow` in `go-idioms` — is the deliberate exception to the first half: it
+   is taught together with the config line that switches it on, and is not added to the reference
+   config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the
+   workflow's matrix floor entry (`1.26.x`) — move all three (docs baseline included) together.
    **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
    weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
    source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the
    number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
 5. Keep the two copies of the reference lint config in sync: `references/golangci.v2.yml` and the
    scaffold block in `go-lint-setup`.
-6. Record the refresh in **CHANGELOG.md** under `## [Unreleased]`.
+6. Run `python3 scripts/validate.py --check-links` — every cited URL must still resolve; a moved
+   page is fixed in the same refresh.
+7. Update the **Revision record** above, then record the refresh in **CHANGELOG.md** under
+   `## [Unreleased]`.
 
 ## Dual-host parity
 

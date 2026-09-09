@@ -24,15 +24,20 @@ This plugin has no MCP backend, so there is intentionally no ``.mcp.json`` check
   * dual-host hook parity: the same ``hooks/*.sh`` wired for the equivalent event on both
     hosts, each wired script present and executable, and none left unwired;
   * doc component inventories: every shipped skill, agent and hook named in the docs that
-    claim to list them. One-directional, so tombstones for removed components stay legal.
+    claim to list them. One-directional, so tombstones for removed components stay legal;
+  * the Google tie-break sentence (clarity, then simplicity, then concision, then
+    maintainability, then consistency) is restated identically, verbatim, in every file
+    that carries it.
 
 Dependency-free (stdlib only) so the ``scripts/validate.sh`` soft-skip is the *only*
 reason it wouldn't run.
 
 Usage:
-    python3 scripts/validate.py              # verify this tree
-    python3 scripts/validate.py --selftest   # verify the checks themselves still catch things
+    python3 scripts/validate.py                # verify this tree
+    python3 scripts/validate.py --selftest     # verify the checks themselves still catch things
+    python3 scripts/validate.py --check-links  # every URL cited in components and docs resolves (network)
 """
+import http.server
 import json
 import os
 import re
@@ -40,6 +45,10 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -72,6 +81,14 @@ INVENTORY_DOCS = {
     "docs/testing.md": ("skills", "agents", "hooks"),
     "docs/install.md": ("hooks",),
 }
+# The Google Go Style Guide tie-break order, restated (not linked) in three independent files —
+# it has already drifted once. Checked verbatim, after collapsing whitespace, since the sentence
+# hard-wraps across lines at ~100 columns in each source file.
+TIE_BREAK_SENTENCE = (
+    "clarity, then simplicity (with its rule of least mechanism: the most standard tool that "
+    "expresses the idea), then concision, then maintainability, then consistency"
+)
+TIE_BREAK_FILES = ("skills/go-coding/SKILL.md", "rules/go-context.mdc", "agents/go-reviewer.md")
 
 
 def err(msg):
@@ -381,6 +398,23 @@ def validate_doc_inventories():
                         f"its component inventory is stale")
 
 
+def validate_tie_break_parity():
+    """The Google tie-break sentence (clarity, then simplicity, then concision, then
+    maintainability, then consistency) is restated — not linked — in three independent files, so
+    an edit to one silently leaves the other two stating a different order. Collapse whitespace
+    runs to a single space (the sentence hard-wraps across lines at ~100 columns) and require
+    TIE_BREAK_SENTENCE verbatim; a paraphrase, a dropped clause, or a reordering fails the check."""
+    for rel in TIE_BREAK_FILES:
+        path = ROOT / rel
+        if not path.is_file():
+            err(f"{rel}: missing — cannot verify the Google tie-break sentence")
+            continue
+        collapsed = re.sub(r"\s+", " ", path.read_text())
+        if TIE_BREAK_SENTENCE not in collapsed:
+            err(f"{rel}: does not carry the Google tie-break sentence verbatim — "
+                f"expected '{TIE_BREAK_SENTENCE}'")
+
+
 def main():
     manifests = {}
     for subdir, label in ((".claude-plugin", "Claude manifest"), (".cursor-plugin", "Cursor manifest")):
@@ -421,6 +455,196 @@ def main():
     validate_linter_references()
     validate_fixer_column()
     validate_doc_inventories()
+    validate_tie_break_parity()
+
+
+URL_RE = re.compile(r"https?://[^\s<>()\[\]`\"']+")
+LINK_SOURCES = ("skills", "agents", "rules", "docs", "README.md", "AGENTS.md")
+
+
+def collect_urls():
+    """Every external URL cited in components and docs, with one file that cites it. Templated
+    URLs (a `go1.NN` placeholder, an angle-bracket slot) are skipped — they are patterns, not
+    links."""
+    seen = {}
+    for src in LINK_SOURCES:
+        path = ROOT / src
+        files = [path] if path.is_file() else sorted(path.rglob("*.md")) + sorted(path.rglob("*.mdc"))
+        for f in files:
+            text = f.read_text()
+            for m in URL_RE.finditer(text):
+                url = m.group(0).rstrip(".,;:")
+                # A placeholder marks a pattern, not a link — skip it whole rather than checking a
+                # truncated prefix as if it were a citation. `{ver}` and `go1.NN` sit inside the
+                # match; `<pkg>` does not, because the regex stops at `<`, so look at the character
+                # right after the match for that one.
+                if "NN" in url or "{" in url or text[m.end():m.end() + 1] == "<":
+                    continue
+                seen.setdefault(url, f.relative_to(ROOT))
+    return seen
+
+
+# Delay before the one retry `resolve_url` grants a transport error or a 429/503. A module-level
+# constant (rather than a literal) so `--selftest` can zero it for the fixture in run_selftest —
+# the fetch-policy self-test would otherwise spend real seconds sleeping for no reason.
+RETRY_DELAY = 1.0
+
+
+def _fetch(url: str, method: str) -> int:
+    req = urllib.request.Request(url, method=method, headers={"User-Agent": "go-coding-plugin-linkcheck/1"})
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return resp.status
+
+
+def resolve_url(url: str) -> tuple[int | None, str | None]:
+    """Resolve one URL: HEAD first, then GET whenever HEAD fails for any reason — some hosts
+    refuse or stall on HEAD, and a dead page fails both, so the retry costs nothing. Within a
+    method: a transport error (reset, timeout) is retried once after RETRY_DELAY, then falls
+    through to the next method; an HTTPError with code 429 or 503 is retried once after
+    RETRY_DELAY too — the server said "later", not "gone" — then falls through; any other
+    HTTPError is a definite answer for that method (no retry, straight to the next method). The
+    first status obtained, by either method, stops the search. Returns `(status, last_reason)`;
+    `status` is None if neither method ever returned one."""
+    status, last = None, None
+    for method in ("HEAD", "GET"):
+        for attempt in (1, 2):
+            try:
+                status = _fetch(url, method)
+                break
+            except urllib.error.HTTPError as e:
+                last = f"HTTP {e.code}"
+                if e.code in (429, 503) and attempt == 1:
+                    time.sleep(RETRY_DELAY)
+                    continue
+                break  # a definite answer for this method: no retry, try the other method
+            except Exception as e:  # noqa: BLE001 — a reset or timeout is retried once, then GET
+                last = type(e).__name__
+                if attempt == 1:
+                    time.sleep(RETRY_DELAY)
+                    continue
+                break
+        if status is not None:
+            break
+    return status, last
+
+
+def check_links() -> int:
+    """Resolve every cited URL via resolve_url (HEAD then GET, retrying once on a transport error
+    or a 429/503 before falling through) and report the ones that never resolve. Needs the
+    network, so it is a separate switch and a separate CI job rather than part of the default
+    run — a moved page is a real defect in a rule's provenance, not a validation-time flake to
+    ignore."""
+    urls = collect_urls()
+    broken = []
+    for url, where in sorted(urls.items()):
+        status, last = resolve_url(url)
+        if status is None or status >= 400:
+            broken.append((url, where, last or f"HTTP {status}"))
+    for url, where, why in broken:
+        print(f"BROKEN {url}  ({where}): {why}")
+    print(f"{'FAIL' if broken else 'OK'}: {len(urls) - len(broken)} of {len(urls)} cited URLs resolve")
+    return 1 if broken else 0
+
+
+class _FetchFixtureServer(http.server.ThreadingHTTPServer):
+    """A local, loopback-only HTTP server for the fetch-policy self-test. Threaded so a
+    connection deliberately left hanging (`/flaky`) cannot block a later request."""
+    daemon_threads = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # First-hit counters for the two one-shot routes; every later hit on the same path
+        # behaves normally, so exactly one retry is what rescues each of them.
+        self.hits = {"flaky": 0, "busy": 0}
+
+    def handle_error(self, request, client_address):
+        pass  # /flaky deliberately drops the connection after closing wfile — the resulting
+        # "I/O operation on closed file" from the base handler's post-request flush is expected,
+        # not a real server error, so it must not print a traceback into --selftest output.
+
+
+class _FetchFixtureHandler(http.server.BaseHTTPRequestHandler):
+    """Routes exercising resolve_url's policy without any network access:
+    /ok resolves on both methods; /head-refused fails HEAD but resolves on GET; /missing is a
+    hard 404 on both; /flaky closes the connection with no response on its first hit (any
+    method), then resolves — proving the one transport retry; /busy answers 503 on its first
+    hit, then resolves — proving the one 429/503 retry."""
+
+    def log_message(self, *_args):
+        pass  # silent — --selftest output should not interleave with HTTP access logs
+
+    def do_HEAD(self):
+        self._route("HEAD")
+
+    def do_GET(self):
+        self._route("GET")
+
+    def _route(self, method):
+        if self.path == "/ok":
+            self._reply(200)
+        elif self.path == "/head-refused":
+            self._reply(405 if method == "HEAD" else 200)
+        elif self.path == "/missing":
+            self._reply(404)
+        elif self.path == "/flaky":
+            if self.server.hits["flaky"] == 0:
+                self.server.hits["flaky"] += 1
+                self.close_connection = True
+                self.wfile.close()
+                return
+            self._reply(200)
+        elif self.path == "/busy":
+            if self.server.hits["busy"] == 0:
+                self.server.hits["busy"] += 1
+                self._reply(503)
+            else:
+                self._reply(200)
+        else:
+            self._reply(404)
+
+    def _reply(self, code):
+        self.send_response(code)
+        self.end_headers()
+
+
+def _selftest_fetch_policy() -> int:
+    """Exercise resolve_url's HEAD/GET fallback and retry policy against a local HTTP fixture —
+    `--selftest` must never touch the public network. Returns the number of mismatches (0 on
+    success), printed as one `ok` line or one `FAIL` line per mismatch."""
+    global RETRY_DELAY
+    real_delay = RETRY_DELAY
+    RETRY_DELAY = 0  # the fixture's retries must not spend real seconds sleeping
+    server = _FetchFixtureServer(("127.0.0.1", 0), _FetchFixtureHandler)
+    thread = threading.Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    try:
+        base = f"http://127.0.0.1:{server.server_port}"
+        cases = (
+            ("/ok", False),
+            ("/head-refused", False),
+            ("/flaky", False),
+            ("/busy", False),
+            ("/missing", True),
+        )
+        mismatches = []
+        for path, expect_broken in cases:
+            status, last = resolve_url(base + path)
+            broken = status is None or status >= 400
+            if broken != expect_broken:
+                mismatches.append(
+                    f"{path}: expected {'broken' if expect_broken else 'resolved'}, "
+                    f"got status={status} last={last}")
+        if mismatches:
+            for mismatch in mismatches:
+                print(f"FAIL link fetch policy: {mismatch}")
+        else:
+            print("ok   link fetch policy: HEAD/GET fallback, HEAD refusal, transport retry, "
+                  "429/503 retry, and a hard 404 all resolve correctly against a local fixture")
+        return len(mismatches)
+    finally:
+        server.shutdown()
+        server.server_close()
+        RETRY_DELAY = real_delay
 
 
 SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
@@ -433,7 +657,9 @@ def _selftest_tree(root: Path, *, break_it=None):
     rather than copied from the repo so a self-test never passes because the real tree happens
     to be shaped a certain way."""
     (root / "skills" / "go-thing").mkdir(parents=True)
+    (root / "skills" / "go-coding").mkdir()
     (root / "agents").mkdir()
+    (root / "rules").mkdir()
     (root / "hooks").mkdir()
     (root / "references").mkdir()
     (root / "docs").mkdir()
@@ -443,6 +669,23 @@ def _selftest_tree(root: Path, *, break_it=None):
         f"---\nname: {name}\ndescription: {desc}\n---\n\nBody. "
         + ("Run `golangci-lint run --enable-only=nosuchlinter`.\n"
            if break_it == "taught_linter" else "\n"))
+    # A second, realistic skill/rule/agent trio carrying the Google tie-break sentence, so
+    # validate_tie_break_parity has the same three relative paths to read here as in the real
+    # tree. Independent of every other break_it variant: always clean unless break_it ==
+    # "tie_break", and then only one of the three files drifts (concision/maintainability
+    # swapped) — proving the check catches a single-file drift, not just three blank files.
+    tie_break_ok = TIE_BREAK_SENTENCE
+    tie_break_bad = TIE_BREAK_SENTENCE.replace(
+        "then concision, then maintainability,", "then maintainability, then concision,")
+    (root / "skills" / "go-coding" / "SKILL.md").write_text(
+        f"---\nname: go-coding\ndescription: Go coding standards router\n---\n\n"
+        f"Tie-break order: {tie_break_ok}.\n")
+    (root / "rules" / "go-context.mdc").write_text(
+        f"---\ndescription: Go coding standards for Cursor\n---\n\n"
+        f"Tie-break order: {tie_break_ok}.\n")
+    (root / "agents" / "go-reviewer.md").write_text(
+        f"---\nname: go-reviewer\ndescription: reviews Go code\ntools: Read\n---\n\n"
+        f"Tie-break order: {tie_break_bad if break_it == 'tie_break' else tie_break_ok}.\n")
     tools = "allowed-tools:" if break_it == "agent_tools" else "tools:"
     (root / "agents" / "go-checker.md").write_text(
         f"---\nname: go-checker\ndescription: checks\n{tools} Read\n---\n\nBody.\n")
@@ -459,9 +702,9 @@ def _selftest_tree(root: Path, *, break_it=None):
     (root / "references" / "golangci.v2.yml").write_text("linters:\n  enable:\n    - revive\n")
     inventory = "" if break_it == "doc_inventory" else "go-thing "
     for doc in ("README.md", "AGENTS.md"):
-        (root / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+        (root / doc).write_text(f"# Doc\n\n{inventory}go-coding go-reviewer go-checker a\n")
     for doc in ("testing.md", "install.md"):
-        (root / "docs" / doc).write_text(f"# Doc\n\n{inventory}go-checker a\n")
+        (root / "docs" / doc).write_text(f"# Doc\n\n{inventory}go-coding go-reviewer go-checker a\n")
 
 
 SELFTEST_CASES = (
@@ -474,6 +717,7 @@ SELFTEST_CASES = (
     ("agent declares allowed-tools", "agent_tools",
      (lambda: validate_md_components("agents", require_name=True, is_agent=True),)),
     ("taught linter not in the reference config", "taught_linter", (validate_linter_references,)),
+    ("Google tie-break sentence drifts between files", "tie_break", (validate_tie_break_parity,)),
 )
 
 
@@ -484,6 +728,21 @@ def run_selftest() -> int:
     same tree with the defect removed, so a check that always fires fails too."""
     global ROOT, errors
     real_root, real_errors, failures = ROOT, errors, 0
+    # The link collector: a templated URL is a pattern, not a link, and is skipped whole — never
+    # truncated at the placeholder and checked as a shorter, real-looking URL.
+    with tempfile.TemporaryDirectory() as tmp:
+        ROOT = Path(tmp)
+        (ROOT / "README.md").write_text(
+            "See <https://example.com/a>. Docs at `https://pkg.go.dev/<pkg>` and "
+            "`https://go.dev/doc/go1.NN`; config `https://example.com/{ver}/x`.\n")
+        got = set(collect_urls())
+    ROOT = real_root
+    if got == {"https://example.com/a"}:
+        print("ok   link collector skips templated URLs whole")
+    else:
+        print(f"FAIL link collector: collected {sorted(got)}")
+        failures += 1
+    failures += _selftest_fetch_policy()
     for label, defect, checks in SELFTEST_CASES:
         outcomes = {}
         for variant, break_it in (("broken", defect), ("clean", None)):
@@ -513,6 +772,8 @@ def run_selftest() -> int:
 if __name__ == "__main__":
     if "--selftest" in sys.argv[1:]:
         sys.exit(run_selftest())
+    if "--check-links" in sys.argv[1:]:
+        sys.exit(check_links())
     main()
     if errors:
         print(f"FAIL: {len(errors)} problem(s)")
@@ -521,6 +782,7 @@ if __name__ == "__main__":
         sys.exit(1)
     print("OK: manifests, dual-host parity, component paths, kebab-case names, "
           "hook configs and hook parity, skills, agents, commands, rules, taught-linter "
-          "references, and doc component inventories are valid")
+          "references, doc component inventories, and Google tie-break sentence parity "
+          "are valid")
     for note in notes:
         print(f"  note: {note}")

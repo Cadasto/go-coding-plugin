@@ -1,6 +1,6 @@
 ---
 name: go-layout
-description: Go project layout, package design and API surface. This skill should be used when the user creates a new package or directory, adds or renames an exported identifier, decides between cmd/ and internal/, writes a doc comment on an exported API, or reviews a diff that adds a package or changes a public type or signature — also util/common grab-bags, start-flat-then-grow, receiver naming, initialisms, in-band error values, and hexagonal/DDD ceremony answered with the standard-library shape. Pair with revive (var-naming, receiver-naming, exported). Not for error handling (go-errors) or tests (go-testing).
+description: Go project layout, package design and API surface. This skill should be used when the user creates a package, adds or renames an exported identifier, decides between cmd/ and internal/, writes a doc comment on an API, or reviews a diff that changes a public type or signature — also import grouping and blank or dot imports, struct literals of foreign types, receiver naming, initialisms, in-band errors, util/common grab-bags, and hexagonal/DDD ceremony. Pair with revive and `go vet` (composites). Not for error handling (go-errors) or tests (go-testing).
 ---
 
 # go-layout — layout, naming & API surface
@@ -27,6 +27,14 @@ exported signature are part of the API — they are as reviewable as the code.
   explicit constructor called from `main`.
 - **Files:** one package per directory; `package foo` for `foo.go` + `foo_test.go`; use
   `package foo_test` for black-box tests that exercise only the exported API.
+- **Imports in groups, standard library first,** then other modules, then side-effect imports —
+  `goimports`/`gofumpt` keep the groups. A blank import (`import _ "pkg"`) belongs in a `main`
+  package or a test that needs the side effect, not in a library, where it silently changes every
+  importer (Style Decisions, *Import "blank"*); the one library exception is `import _ "embed"` in a
+  file that uses the `//go:embed` directive. `revive` (`blank-imports`, default rule set) reports a
+  blank import outside `main` and test files unless a comment justifies it or it is that `embed`
+  case, so a deliberate library blank import carries a comment saying why. Never `import .` — it
+  hides where a name comes from; `revive` (`dot-imports`, default) flags it.
 
 ## Naming
 
@@ -71,6 +79,11 @@ exported signature are part of the API — they are as reviewable as the code.
 - **Prefer synchronous signatures** — let the caller add concurrency (→ `go-concurrency`).
 - **Make the zero value useful where possible** (`bytes.Buffer`, `sync.Mutex` need no constructor). If
   a type genuinely requires a `New…`, the doc comment must say so.
+- **Name the fields in a struct literal of a type from another package** —
+  `csv.Reader{Comma: ',', Comment: '#'}`, never positional. The owner may add or reorder fields; a
+  positional literal then breaks, or worse still compiles with the values in the wrong slots. `go vet`
+  (`composites`) flags it. Positional stays fine for a small type of the current package, whose
+  definition sits beside the use.
 
 ## Doc comments
 
@@ -89,7 +102,8 @@ exported signature are part of the API — they are as reviewable as the code.
 ## Sources
 - Effective Go — <https://go.dev/doc/effective_go>
 - Code Review Comments (Package/Variable/Receiver Names, Initialisms, Mixed Caps, In-Band Errors, Named Result Parameters, Pass Values, Interfaces, Doc Comments) — <https://go.dev/wiki/CodeReviewComments>
-- Google Go Style Guide (naming, option structs, documentation, test doubles, program initialization) — <https://google.github.io/styleguide/go/best-practices>
+- Google Go Style Decisions (Import grouping, Import blank, Import dot, Field names, Getters, Receiver names, Initialisms) — <https://google.github.io/styleguide/go/decisions>; Best Practices (naming, option structs, documentation, test doubles, program initialization) — <https://google.github.io/styleguide/go/best-practices>
+- `go vet` analyzers (`composites`, `copylocks`) — <https://pkg.go.dev/cmd/vet>; revive rules (`blank-imports`, `dot-imports`, `exported`, `var-naming`, `receiver-naming`) — <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>
 - Uber Go Style Guide (Exit in Main, Avoid init()) — <https://github.com/uber-go/guide>
 - Doc comment syntax — <https://go.dev/doc/comment>; `internal/` — <https://pkg.go.dev/cmd/go#hdr-Internal_Directories>
 

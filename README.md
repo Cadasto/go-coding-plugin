@@ -32,7 +32,7 @@ Or load a local working copy for a single session: `claude --plugin-dir /path/to
 | Cursor rule `go-context.mdc` | shipped | `**/*.go`-scoped guidance mirroring the router for Cursor. |
 | Scripts `scripts/hooks-test.sh`, `scripts/usage-report.py` | shipped | Dev tooling, not part of the installed component surface: a bash test harness for the hooks, and a stdlib-only adoption-report generator over local session transcripts. |
 
-Guidance is grounded in authoritative sources — [Effective Go](https://go.dev/doc/effective_go), [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments), the [Google](https://google.github.io/styleguide/go/) and [Uber](https://github.com/uber-go/guide) style guides — and the standard toolchain (`gofmt`/`gofumpt`, `go vet`, `staticcheck`, `golangci-lint`, `go test -race`).
+Guidance is grounded in authoritative sources — [Effective Go](https://go.dev/doc/effective_go), [Go Code Review Comments](https://go.dev/wiki/CodeReviewComments), the [Google Go Style Guide](https://google.github.io/styleguide/go/) (its *Guide*, *Style Decisions*, and *Best Practices*) and the [Uber Go Style Guide](https://github.com/uber-go/guide) — and the standard toolchain (`gofmt`/`gofumpt`, `go vet`, `staticcheck`, `golangci-lint`, `go test -race`).
 
 ## Using with subagent orchestrators
 
