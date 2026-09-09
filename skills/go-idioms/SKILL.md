@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, Go 1.27 additions noted. This skill should be used when a diff or question contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`, iterators, `omitzero`, `os.Root`, `new(expr)`, `errors.AsType`, a nested `:=` that shadows `err`, a redundant `break` in a `switch`, and the Go 1.27 fixers (`atomictypes`, `embedlit`, `slicesbackward`, `unsafefuncs`). Advice equals tooling — `go fix ./...` or `golangci-lint --enable-only=modernize`. Not for linter configuration (go-lint-setup). Go only.
+description: Modern idiomatic Go (`modernize`) — Go 1.26+, 1.27 additions noted. This skill should be used when a diff contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`, iterators, `omitzero`, `os.Root`, `new(expr)`, `errors.AsType`, and Go 1.27's `atomictypes`, `embedlit`, `slicesbackward`, `unsafefuncs` — rewrites go to `go fix ./...` or `golangci-lint --enable-only=modernize`, a nested `:=` that shadows `err` to the opt-in `shadow` analyzer, a redundant `break` in a `switch` to staticcheck S1023. Not for linter configuration (go-lint-setup). Go only.
 ---
 
 # go-idioms — modern Go (modernize)
@@ -82,9 +82,10 @@ something a modernizer rewrites.
   Nothing in the standard set reports this; the `shadow` analyzer from `golang.org/x/tools` does
   when enabled (in golangci-lint: `linters.settings.govet.enable: [shadow]`) — it is noisy on
   legitimate reuse, so a repo enables it deliberately rather than by default.
-- **No `break` at the end of a `switch` case.** Go cases do not fall through, so the `break` is dead
-  text; `staticcheck` S1023 (standard set) flags it. `break` inside a `switch` means something only
-  with a label, to leave an enclosing loop.
+- **No `break` at the end of a `switch` case.** Go cases do not fall through, so a `break` as the
+  last statement of a case is dead text; `staticcheck` S1023 (standard set) flags exactly that.
+  Earlier in a case a `break` still does work — it leaves the `switch` from that point — and a
+  labelled `break` leaves the enclosing loop instead; neither of those is dead text.
 
 *Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) graduates several † fixers into the toolchain's
 `go fix` (`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup`

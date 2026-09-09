@@ -66,7 +66,8 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   shows in `go doc` and on pkg.go.dev, and `go test` compiles it; end it with a `// Output:` comment
   and `go test` also runs it and compares stdout, so the example cannot rot. Name them `ExampleT`,
   `ExampleT_Method`, `ExampleF_suffix` (lowercase suffix) — `go vet` (`tests`) rejects a malformed
-  name. A library gets one for every exported entry point a user reaches for first.
+  name. Style Decisions asks for one where feasible — for the entry points a reader meets first — as
+  advice, not a per-export rule.
 - **Name the fields in table-case literals** when a case spans many lines, when adjacent fields share
   a type, or when zero-value fields are left out — `{input: "a,b", sep: ",", want: 2}` reads on its
   own; `{"a,b", ",", 2}` has to be decoded against the struct.

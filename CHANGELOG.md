@@ -10,13 +10,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Added
-- Skills: `go-layout` — imports in groups with the standard library first, blank imports only in `main` or a test and with a comment, no dot imports (`revive` `blank-imports`/`dot-imports`), and field names in struct literals of types from other packages (`go vet` `composites`).
+- Skills: `go-layout` — imports in groups with the standard library first, blank imports only in `main` or a test (the `embed` package under `//go:embed` excepted; a justifying comment is revive's alternate in a library), no dot imports (`revive` `blank-imports`/`dot-imports`), and field names in struct literals of types from other packages (`go vet` `composites`).
 - Skills: `go-errors` — `MustX` helpers are for package initialisation from constant inputs or a test helper that `t.Fatal`s, never for input that can fail.
-- Skills: `go-testing` — `Example` functions with `// Output:` as runnable documentation (`go vet` `tests`), field names in table-case literals, and comparing stable results rather than serialised bytes or map order.
+- Skills: `go-testing` — `Example` functions with `// Output:` as runnable documentation, advised where feasible rather than one per export (`go vet` `tests`), field names in table-case literals, and comparing stable results rather than serialised bytes or map order.
 - Skills: `go-idioms` — a nested `:=` that shadows `err` or `ctx` (the `shadow` analyzer, opt-in), and the redundant `break` at the end of a `switch` case (staticcheck S1023).
 - Skills: `go-coding`, `rules/go-context.mdc` — the tie-break order for two valid forms: clarity, simplicity (with least mechanism), concision, maintainability, consistency (Google Go Style Guide).
-- Agents: `go-reviewer` — import and literal hygiene and test-fragility dimensions, a shadowed `err` under error swallowing, and the same tie-break order for style findings.
-- Scripts: `validate.py --check-links` verifies every cited URL resolves; `.github/workflows/links.yml` runs it weekly and on pull requests touching skills, agents, rules, or docs.
+- Agents: `go-reviewer` — import and literal hygiene and test-fragility dimensions, a shadowed `err` and a `Must` helper on a request path under error swallowing, and the same tie-break order for style findings.
+- Scripts: `validate.py --check-links` verifies every cited URL resolves (HEAD, then GET; one retry on a transport error or a 429/503), and `--selftest` exercises that policy against a local server with no network; `.github/workflows/links.yml` runs the live check weekly and on pull requests touching skills, agents, rules, docs, the checker, or the workflow.
+- Scripts: `validate.py` checks that the tie-break sentence is identical in the `go-coding` router, the Cursor rule, and `go-reviewer`.
 
 ### Changed
 - References: the source registry names Google's three documents by weight (Guide, Style Decisions, Best Practices), adds the linter rule catalogues to Tier 3, and records the revision read for each mutable source.

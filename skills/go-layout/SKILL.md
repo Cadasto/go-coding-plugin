@@ -28,10 +28,13 @@ exported signature are part of the API — they are as reviewable as the code.
 - **Files:** one package per directory; `package foo` for `foo.go` + `foo_test.go`; use
   `package foo_test` for black-box tests that exercise only the exported API.
 - **Imports in groups, standard library first,** then other modules, then side-effect imports —
-  `goimports`/`gofumpt` keep the groups. A blank import (`import _ "pkg"`) belongs only in a `main`
-  package or a test that needs the side effect, with a comment naming it; never in a library, where
-  it silently changes every importer. Never `import .` — it hides where a name comes from. `revive`
-  (`blank-imports`, `dot-imports`, both in its default rule set) catches both.
+  `goimports`/`gofumpt` keep the groups. A blank import (`import _ "pkg"`) belongs in a `main`
+  package or a test that needs the side effect, not in a library, where it silently changes every
+  importer (Style Decisions, *Import "blank"*); the one library exception is `import _ "embed"` in a
+  file that uses the `//go:embed` directive. `revive` (`blank-imports`, default rule set) reports a
+  blank import outside `main` and test files unless a comment justifies it or it is that `embed`
+  case, so a deliberate library blank import carries a comment saying why. Never `import .` — it
+  hides where a name comes from; `revive` (`dot-imports`, default) flags it.
 
 ## Naming
 

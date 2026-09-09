@@ -62,8 +62,8 @@ Apply these even if you load nothing else; they are the rules the focused skills
 ## Tie-breaks (when two valid forms compete)
 
 When both forms pass the tools, decide by the order Google's Go Style Guide gives for readable code:
-**clarity, then simplicity (with its rule of *least mechanism*: the most standard tool that expresses
-the idea), then concision, then maintainability, then consistency**. Say which attribute decided it;
+clarity, then simplicity (with its rule of least mechanism: the most standard tool that expresses
+the idea), then concision, then maintainability, then consistency. Say which attribute decided it;
 "more idiomatic" on its own is not a reason. Source: <https://google.github.io/styleguide/go/guide> (normative and canonical).
 
 ## Writing for the human

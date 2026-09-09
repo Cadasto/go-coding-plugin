@@ -71,7 +71,9 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
 
 - **Silent error swallowing** — `_ = f()` on an error that matters; empty `if err != nil {}`; `%v`
   where `%w` was needed (breaks downstream `errors.Is`/`errors.As`); returning `nil` after logging a
-  real failure; a nested `:=` that shadows `err` so the outer check sees nil (`go-idioms`).
+  real failure; a nested `:=` that shadows `err` so the outer check sees nil (`go-idioms`);
+  a `MustX` helper — panic on failure — called on a request path or on input the program does not
+  control (`go-errors`).
 - **Goroutine leaks / lifetime** — a goroutine with no exit path; a channel send/recv after the
   counterparty has returned; workers not tied to a `context` or done signal; `wg.Add`/`Done`
   mismatch (prefer `wg.Go`).
@@ -115,24 +117,24 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
   `go fix ./...` or `golangci-lint run --enable-only=modernize`.
 - **slog hot-path waste** — building a per-call logger instead of `logger.With(...)`; formatting or
   allocating before a level check; key-value variadic on a hot path instead of `slog.LogAttrs`.
-- **Import and literal hygiene** — `import .`; `import _` outside a `main` package or a test, or
-  without a comment naming the side effect; a positional struct literal of a type from another
-  package; a `MustX` helper called on a request path. `revive` (`blank-imports`, `dot-imports`) and
-  `go vet` (`composites`) catch the first three — name the rule; `Must` placement is judgment
-  (`go-layout`, `go-errors`).
+- **Import and literal hygiene** — `import .`; `import _` in a library package with neither a
+  `//go:embed` use of `embed` nor a comment justifying the side effect; a positional struct literal
+  of a type from another package. `revive` (`blank-imports`, `dot-imports`) and `go vet`
+  (`composites`) catch all three — name the rule (`go-layout`).
 - **Test fragility** — a test comparing serialised bytes or formatted text from a package the repo
   does not own, or map-derived output without sorting; `t.Fatal` called from a goroutine the test
-  started; a table whose long positional case literals have to be decoded against the struct; a new
-  exported entry point in a library with no `Example` function (`go-testing`).
+  started; a table whose long positional case literals have to be decoded against the struct
+  (`go-testing`).
 
 For the *why* and citations behind any dimension, the `go-errors`, `go-concurrency`, `go-testing`,
 `go-idioms`, `go-lint-setup`, and `go-layout` skills carry the grounded rules — reference them rather
 than re-deriving from memory.
 
 When a finding is about which of two valid forms to prefer and the tools accept both, rank by the
-order Google's Go Style Guide gives — clarity, then simplicity (with its rule of least mechanism),
-then concision, then maintainability, then consistency — and say which attribute decided it (<https://google.github.io/styleguide/go/guide>). A style
-preference with no attribute behind it is not a finding.
+order Google's Go Style Guide gives — clarity, then simplicity (with its rule of least mechanism:
+the most standard tool that expresses the idea), then concision, then maintainability, then
+consistency — and say which attribute decided it (<https://google.github.io/styleguide/go/guide>). A
+style preference with no attribute behind it is not a finding.
 
 ## Output format
 

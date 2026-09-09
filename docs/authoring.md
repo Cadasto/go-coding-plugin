@@ -70,7 +70,8 @@ citation. Everything the skills assert should be traceable to one of these.
   names which one:
   - the *Guide* — <https://google.github.io/styleguide/go/guide> — **normative and canonical**: the five ordered readability principles
     (clarity, simplicity, concision, maintainability, consistency) and, under simplicity, *least mechanism*. The
-    tie-break order the router and the reviewer use.
+    tie-break order the router, the Cursor rule and the reviewer use — one identical sentence in all
+    three, checked by `scripts/validate.py`.
   - *Style Decisions* — <https://google.github.io/styleguide/go/decisions> — **normative, not canonical**: the reviewer rulebook — naming,
     commentary, imports, errors, language, common libraries, useful test failures. The main Google
     source for skill rules.
@@ -132,9 +133,11 @@ revision first, so it reads what changed rather than everything, then updates th
    halves: every linter taught in components must be enabled in `references/golangci.v2.yml`,
    and — when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and
    `1.27.x`; locally it soft-skips with a note) — the `go-idioms` Fixer column is verified against
-   `go tool fix help`: plain names must be registered, † names must not be. The floor minor
-   lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.26.x`) — move
-   all three (docs baseline included) together.
+   `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill
+   teaches as *opt-in* — `shadow` in `go-idioms` — is the deliberate exception to the first half: it
+   is taught together with the config line that switches it on, and is not added to the reference
+   config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the
+   workflow's matrix floor entry (`1.26.x`) — move all three (docs baseline included) together.
    **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
    weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
    source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the
