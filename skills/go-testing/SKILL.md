@@ -1,6 +1,6 @@
 ---
 name: go-testing
-description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks or fuzz targets — any _test.go file, table-driven `t.Run`, a can-fail control proving a guard is mutation-detectable, a refusal test asserting the operation-specific facet not a shared sentinel, `t.Parallel` (and what cannot run under it), `t.Context`, `t.Chdir`/`t.Setenv`, `t.TempDir` vs `t.ArtifactDir`, `t.Output`, `testing.B.Loop`, the race detector, goroutine-leak checks, `testing/synctest` for time and concurrency, fuzzing, golden files, or failure messages that actually diagnose. Pair with `go test -race`. Go only; error wrapping belongs to go-errors.
+description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks or fuzz targets — any _test.go file, table-driven `t.Run`, a can-fail control proving a guard is mutation-detectable, a refusal test asserting the operation-specific facet not a shared sentinel, `t.Parallel` (and what cannot run under it), `t.Context`, `t.Chdir`/`t.Setenv`, `t.TempDir` vs `t.ArtifactDir`, `t.Output`, `testing.B.Loop`, `Example` functions with `// Output:`, field names in table cases, stable comparisons of serialised or map-derived output, the race detector, goroutine-leak checks, `testing/synctest` for time and concurrency, fuzzing, golden files, or failure messages that actually diagnose. Pair with `go test -race`. Go only; error wrapping belongs to go-errors.
 ---
 
 # go-testing — Go testing
@@ -62,6 +62,18 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
 - **Failure messages must diagnose without a debugger:** name the call, the input, the result, and
   the expectation — `t.Errorf("Parse(%q) = %v, want %v", in, got, want)` — never a bare
   `t.Error("failed")`. For structs and slices print a diff (`cmp.Diff(want, got)`), not two blobs.
+- **Example functions are runnable documentation.** `func ExampleParse()` in a `_test.go` file
+  shows in `go doc` and on pkg.go.dev, and `go test` compiles it; end it with a `// Output:` comment
+  and `go test` also runs it and compares stdout, so the example cannot rot. Name them `ExampleT`,
+  `ExampleT_Method`, `ExampleF_suffix` (lowercase suffix) — `go vet` (`tests`) rejects a malformed
+  name. A library gets one for every exported entry point a user reaches for first.
+- **Name the fields in table-case literals** when a case spans many lines, when adjacent fields share
+  a type, or when zero-value fields are left out — `{input: "a,b", sep: ",", want: 2}` reads on its
+  own; `{"a,b", ",", 2}` has to be decoded against the struct.
+- **Compare stable results.** Output whose exact bytes belong to a package the repo does not own —
+  `json.Marshal`, a formatted string, map iteration order — can change under a dependency bump. Parse
+  it back and compare values; sort map-derived slices first (`slices.Sorted(maps.Keys(m))`); compare
+  structs with `cmp.Diff`, not `reflect.DeepEqual` on their text form.
 - **Helpers set up; the test body asserts.** Call `t.Helper()` so a failure points at the caller's
   line, and prefer a helper that *returns* a value or `error` over one that fails internally —
   assertion logic belongs where the case's context is visible. `t.Fatal` in a setup helper is fine;
@@ -71,7 +83,8 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
 ## Sources
 - synctest — <https://go.dev/blog/synctest>; `testing.B.Loop` — <https://go.dev/blog/testing-b-loop>
 - `testing` package (`T.Context`, `T.Chdir`, `T.Output`, `T.Attr`, `T.ArtifactDir`) — <https://pkg.go.dev/testing>; Go 1.22/1.24/1.25/1.26 release notes — <https://go.dev/doc/go1.26>
-- Code Review Comments (Useful Test Failures) — <https://go.dev/wiki/CodeReviewComments>; Google Go Style Guide (Tests) — <https://google.github.io/styleguide/go/best-practices>
+- Code Review Comments (Useful Test Failures) — <https://go.dev/wiki/CodeReviewComments>; Google Go Style Decisions (Examples, Compare stable results, Useful test failures) — <https://google.github.io/styleguide/go/decisions>; Best Practices (Tests, Use field names in struct literals, `t.Error` vs `t.Fatal`) — <https://google.github.io/styleguide/go/best-practices>
+- Example functions — <https://go.dev/blog/examples>; `go vet` `tests` analyzer — <https://pkg.go.dev/cmd/vet>
 - `testing/cryptotest` (Go 1.26) — <https://pkg.go.dev/testing/cryptotest>
 - `go.uber.org/goleak` — <https://pkg.go.dev/go.uber.org/goleak>
 

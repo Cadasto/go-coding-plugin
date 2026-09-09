@@ -1,6 +1,6 @@
 ---
 name: go-errors
-description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, `errors.Is`/`errors.AsType`, sentinel vs typed errors, `errors.Join`, an unchecked `Close`, when panic is legitimate, enum-switch dispatch defaults, keeping payload values out of boundary errors and logs, or chasing a swallowed or context-losing error. Pair with the `errorlint` linter. Go only.
+description: Idiomatic Go error handling. This skill should be used when the user writes, reviews, or debugs Go error code — wrapping with `%w`, `errors.Is`/`errors.AsType`, sentinel vs typed errors, `errors.Join`, an unchecked `Close`, when panic is legitimate, `Must` helpers, enum-switch dispatch defaults, keeping payload values out of boundary errors and logs, or chasing a swallowed or context-losing error. Pair with the `errorlint` linter. Go only.
 ---
 
 # go-errors — Go error handling
@@ -41,6 +41,11 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   plausibly hit; panic is for programmer error, API misuse, and genuinely unreachable states. If a
   package uses panic internally for unwinding, `recover` it inside that package and return an error
   — a panic must never escape into a caller.
+- **`MustX` is for package initialisation, not for input.** A helper that panics on failure carries
+  the `Must` prefix (`regexp.MustCompile`, `template.Must`) and is called only while setting up
+  package-level values from constants the author controls. Anything that can fail on user input, a
+  file, or the network returns an error instead — a `Must` on a request path turns bad input into a
+  crash.
 - **Fail loudly on impossible dispatch:** a `switch` over an internal enum/kind gets a `default`
   that returns an error (panic only for the genuinely unreachable) — never a silent pass-through
   that lets a later-added member ride the weakest arm. Pin exhaustiveness with the `exhaustive`
@@ -58,7 +63,7 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
 ## Sources
 - Go 1.13 errors — <https://go.dev/blog/go1.13-errors>; `errors.AsType` (Go 1.26) — <https://pkg.go.dev/errors#AsType>
 - Code Review Comments (Error Strings, Handle Errors, Indent Error Flow, Don't Panic) — <https://go.dev/wiki/CodeReviewComments>
-- Google Go Style Guide (Error Handling, Panics, `%w` placement) — <https://google.github.io/styleguide/go/best-practices>
+- Google Go Style Decisions (Must functions, Returning errors, Error strings, Handle errors, In-band errors, Don't panic) — <https://google.github.io/styleguide/go/decisions>; Best Practices (Error handling, Panics, `%w` placement) — <https://google.github.io/styleguide/go/best-practices>
 - Uber Go Style Guide (Errors) — <https://github.com/uber-go/guide>
 - `os.File.Close` returns write errors — <https://pkg.go.dev/os#File.Close>
 

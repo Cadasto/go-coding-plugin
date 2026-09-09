@@ -23,7 +23,7 @@ Two principles from the project research drive it:
 | Errors (`%w`, `errors.Is`/`AsType`, `errors.Join`, sentinel/typed, enum dispatch) | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
-| Layout, naming & API surface (`internal/`, initialisms, receiver type, in-band errors, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
+| Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
 | Code intelligence (defs/refs/diagnostics/rename/vulncheck) | install the **`gopls-lsp`** plugin | — |
 
 Open the focused `go-*` skill for the topic — it carries the cited rules and the judgment; run the
@@ -37,10 +37,10 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 | The diff touches… | Load |
 |---|---|
 | any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim | `go-testing` |
-| `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `switch` over an enum | `go-errors` |
-| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)` | `go-idioms` |
+| `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `Must` helper, a `switch` over an enum | `go-errors` |
+| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a nested `:=` on `err` | `go-idioms` |
 | `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned resource | `go-concurrency` |
-| a new package, an exported identifier, a `cmd/` or `internal/` decision, a doc comment on an API | `go-layout` |
+| a new package, an exported identifier, a `cmd/` or `internal/` decision, an import block, a struct literal of a foreign type, a doc comment on an API | `go-layout` |
 | `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |
 
 One load per skill per session is enough; the skill stays in context. Orchestrators dispatching
@@ -59,6 +59,13 @@ Apply these even if you load nothing else; they are the rules the focused skills
 - `ctx` first; no goroutine without an owner that waits for it; `t.Context()` in tests.
 - Run `gofmt`/`gofumpt` and `golangci-lint run` — never reason out what a tool decides.
 
+## Tie-breaks (when two valid forms compete)
+
+When both forms pass the tools, decide by the order Google's Go Style Guide gives for readable code:
+**clarity, then simplicity, then concision, then maintainability, then consistency** — and *least
+mechanism*: prefer the most standard tool that expresses the idea. Say which attribute decided it;
+"more idiomatic" on its own is not a reason. Source: <https://google.github.io/styleguide/go/guide> (normative and canonical).
+
 ## Writing for the human
 
 Anything a person reads — a PR description, a review comment, a question, a design choice put to
@@ -72,9 +79,10 @@ names stay verbatim — it is the prose around them that must be plain.
 
 - Effective Go — <https://go.dev/doc/effective_go>
 - Go Code Review Comments — <https://go.dev/wiki/CodeReviewComments>
-- Google Go Style Guide — <https://google.github.io/styleguide/go/>
+- Google Go Style Guide — <https://google.github.io/styleguide/go/> — three documents, cite the one a rule comes from: the *Guide* (<https://google.github.io/styleguide/go/guide>, normative and canonical: the principles), *Style Decisions* (<https://google.github.io/styleguide/go/decisions>, normative: the reviewer rulebook), *Best Practices* (<https://google.github.io/styleguide/go/best-practices>, advisory)
 - Uber Go Style Guide — <https://github.com/uber-go/guide>
 - Package & toolchain docs — <https://pkg.go.dev>
+- Linter rule catalogues (name the rule, not just the tool) — `go vet` <https://pkg.go.dev/cmd/vet>; staticcheck <https://staticcheck.dev/docs/checks/>; revive <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; golangci-lint linters <https://golangci-lint.run/docs/linters/>
 
 ## For a focused review
 

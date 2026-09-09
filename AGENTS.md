@@ -17,8 +17,9 @@ This plugin encodes **Go (golang) coding standards**. Guidance must be grounded 
 - **Style references** (cite these when a rule depends on them):
   - **Effective Go** — <https://go.dev/doc/effective_go>
   - **Go Code Review Comments** — <https://go.dev/wiki/CodeReviewComments>
-  - **Google Go Style Guide** — <https://google.github.io/styleguide/go/>
+  - **Google Go Style Guide** — <https://google.github.io/styleguide/go/> — cite the document a rule comes from: the *Guide* (normative and canonical; the ordered principles), *Style Decisions* (normative; the reviewer rulebook), *Best Practices* (advisory)
   - **Uber Go Style Guide** — <https://github.com/uber-go/guide>
+  - **Linter rule catalogues** — name the rule when a skill says a tool catches something: `go vet` <https://pkg.go.dev/cmd/vet>, staticcheck <https://staticcheck.dev/docs/checks/>, revive <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>
 - **Standard library & toolchain** — package docs at <https://pkg.go.dev>; modules, `go test`, table-driven tests, and the race detector (`go test -race`) are the baseline testing conventions.
 
 When a recommendation derives from one of the above, attribute it explicitly and distinguish cited rules from inference.

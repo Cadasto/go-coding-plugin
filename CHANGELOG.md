@@ -7,6 +7,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Keep a Changelog: https://keepachangelog.com/en/1.1.0/
 - Semantic Versioning: https://semver.org/spec/v2.0.0.html
 
+## [Unreleased]
+
+### Added
+- Skills: `go-layout` — imports in groups with the standard library first, blank imports only in `main` or a test and with a comment, no dot imports (`revive` `blank-imports`/`dot-imports`), and field names in struct literals of types from other packages (`go vet` `composites`).
+- Skills: `go-errors` — `MustX` helpers are for package initialisation from constant inputs, never for input that can fail.
+- Skills: `go-testing` — `Example` functions with `// Output:` as runnable documentation (`go vet` `tests`), field names in table-case literals, and comparing stable results rather than serialised bytes or map order.
+- Skills: `go-idioms` — a nested `:=` that shadows `err` or `ctx` (the `shadow` analyzer, opt-in), and the redundant `break` at the end of a `switch` case (staticcheck S1023).
+- Skills: `go-coding`, `rules/go-context.mdc` — the tie-break order for two valid forms: clarity, simplicity, concision, maintainability, consistency, and least mechanism (Google Go Style Guide).
+- Agents: `go-reviewer` — import and literal hygiene and test-fragility dimensions, a shadowed `err` under error swallowing, and the same tie-break order for style findings.
+- Scripts: `validate.py --check-links` verifies every cited URL resolves; `.github/workflows/links.yml` runs it weekly and on pull requests touching skills, agents, rules, or docs.
+
+### Changed
+- References: the source registry names Google's three documents by weight (Guide, Style Decisions, Best Practices), adds the linter rule catalogues to Tier 3, and records the revision read for each mutable source.
+- Docs: `AGENTS.md` and `README.md` follow the registry.
+
 ## [0.5.0] - 2026-09-04
 
 Makes the `go-coding` router route. A usage analysis of local session transcripts found the router

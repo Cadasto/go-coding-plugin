@@ -30,8 +30,9 @@ Dependency-free (stdlib only) so the ``scripts/validate.sh`` soft-skip is the *o
 reason it wouldn't run.
 
 Usage:
-    python3 scripts/validate.py              # verify this tree
-    python3 scripts/validate.py --selftest   # verify the checks themselves still catch things
+    python3 scripts/validate.py                # verify this tree
+    python3 scripts/validate.py --selftest     # verify the checks themselves still catch things
+    python3 scripts/validate.py --check-links  # every URL cited in components and docs resolves (network)
 """
 import json
 import os
@@ -40,6 +41,8 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -423,6 +426,62 @@ def main():
     validate_doc_inventories()
 
 
+URL_RE = re.compile(r"https?://[^\s<>()\[\]`\"']+")
+LINK_SOURCES = ("skills", "agents", "rules", "docs", "README.md", "AGENTS.md")
+
+
+def collect_urls():
+    """Every external URL cited in components and docs, with one file that cites it. Templated
+    URLs (a `go1.NN` placeholder, an angle-bracket slot) are skipped — they are patterns, not
+    links."""
+    seen = {}
+    for src in LINK_SOURCES:
+        path = ROOT / src
+        files = [path] if path.is_file() else sorted(path.rglob("*.md")) + sorted(path.rglob("*.mdc"))
+        for f in files:
+            for url in URL_RE.findall(f.read_text()):
+                url = url.rstrip(".,;:")
+                if "NN" in url or "<" in url or "{" in url:
+                    continue
+                seen.setdefault(url, f.relative_to(ROOT))
+    return seen
+
+
+def _fetch(url: str, method: str) -> int:
+    req = urllib.request.Request(url, method=method, headers={"User-Agent": "go-coding-plugin-linkcheck/1"})
+    with urllib.request.urlopen(req, timeout=20) as resp:
+        return resp.status
+
+
+def check_links() -> int:
+    """Resolve every cited URL (HEAD, falling back to GET for hosts that refuse HEAD). Needs the
+    network, so it is a separate switch and a separate CI job rather than part of the default
+    run — a moved page is a real defect in a rule's provenance, not a validation-time flake to
+    ignore."""
+    urls = collect_urls()
+    broken = []
+    for url, where in sorted(urls.items()):
+        status, last = None, None
+        for method in ("HEAD", "GET"):
+            try:
+                status = _fetch(url, method)
+                break
+            except urllib.error.HTTPError as e:
+                last = f"HTTP {e.code}"
+                if e.code in (403, 405) and method == "HEAD":
+                    continue
+                break
+            except Exception as e:  # noqa: BLE001 — any transport failure is a broken link here
+                last = type(e).__name__
+                break
+        if status is None or status >= 400:
+            broken.append((url, where, last or f"HTTP {status}"))
+    for url, where, why in broken:
+        print(f"BROKEN {url}  ({where}): {why}")
+    print(f"{'FAIL' if broken else 'OK'}: {len(urls) - len(broken)} of {len(urls)} cited URLs resolve")
+    return 1 if broken else 0
+
+
 SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
     {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
 SELFTEST_HOOKS_CURSOR = {"hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
@@ -513,6 +572,8 @@ def run_selftest() -> int:
 if __name__ == "__main__":
     if "--selftest" in sys.argv[1:]:
         sys.exit(run_selftest())
+    if "--check-links" in sys.argv[1:]:
+        sys.exit(check_links())
     main()
     if errors:
         print(f"FAIL: {len(errors)} problem(s)")

@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, Go 1.27 additions noted. This skill should be used when a diff or question contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)`, `errors.AsType`, dropped loop-var copies, and the Go 1.27 additions (generic methods, json/v2-backed `encoding/json`, the `atomictypes`/`embedlit`/`slicesbackward`/`unsafefuncs` fixers). Advice equals tooling — `go fix ./...` or `golangci-lint --enable-only=modernize`. Not for linter configuration (go-lint-setup). Go only.
+description: Modern idiomatic Go (the `modernize` analyzer set) — Go 1.26+, Go 1.27 additions noted. This skill should be used when a diff or question contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any` over `interface{}`, iterators, `omitzero` json tags, `os.Root`, `new(expr)`, `errors.AsType`, dropped loop-var copies, a nested `:=` that shadows `err` or `ctx`, a redundant `break` ending a `switch` case, and the Go 1.27 additions (generic methods, json/v2-backed `encoding/json`, the `atomictypes`/`embedlit`/`slicesbackward`/`unsafefuncs` fixers). Advice equals tooling — `go fix ./...` or `golangci-lint --enable-only=modernize`. Not for linter configuration (go-lint-setup). Go only.
 ---
 
 # go-idioms — modern Go (modernize)
@@ -76,6 +76,15 @@ something a modernizer rewrites.
   (e.g. marshalling `[]` vs `null`).
 - **`slices.Sorted(maps.Keys(m))`** (1.23) when iterating a map for output — map order is random, and
   unstable output is a flaky-test and noisy-diff source.
+- **A nested `:=` can shadow `err` or `ctx`.** `if v, err := f(); err != nil { … }` inside a function
+  that already has an `err` declares a second one; the outer stays nil and a later `return err`
+  reports success. Use `=` to assign into the existing variable, or give the inner one another name.
+  Nothing in the standard set reports this; the `shadow` analyzer from `golang.org/x/tools` does
+  when enabled (in golangci-lint: `linters.settings.govet.enable: [shadow]`) — it is noisy on
+  legitimate reuse, so a repo enables it deliberately rather than by default.
+- **No `break` at the end of a `switch` case.** Go cases do not fall through, so the `break` is dead
+  text; `staticcheck` S1023 (standard set) flags it. `break` inside a `switch` means something only
+  with a label, to leave an enclosing loop.
 
 *Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) graduates several † fixers into the toolchain's
 `go fix` (`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup`
@@ -111,6 +120,7 @@ moves to 1.27, these are worth reaching for.
 - `slog` — <https://go.dev/blog/slog>; Go 1.21–1.26 release notes (`new(expr)`, self-ref generics — <https://go.dev/doc/go1.26>)
 - `os.Root` / `omitzero` / `rand.Text` — <https://go.dev/doc/go1.24>; Code Review Comments (Declaring Empty Slices, Crypto Rand) — <https://go.dev/wiki/CodeReviewComments>
 - Go 1.27 release notes (generic methods, `stdversion`, `encoding/json/v2`, new `go fix` modernizers) — <https://go.dev/doc/go1.27>
+- Google Go Style Decisions (Switch and break, Nil slices) — <https://google.github.io/styleguide/go/decisions>; Best Practices (Shadowing) — <https://google.github.io/styleguide/go/best-practices>; staticcheck S1023 — <https://staticcheck.dev/docs/checks/#S1023>; `shadow` analyzer — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/shadow>
 - `atomictypes` / `slicesbackward` / `embedlit` modernizer commits — <https://github.com/golang/tools/commit/17ee9acf0e54b52b93b8250245ea261f5e4a88ec>, <https://github.com/golang/tools/commit/b96d2a55a08943af1de2914a59fb88fe0acbb897>, <https://github.com/golang/tools/commit/c2a9c879aa8aea10399b942692b75107790bbcd7>
 
 ---

@@ -30,13 +30,13 @@ matching the change — it carries the cited rules and the judgment:
 
 - any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim →
   `go-testing`
-- `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `switch` over an enum → `go-errors`
-- a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)` →
-  `go-idioms`
+- `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `Must` helper, a `switch` over an enum → `go-errors`
+- a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a
+  nested `:=` on `err` → `go-idioms`
 - `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned
   resource → `go-concurrency`
-- a new package, an exported identifier, a `cmd/` or `internal/` decision, a doc comment on an API →
-  `go-layout`
+- a new package, an exported identifier, a `cmd/` or `internal/` decision, an import block, a struct
+  literal of a foreign type, a doc comment on an API → `go-layout`
 - `.golangci.y*ml`, a linter complaint you do not understand → `go-lint-setup`
 
 ## Minimum checklist (when opening a skill is not affordable)
@@ -58,8 +58,13 @@ first time it appears or leave it out. Keep it short: a few sentences per point,
 must make gets the options plus a recommendation. Identifiers, commands and linter names stay
 verbatim — it is the prose around them that must be plain.
 
-Ground every judgment call in a cited source — Effective Go, Go Code Review Comments, the Google
-and Uber Go style guides, `pkg.go.dev`. Don't invent rules. Adopt the shipped golangci-lint v2
+When two valid forms compete and the tools accept both, decide by the order Google's Go Style Guide
+gives: clarity, then simplicity, then concision, then maintainability, then consistency — and least
+mechanism (the most standard tool that expresses the idea). Say which attribute decided it.
+
+Ground every judgment call in a cited source — Effective Go, Go Code Review Comments, the Google Go
+Style Guide (cite the document: Guide, Style Decisions, or Best Practices), the Uber Go style guide,
+`pkg.go.dev`, and the linter rule catalogues. Don't invent rules. Adopt the shipped golangci-lint v2
 config (`references/golangci.v2.yml`, at the **plugin root** — search the installed plugin directory
 for it, not under this rule's own dir); run `golangci-lint run --fix` for auto-fixable findings, and
 read the rest.
