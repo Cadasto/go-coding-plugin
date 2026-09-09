@@ -9,6 +9,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-09-09
+
 ### Added
 - Skills: `go-layout` — imports in groups with the standard library first, blank imports only in `main` or a test (the `embed` package under `//go:embed` excepted; a justifying comment is revive's alternate in a library), no dot imports (`revive` `blank-imports`/`dot-imports`), and field names in struct literals of types from other packages (`go vet` `composites`).
 - Skills: `go-errors` — `MustX` helpers are for package initialisation from constant inputs or a test helper that `t.Fatal`s, never for input that can fail.
