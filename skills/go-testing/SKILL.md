@@ -1,6 +1,6 @@
 ---
 name: go-testing
-description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks or fuzz targets — any _test.go file, table-driven `t.Run`, a can-fail control proving a guard is mutation-detectable, a refusal test asserting the operation-specific facet not a shared sentinel, `t.Parallel` (and what cannot run under it), `t.Context`, `t.Chdir`/`t.Setenv`, `t.TempDir` vs `t.ArtifactDir`, `t.Output`, `testing.B.Loop`, `Example` functions with `// Output:`, field names in table cases, stable comparisons of serialised or map-derived output, the race detector, goroutine-leak checks, `testing/synctest` for time and concurrency, fuzzing, golden files, or failure messages that actually diagnose. Pair with `go test -race`. Go only; error wrapping belongs to go-errors.
+description: Idiomatic Go testing. This skill should be used when the user writes or reviews Go tests, benchmarks or fuzz targets — any _test.go file, table-driven `t.Run`, a can-fail control proving a guard is mutation-detectable, `t.Parallel` and what cannot run under it, `t.Context`, `t.TempDir` vs `t.ArtifactDir`, `testing.B.Loop`, `Example` functions with `// Output:`, stable comparisons of serialised or map-derived output, `testing/synctest` for time and concurrency, the race detector, goroutine-leak checks, golden files, or failure messages that diagnose. Pair with `go test -race`. Go only; error wrapping belongs to go-errors.
 ---
 
 # go-testing — Go testing

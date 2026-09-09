@@ -11,10 +11,10 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Added
 - Skills: `go-layout` — imports in groups with the standard library first, blank imports only in `main` or a test and with a comment, no dot imports (`revive` `blank-imports`/`dot-imports`), and field names in struct literals of types from other packages (`go vet` `composites`).
-- Skills: `go-errors` — `MustX` helpers are for package initialisation from constant inputs, never for input that can fail.
+- Skills: `go-errors` — `MustX` helpers are for package initialisation from constant inputs or a test helper that `t.Fatal`s, never for input that can fail.
 - Skills: `go-testing` — `Example` functions with `// Output:` as runnable documentation (`go vet` `tests`), field names in table-case literals, and comparing stable results rather than serialised bytes or map order.
 - Skills: `go-idioms` — a nested `:=` that shadows `err` or `ctx` (the `shadow` analyzer, opt-in), and the redundant `break` at the end of a `switch` case (staticcheck S1023).
-- Skills: `go-coding`, `rules/go-context.mdc` — the tie-break order for two valid forms: clarity, simplicity, concision, maintainability, consistency, and least mechanism (Google Go Style Guide).
+- Skills: `go-coding`, `rules/go-context.mdc` — the tie-break order for two valid forms: clarity, simplicity (with least mechanism), concision, maintainability, consistency (Google Go Style Guide).
 - Agents: `go-reviewer` — import and literal hygiene and test-fragility dimensions, a shadowed `err` under error swallowing, and the same tie-break order for style findings.
 - Scripts: `validate.py --check-links` verifies every cited URL resolves; `.github/workflows/links.yml` runs it weekly and on pull requests touching skills, agents, rules, or docs.
 

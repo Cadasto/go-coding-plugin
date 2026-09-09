@@ -41,11 +41,12 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   plausibly hit; panic is for programmer error, API misuse, and genuinely unreachable states. If a
   package uses panic internally for unwinding, `recover` it inside that package and return an error
   — a panic must never escape into a caller.
-- **`MustX` is for package initialisation, not for input.** A helper that panics on failure carries
-  the `Must` prefix (`regexp.MustCompile`, `template.Must`) and is called only while setting up
-  package-level values from constants the author controls. Anything that can fail on user input, a
-  file, or the network returns an error instead — a `Must` on a request path turns bad input into a
-  crash.
+- **`MustX` is for package initialisation and test helpers, not for input.** A helper that stops the
+  program on failure carries the `Must` prefix (`regexp.MustCompile`, `template.Must`) and is called
+  while setting up package-level values from constants the author controls; the same prefix fits a
+  test helper that stops only the current test with `t.Fatal` (`mustParse(t, s)`). Anything that can
+  fail on user input, a file, or the network returns an error instead — a `Must` on a request path
+  turns bad input into a crash.
 - **Fail loudly on impossible dispatch:** a `switch` over an internal enum/kind gets a `default`
   that returns an error (panic only for the genuinely unreachable) — never a silent pass-through
   that lets a later-added member ride the weakest arm. Pin exhaustiveness with the `exhaustive`

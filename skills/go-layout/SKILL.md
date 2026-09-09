@@ -1,6 +1,6 @@
 ---
 name: go-layout
-description: Go project layout, package design and API surface. This skill should be used when the user creates a new package or directory, adds or renames an exported identifier, decides between cmd/ and internal/, writes a doc comment on an exported API, or reviews a diff that adds a package or changes a public type or signature — also util/common grab-bags, start-flat-then-grow, receiver naming, initialisms, in-band error values, import grouping and blank or dot imports, unkeyed struct literals of foreign types, and hexagonal/DDD ceremony answered with the standard-library shape. Pair with revive (var-naming, receiver-naming, exported, blank-imports, dot-imports) and `go vet` (composites). Not for error handling (go-errors) or tests (go-testing).
+description: Go project layout, package design and API surface. This skill should be used when the user creates a package, adds or renames an exported identifier, decides between cmd/ and internal/, writes a doc comment on an API, or reviews a diff that changes a public type or signature — also import grouping and blank or dot imports, struct literals of foreign types, receiver naming, initialisms, in-band errors, util/common grab-bags, and hexagonal/DDD ceremony. Pair with revive and `go vet` (composites). Not for error handling (go-errors) or tests (go-testing).
 ---
 
 # go-layout — layout, naming & API surface

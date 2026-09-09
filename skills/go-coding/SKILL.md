@@ -23,7 +23,7 @@ Two principles from the project research drive it:
 | Errors (`%w`, `errors.Is`/`AsType`, `errors.Join`, sentinel/typed, enum dispatch) | `golangci-lint run --enable-only=errorlint,exhaustive` | `go-errors` |
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
-| Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
+| Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`, `blank-imports`, `dot-imports`), `go vet` (`composites`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
 | Code intelligence (defs/refs/diagnostics/rename/vulncheck) | install the **`gopls-lsp`** plugin | — |
 
 Open the focused `go-*` skill for the topic — it carries the cited rules and the judgment; run the
@@ -62,8 +62,8 @@ Apply these even if you load nothing else; they are the rules the focused skills
 ## Tie-breaks (when two valid forms compete)
 
 When both forms pass the tools, decide by the order Google's Go Style Guide gives for readable code:
-**clarity, then simplicity, then concision, then maintainability, then consistency** — and *least
-mechanism*: prefer the most standard tool that expresses the idea. Say which attribute decided it;
+**clarity, then simplicity (with its rule of *least mechanism*: the most standard tool that expresses
+the idea), then concision, then maintainability, then consistency**. Say which attribute decided it;
 "more idiomatic" on its own is not a reason. Source: <https://google.github.io/styleguide/go/guide> (normative and canonical).
 
 ## Writing for the human

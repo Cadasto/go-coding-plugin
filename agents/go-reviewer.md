@@ -130,8 +130,8 @@ For the *why* and citations behind any dimension, the `go-errors`, `go-concurren
 than re-deriving from memory.
 
 When a finding is about which of two valid forms to prefer and the tools accept both, rank by the
-order Google's Go Style Guide gives — clarity, then simplicity, then concision, then maintainability,
-then consistency, plus least mechanism — and say which attribute decided it (<https://google.github.io/styleguide/go/guide>). A style
+order Google's Go Style Guide gives — clarity, then simplicity (with its rule of least mechanism),
+then concision, then maintainability, then consistency — and say which attribute decided it (<https://google.github.io/styleguide/go/guide>). A style
 preference with no attribute behind it is not a finding.
 
 ## Output format

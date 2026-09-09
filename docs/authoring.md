@@ -69,7 +69,7 @@ citation. Everything the skills assert should be traceable to one of these.
 - Google Go Style Guide — three documents of different weight, ranked by Google itself; a citation
   names which one:
   - the *Guide* — <https://google.github.io/styleguide/go/guide> — **normative and canonical**: the five ordered readability principles
-    (clarity, simplicity, concision, maintainability, consistency) and *least mechanism*. The
+    (clarity, simplicity, concision, maintainability, consistency) and, under simplicity, *least mechanism*. The
     tie-break order the router and the reviewer use.
   - *Style Decisions* — <https://google.github.io/styleguide/go/decisions> — **normative, not canonical**: the reviewer rulebook — naming,
     commentary, imports, errors, language, common libraries, useful test failures. The main Google

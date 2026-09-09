@@ -41,6 +41,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.request
 from pathlib import Path
@@ -439,9 +440,14 @@ def collect_urls():
         path = ROOT / src
         files = [path] if path.is_file() else sorted(path.rglob("*.md")) + sorted(path.rglob("*.mdc"))
         for f in files:
-            for url in URL_RE.findall(f.read_text()):
-                url = url.rstrip(".,;:")
-                if "NN" in url or "<" in url or "{" in url:
+            text = f.read_text()
+            for m in URL_RE.finditer(text):
+                url = m.group(0).rstrip(".,;:")
+                # A placeholder marks a pattern, not a link — skip it whole rather than checking a
+                # truncated prefix as if it were a citation. `{ver}` and `go1.NN` sit inside the
+                # match; `<pkg>` does not, because the regex stops at `<`, so look at the character
+                # right after the match for that one.
+                if "NN" in url or "{" in url or text[m.end():m.end() + 1] == "<":
                     continue
                 seen.setdefault(url, f.relative_to(ROOT))
     return seen
@@ -454,7 +460,9 @@ def _fetch(url: str, method: str) -> int:
 
 
 def check_links() -> int:
-    """Resolve every cited URL (HEAD, falling back to GET for hosts that refuse HEAD). Needs the
+    """Resolve every cited URL: HEAD first, then GET whenever HEAD fails for any reason — some
+    hosts refuse or stall on HEAD, and a dead page fails both, so the retry costs nothing. A transport
+    error (reset, timeout) gets one retry per method, so a single hiccup does not fail the run. Needs the
     network, so it is a separate switch and a separate CI job rather than part of the default
     run — a moved page is a real defect in a rule's provenance, not a validation-time flake to
     ignore."""
@@ -463,16 +471,18 @@ def check_links() -> int:
     for url, where in sorted(urls.items()):
         status, last = None, None
         for method in ("HEAD", "GET"):
-            try:
-                status = _fetch(url, method)
-                break
-            except urllib.error.HTTPError as e:
-                last = f"HTTP {e.code}"
-                if e.code in (403, 405) and method == "HEAD":
-                    continue
-                break
-            except Exception as e:  # noqa: BLE001 — any transport failure is a broken link here
-                last = type(e).__name__
+            for attempt in (1, 2):
+                try:
+                    status = _fetch(url, method)
+                    break
+                except urllib.error.HTTPError as e:
+                    last = f"HTTP {e.code}"      # a definite answer: no retry, try the other method
+                    break
+                except Exception as e:  # noqa: BLE001 — a reset or timeout is retried once, then GET
+                    last = type(e).__name__
+                    if attempt == 1:
+                        time.sleep(1)
+            if status is not None:
                 break
         if status is None or status >= 400:
             broken.append((url, where, last or f"HTTP {status}"))
@@ -543,6 +553,20 @@ def run_selftest() -> int:
     same tree with the defect removed, so a check that always fires fails too."""
     global ROOT, errors
     real_root, real_errors, failures = ROOT, errors, 0
+    # The link collector: a templated URL is a pattern, not a link, and is skipped whole — never
+    # truncated at the placeholder and checked as a shorter, real-looking URL.
+    with tempfile.TemporaryDirectory() as tmp:
+        ROOT = Path(tmp)
+        (ROOT / "README.md").write_text(
+            "See <https://example.com/a>. Docs at `https://pkg.go.dev/<pkg>` and "
+            "`https://go.dev/doc/go1.NN`; config `https://example.com/{ver}/x`.\n")
+        got = set(collect_urls())
+    ROOT = real_root
+    if got == {"https://example.com/a"}:
+        print("ok   link collector skips templated URLs whole")
+    else:
+        print(f"FAIL link collector: collected {sorted(got)}")
+        failures += 1
     for label, defect, checks in SELFTEST_CASES:
         outcomes = {}
         for variant, break_it in (("broken", defect), ("clean", None)):
