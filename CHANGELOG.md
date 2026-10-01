@@ -9,6 +9,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 - Docs: `README.md` follows the shared Cadasto plugin layout (badge row, requirements, table of contents, features); each `docs/` page opens with a paragraph naming its reader.
 - Docs: `docs/versioning.md` release steps include updating the README version badge.
+- Docs: `README.md` drops the Status column from Components and groups its rows by kind.
+- Docs: `README.md` moves the dev scripts from Components to Development.
+- Docs: `docs/testing.md` lists what `scripts/validate.py` checks in its own subsection, including the three plugin-specific invariants.
+- Docs: `docs/testing.md` gives the `/go-lint-setup` triggering test an expected result.
+- Docs: `docs/testing.md`, `docs/versioning.md`, and `docs/authoring.md` use one line per paragraph, like `docs/install.md`.
+- Docs: `docs/authoring.md` drops "command" from its title; `docs/authoring.md` and `docs/versioning.md` call slash commands skills.
+
+### Fixed
+- Docs: `README.md` counts three plugin-specific validator invariants, adding the Google tie-break sentence.
+- Docs: `README.md` says `scripts/hooks-test.sh` tests all three hook scripts.
+- Docs: `docs/install.md` names the Cursor-only rule among host differences.
+- Docs: `docs/testing.md` says to load a working copy with `--plugin-dir`, not install it.
+- Docs: `docs/testing.md` says CI installs Python 3 rather than pinning it.
+- Docs: `docs/testing.md` says the validator rejects an agent's `allowed-tools:`, not that it requires `tools:`.
+- Docs: `docs/authoring.md` renders the Google-internal exclusions as their own paragraph, not as part of the *Best Practices* bullet.
 
 ## [0.6.0] - 2026-09-09
 
