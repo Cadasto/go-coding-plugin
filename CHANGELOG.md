@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-10-01
+
 ### Changed
 - Docs: `README.md` follows the shared Cadasto plugin layout (badge row, requirements, table of contents, features); each `docs/` page opens with a paragraph naming its reader.
 - Docs: `docs/versioning.md` release steps include updating the README version badge.
