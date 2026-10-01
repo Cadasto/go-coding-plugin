@@ -1,6 +1,6 @@
 # Installing the Go Coding Plugin
 
-This page is for anyone installing, updating, or dogfooding the plugin: the Claude Code marketplace install, a local working copy for development, Cursor, and the Go toolchain the hooks expect on the host. The plugin is distributed for both [Claude Code](https://docs.claude.com/en/docs/claude-code/plugins) (`.claude-plugin/`) and [Cursor](https://cursor.com/docs/plugins) (`.cursor-plugin/`). Skill, agent, and rule content is shared; only the manifest and hook layer differ. The plugin is pure Markdown + JSON, so there is no build step and **no MCP server** to wire up.
+This page is for anyone installing, updating, or dogfooding the plugin: the Claude Code marketplace install, a local working copy for development, Cursor, and the Go toolchain the hooks expect on the host. The plugin is distributed for both [Claude Code](https://docs.claude.com/en/docs/claude-code/plugins) (`.claude-plugin/`) and [Cursor](https://cursor.com/docs/plugins) (`.cursor-plugin/`). Both hosts share the skill, agent, and reference content; only the manifests, the hook configs, and the Cursor-only rule in `rules/` differ. The plugin is pure Markdown + JSON, so there is no build step and **no MCP server** to wire up.
 
 ## Claude Code
 
@@ -19,15 +19,15 @@ The marketplace name is `cadasto`, so the plugin is addressed as `go-coding@cada
 claude --plugin-dir /path/to/go-coding-plugin
 ```
 
-`--plugin-dir` loads the plugin from disk for **that session only**. It does not persist, which makes it the right tool for dogfooding an unreleased working copy. It is repeatable (`--plugin-dir A --plugin-dir B`) and also accepts a `.zip`.
+`--plugin-dir` loads the plugin from disk for **that session only**, which makes it the right tool for dogfooding an unreleased working copy. It is repeatable (`--plugin-dir A --plugin-dir B`) and also accepts a `.zip`.
 
-Claude Code has **no `plugin add` subcommand**. `claude plugin install` resolves names from a configured marketplace, not filesystem paths, and `claude plugin marketplace add <path>` expects a marketplace manifest (`.claude-plugin/marketplace.json`), which a single-plugin repository like this one does not have. For a persistent install, go through the marketplace above.
+Claude Code has **no `plugin add` subcommand**. `claude plugin install` resolves names from a configured marketplace, not filesystem paths, and `claude plugin marketplace add <path>` expects a marketplace manifest (`.claude-plugin/marketplace.json`), which a single-plugin repository like this one does not have. For a persistent install, use the marketplace.
 
 ### Inspect / update
 
 ```bash
-claude plugin validate .                 # manifest + component structure
-claude plugin details go-coding   # component inventory + projected token cost
+claude plugin validate .           # manifest + component structure
+claude plugin details go-coding    # component inventory + projected token cost
 ```
 
 ```text
@@ -35,7 +35,7 @@ claude plugin details go-coding   # component inventory + projected token cost
 /plugin update go-coding
 ```
 
-A session restart is required for an update to take effect.
+Restart the session for an update to take effect.
 
 ## Cursor
 
@@ -43,7 +43,7 @@ Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or
 
 ## Host toolchain (minimal requirements)
 
-Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`. The plugin targets **Go 1.26.4+** + golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.25 or older modules.
+Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`. The plugin targets **Go 1.26.4+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.25 or older modules.
 
 At minimum the host should provide:
 
@@ -97,7 +97,7 @@ These are **host-only** dev tools; the plugin still works without them (the form
 The plugin ships three host-agnostic hooks (Claude `hooks/hooks.json`, Cursor `hooks/cursor-hooks.json`):
 
 - **`session-start.sh`**: on session start, detects a Go workspace (`go.mod`/`*.go`) and prints one standards line.
-- **`format-on-save.sh`**: after each edit of a `*.go` file (Claude `PostToolUse` on `Write`/`Edit`; Cursor `afterFileEdit`), runs **`gofumpt -w`** on that file, or **`gofmt -w -s`** when `gofumpt` is not installed. It is **host-only** (no container round-trip), **edits the file in place**, and is a **silent no-op** when no Go formatter is on `PATH`, so install `gofmt` (ships with Go) or `gofumpt` to benefit. It never blocks an edit. This is per-file formatting only; run `golangci-lint` and your tests via CI/`make` for full-tree checks.
-- **`skill-nudge.sh`**: after each edit of a `*.go` file (same trigger as `format-on-save.sh`), names ONE matching go-coding skill for that edit (a `_test.go` file → `go-testing`; goroutine/channel/`sync`/`atomic`/`errgroup` content → `go-concurrency`; `fmt.Errorf`/`errors.*` → `go-errors`), once per skill per session. Delivered as a hook `systemMessage` under Claude Code (reaches the model's context on exit 0) or a plain line under Cursor. It never blocks an edit.
+- **`format-on-save.sh`**: after each edit of a `*.go` file (Claude `PostToolUse` on `Write`/`Edit`; Cursor `afterFileEdit`), runs **`gofumpt -w`** on that file, or **`gofmt -w -s`** when `gofumpt` is not installed. It is **host-only** (no container round-trip), **edits the file in place**, and is a **silent no-op** when no Go formatter is on `PATH`, so it needs Go (which ships `gofmt`) or `gofumpt` on the host. It never blocks an edit. This is per-file formatting only; run `golangci-lint` and your tests via CI/`make` for full-tree checks.
+- **`skill-nudge.sh`**: after each edit of a `*.go` file (same trigger as `format-on-save.sh`), names one matching go-coding skill for that edit (a `_test.go` file → `go-testing`; goroutine/channel/`sync`/`atomic`/`errgroup` content → `go-concurrency`; `fmt.Errorf`/`errors.*` → `go-errors`), once per skill per session. Delivered as a hook `systemMessage` under Claude Code (reaches the model's context on exit 0) or a plain line under Cursor. It never blocks an edit.
 
-> The Cursor wiring targets the `afterFileEdit` event; if your Cursor version exposes a different post-edit event or payload shape, adjust `hooks/cursor-hooks.json` and the path-extraction in `format-on-save.sh` accordingly.
+> The Cursor wiring targets the `afterFileEdit` event; if your Cursor version exposes a different post-edit event or payload shape, adjust `hooks/cursor-hooks.json` and the path extraction in `format-on-save.sh` to match.

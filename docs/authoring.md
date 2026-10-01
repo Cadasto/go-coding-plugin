@@ -1,59 +1,33 @@
-# Skill, command, agent, and rule authoring conventions
+# Skill, agent, and rule authoring conventions
 
-This page is for contributors adding or changing a skill, command, agent, or Cursor rule, and for
-anyone refreshing the skills against current Go practice. It expands on the *how* behind
-[AGENTS.md](../AGENTS.md), which stays authoritative, and it holds the source registry a refresh
-re-reads. The shipped components are the reference examples.
+This page is for contributors adding or changing a skill (including a slash-command skill), agent, or Cursor rule, and for anyone refreshing the skills against current Go practice. It expands on the *how* behind [AGENTS.md](../AGENTS.md), which stays authoritative, and it holds the source registry a refresh re-reads. The shipped components are the reference examples.
 
 ## Naming and layout
 
-- **Components are kebab-case** and namespaced `<plugin>:<component>` (for example
-  `go-coding:go-errors`); don't repeat the plugin's words in a component name. A component's
-  frontmatter `name` MUST equal its directory (skills) or filename stem (agents);
-  `scripts/validate.py` enforces this.
-- `skills/<name>/SKILL.md` (includes user-invoked slash commands) · `agents/<name>.md` ·
-  `rules/<name>.mdc`. Shared reference material (for example `references/golangci.v2.yml`) lives in
-  top-level `references/`. The legacy `commands/<name>.md` layout is not used.
+- **Components are kebab-case** and namespaced `<plugin>:<component>` (for example `go-coding:go-errors`); don't repeat the plugin's words in a component name. A component's frontmatter `name` MUST equal its directory (skills) or filename stem (agents); `scripts/validate.py` enforces this.
+- `skills/<name>/SKILL.md` (includes user-invoked slash commands) · `agents/<name>.md` · `rules/<name>.mdc`. Shared reference material (for example `references/golangci.v2.yml`) lives in top-level `references/`. The legacy `commands/<name>.md` layout is not used.
 
 ## Skill, agent, or rule
 
-- **Skill (auto-invoked)**: a load-on-use procedure or router. Only its `description` is always-on,
-  so keep that lean (the instruction budget is finite). The `go-coding` router + the `go-*`
-  standards skills are the model.
-- **Skill (user-invoked / slash command)**: a thin one-shot `skills/<name>/SKILL.md` that also
-  carries `argument-hint` + `allowed-tools`; use `$ARGUMENTS` in the body. Invoked as `/<name>`. See
-  `/go-lint-setup`. (The legacy `commands/` folder is not used.)
-- **Agent**: a context-isolated specialist. Use **`tools:`** (a YAML block list), **never**
-  `allowed-tools:`, because in an agent that key is silently ignored and the agent inherits *all* tools.
-  See `go-reviewer` (report-only, no sub-agent dispatch).
-- **Cursor rule**: a Cursor-only `.mdc` with `description` / `globs` / `alwaysApply` that mirrors a
-  skill for the Cursor host. See `rules/go-context.mdc`.
+- **Skill (auto-invoked)**: a load-on-use procedure or router. Only its `description` is always-on, so keep that lean (the instruction budget is finite). The `go-coding` router + the `go-*` standards skills are the model.
+- **Skill (user-invoked / slash command)**: a thin one-shot `skills/<name>/SKILL.md` that also carries `argument-hint` + `allowed-tools`; use `$ARGUMENTS` in the body. Invoked as `/<name>`. See `/go-lint-setup`. (The legacy `commands/` folder is not used.)
+- **Agent**: a context-isolated specialist. Use **`tools:`** (a YAML block list), **never** `allowed-tools:`, because in an agent that key is silently ignored and the agent inherits *all* tools. See `go-reviewer` (report-only, no sub-agent dispatch).
+- **Cursor rule**: a Cursor-only `.mdc` with `description` / `globs` / `alwaysApply` that mirrors a skill for the Cursor host. See `rules/go-context.mdc`.
 
 ## The `description` (the trigger)
 
-For skills the `description` is always-on metadata: keep it lean (~50–75 words) and in the third person:
-*what + scope*, 3–5 representative triggers ("This skill should be used when…"), and a short
-"Not for …" anti-trigger. For commands it's the one-line palette entry; pair it with `argument-hint`.
+For skills the `description` is always-on metadata, so keep it lean (~50–75 words) and in the third person. Give *what + scope*, 3–5 representative triggers ("This skill should be used when…"), and a short "Not for …" anti-trigger. For a slash-command skill it is also the one-line palette entry; pair it with `argument-hint`.
 
-**YAML gotcha:** a `description` value with an unquoted `: ` (colon-space), for example writing
-`version: "2"` inline, makes a real YAML parser read it as a nested mapping, so the component loads
-with *empty* metadata (every field silently dropped). `claude plugin validate` catches this, and
-`scripts/validate.py` guards against it too. Reword or quote the value.
+**YAML gotcha:** a `description` value with an unquoted `: ` (colon-space), for example writing `version: "2"` inline, makes a real YAML parser read it as a nested mapping, so the component loads with *empty* metadata (every field silently dropped). `claude plugin validate` catches this, and `scripts/validate.py` guards against it too. Reword or quote the value.
 
 ## Body
 
-- **Deterministic beats prose.** Point at the tool that enforces a rule (`gofmt`/`gofumpt`,
-  `go vet`, a `golangci-lint` linter, `modernize`, `go test -race`) rather than re-deriving it.
-  Ground every judgment rule in a cited source (Effective Go, Go Code Review Comments, the Google or
-  Uber style guide, a `go.dev/blog` post, `pkg.go.dev`); do not invent rules.
-- Imperative voice; explain *why* a rule matters rather than relying on bare MUST/NEVER. Keep skill
-  bodies focused: the always-on cost is the `description`, and the body loads on use.
+- **Deterministic beats prose.** Point at the tool that enforces a rule (`gofmt`/`gofumpt`, `go vet`, a `golangci-lint` linter, `modernize`, `go test -race`) rather than re-deriving it. Ground every judgment rule in a cited source (Effective Go, Go Code Review Comments, the Google or Uber style guide, a `go.dev/blog` post, `pkg.go.dev`); do not invent rules.
+- Imperative voice; explain *why* a rule matters rather than relying on bare MUST/NEVER. Keep skill bodies focused: the always-on cost is the `description`, and the body loads on use.
 
 ## Refreshing the standards baseline (source registry)
 
-When asked to *refresh the skills against current Go practice*, re-read these sources in this order
-and update the affected skill bodies. Do not refresh from memory, and do not add a rule without a
-citation. Everything the skills assert should be traceable to one of these.
+When asked to *refresh the skills against current Go practice*, re-read these sources in this order and update the affected skill bodies. Do not refresh from memory, and do not add a rule without a citation. Everything the skills assert should be traceable to one of these.
 
 **Tier 1: normative, always check first**
 
@@ -68,42 +42,23 @@ citation. Everything the skills assert should be traceable to one of these.
 
 **Tier 2: style guides (attribute when a rule comes from one, and name the document)**
 
-- Google Go Style Guide: three documents of different weight, ranked by Google itself; a citation
-  names which one:
-  - the *Guide* (<https://google.github.io/styleguide/go/guide>), **normative and canonical**: the five ordered readability principles
-    (clarity, simplicity, concision, maintainability, consistency) and, under simplicity, *least mechanism*. This is
-    the tie-break order the router, the Cursor rule and the reviewer use, as one identical sentence in
-    all three, checked by `scripts/validate.py`.
-  - *Style Decisions* (<https://google.github.io/styleguide/go/decisions>), **normative, not canonical**: the reviewer rulebook for naming,
-    commentary, imports, errors, language, common libraries, useful test failures. The main Google
-    source for skill rules.
-  - *Best Practices* (<https://google.github.io/styleguide/go/best-practices>), **advisory**: patterns with trade-offs (test doubles, option structs,
-    error structure, shadowing, table-test literals).
-  Google-internal guidance is not adopted: flag conventions, Google's own logging library and
-  verbosity levels, protocol-buffer stubs, and CLI library choices.
+- Google Go Style Guide: three documents of different weight, ranked by Google itself; a citation names which one:
+  - the *Guide* (<https://google.github.io/styleguide/go/guide>), **normative and canonical**: the five ordered readability principles (clarity, simplicity, concision, maintainability, consistency) and, under simplicity, *least mechanism*. This is the tie-break order the router, the Cursor rule and the reviewer use, as one identical sentence in all three, checked by `scripts/validate.py`.
+  - *Style Decisions* (<https://google.github.io/styleguide/go/decisions>), **normative, not canonical**: the reviewer rulebook for naming, commentary, imports, errors, language, common libraries, useful test failures. The main Google source for skill rules.
+  - *Best Practices* (<https://google.github.io/styleguide/go/best-practices>), **advisory**: patterns with trade-offs (test doubles, option structs, error structure, shadowing, table-test literals).
+
+  Google-internal guidance is not adopted: flag conventions, Google's own logging library and verbosity levels, protocol-buffer stubs, and CLI library choices.
 - Uber Go Style Guide: <https://github.com/uber-go/guide>
 
 **Tier 3: the enforcing tools (this is what keeps "advice == tooling" true)**
 
-- **`go tool fix help` on the floor-version toolchain**: the authority for which fixers `go fix`
-  actually ships (the plain rows in the `go-idioms` **Fixer** column). The `go fix` blog post:
-  <https://go.dev/blog/gofix>
-- `modernize` per-fixer docs: <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>.
-  These track x/tools **tip**, which is usually ahead of the toolchain, so they are the source for **†** rows and
-  never evidence that a fixer ships in `go fix`
-- golangci-lint docs: <https://golangci-lint.run/docs/> · v1→v2 migration:
-  <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin):
-  <https://golangci-lint.run/docs/product/changelog/>
-- `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`,
-  `examples`)
-- **Linter rule catalogues**: when a skill says a tool catches something, the rule id or name comes
-  from here, not from memory: `go vet` analyzers <https://pkg.go.dev/cmd/vet>; staticcheck checks
-  <https://staticcheck.dev/docs/checks/>; revive rules <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; errorlint
-  <https://github.com/polyfloyd/go-errorlint>; gofumpt rules <https://github.com/mvdan/gofumpt#added-rules>;
-  the golangci-lint linters index <https://golangci-lint.run/docs/linters/>
+- **`go tool fix help` on the floor-version toolchain**: the authority for which fixers `go fix` actually ships (the plain rows in the `go-idioms` **Fixer** column). The `go fix` blog post: <https://go.dev/blog/gofix>
+- `modernize` per-fixer docs: <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>. These track x/tools **tip**, which is usually ahead of the toolchain, so they are the source for **†** rows and never evidence that a fixer ships in `go fix`
+- golangci-lint docs: <https://golangci-lint.run/docs/> · v1→v2 migration: <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin): <https://golangci-lint.run/docs/product/changelog/>
+- `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`, `examples`)
+- **Linter rule catalogues**: when a skill says a tool catches something, the rule id or name comes from here, not from memory: `go vet` analyzers <https://pkg.go.dev/cmd/vet>; staticcheck checks <https://staticcheck.dev/docs/checks/>; revive rules <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; errorlint <https://github.com/polyfloyd/go-errorlint>; gofumpt rules <https://github.com/mvdan/gofumpt#added-rules>; the golangci-lint linters index <https://golangci-lint.run/docs/linters/>
 
-**Revision record**: the mutable sources, as last read. A refresh diffs each against its recorded
-revision first, so it reads what changed rather than everything, then updates this table.
+**Revision record**: the mutable sources, as last read. A refresh diffs each against its recorded revision first, so it reads what changed rather than everything, then updates this table.
 
 | Source | Revision read | Checked |
 |---|---|---|
@@ -115,53 +70,24 @@ revision first, so it reads what changed rather than everything, then updates th
 
 **Procedure**
 
-1. Confirm the current *released* Go version (release history); a draft `go1.NN` page is not a
-   baseline. Guidance for an unreleased version goes in as one *italic, explicitly labelled*
-   sentence (`*Go 1.NN (draft, expected …)*`), never as a rule.
-   **The baseline is a hard floor** (currently **Go 1.26.4+**; Go 1.27 is supported too, with its
-   additions flagged as hints rather than folded into the floor): recommend the modern form flat, with
-   no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the
-   version annotation (`Since`, "(Go 1.24)"): that is provenance, and it tells a reader on an older
-   module what a bump would buy. When the floor moves, delete the guidance below it.
-2. Diff each `go-*` skill against Tier 1 for the baseline and the two prior versions. The common
-   miss is a stdlib API that landed *after* a skill was written (`errors.AsType`, `t.ArtifactDir`).
+1. Confirm the current *released* Go version (release history); a draft `go1.NN` page is not a baseline. Guidance for an unreleased version goes in as one *italic, explicitly labelled* sentence (`*Go 1.NN (draft, expected …)*`), never as a rule.
+
+   **The baseline is a hard floor** (currently **Go 1.26.4+**; Go 1.27 is supported too, with its additions flagged as hints rather than folded into the floor): recommend the modern form flat, with no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the version annotation (`Since`, "(Go 1.24)"): that is provenance, and it tells a reader on an older module what a bump would buy. When the floor moves, delete the guidance below it.
+2. Diff each `go-*` skill against Tier 1 for the baseline and the two prior versions. The common miss is a stdlib API that landed *after* a skill was written (`errors.AsType`, `t.ArtifactDir`).
 3. Verify every version gate in `pkg.go.dev`'s "added in" annotation before writing a `Since` cell.
-4. Re-check the Tier 3 tool names: a renamed or dropped fixer/linter turns a rule into a wrong
-   command (`waitgroup` → `waitgroupgo`).
-   **Run the tool, don't read about it:** when a floor-version toolchain is available,
-   `go tool fix help` settles fixer names in one command, whereas pkg.go.dev's modernize page tracks
-   x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters
-   (`golangci-lint help linters` on the pinned build). `scripts/validate.py` enforces both
-   halves: every linter taught in components must be enabled in `references/golangci.v2.yml`,
-   and, when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and
-   `1.27.x`; locally it soft-skips with a note), the `go-idioms` Fixer column is verified against
-   `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill
-   teaches as *opt-in* (`shadow` in `go-idioms`) is the deliberate exception to the first half: it
-   is taught together with the config line that switches it on, and is not added to the reference
-   config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the
-   workflow's matrix floor entry (`1.26.x`); move all three (docs baseline included) together.
-   **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within
-   weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one
-   source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the
-   number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
-5. Keep the two copies of the reference lint config in sync: `references/golangci.v2.yml` and the
-   scaffold block in `go-lint-setup`.
-6. Run `python3 scripts/validate.py --check-links`: every cited URL must still resolve; a moved
-   page is fixed in the same refresh.
-7. Update the **Revision record** above, then record the refresh in **CHANGELOG.md** under
-   `## [Unreleased]`.
+4. Re-check the Tier 3 tool names: a renamed or dropped fixer/linter turns a rule into a wrong command (`waitgroup` → `waitgroupgo`).
+
+   **Run the tool, don't read about it:** when a floor-version toolchain is available, `go tool fix help` settles fixer names in one command, whereas pkg.go.dev's modernize page tracks x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters (`golangci-lint help linters` on the pinned build). `scripts/validate.py` enforces both halves: every linter taught in components must be enabled in `references/golangci.v2.yml`, and, when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and `1.27.x`; locally it soft-skips with a note), the `go-idioms` Fixer column is verified against `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill teaches as *opt-in* (`shadow` in `go-idioms`) is the deliberate exception to the first half: it is taught together with the config line that switches it on, and is not added to the reference config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.26.x`); move all three (docs baseline included) together.
+
+   **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
+5. Keep the two copies of the reference lint config in sync: `references/golangci.v2.yml` and the scaffold block in `go-lint-setup`.
+6. Run `python3 scripts/validate.py --check-links`: every cited URL must still resolve; a moved page is fixed in the same refresh.
+7. Update the **Revision record** above, then record the refresh in **CHANGELOG.md** under `## [Unreleased]`.
 
 ## Dual-host parity
 
-Skills, commands, and agents are shared by both hosts. The **Cursor** manifest
-(`.cursor-plugin/plugin.json`) must declare each component path, plus a `.mdc` mirror wherever a
-Cursor rule is wanted; **Claude** discovers the default folders automatically. Keep the two
-manifests' `name`/`version`/`description`/`author` identical (`scripts/validate.py` checks parity),
-and the Cursor hook command **workspace-relative** (`bash hooks/session-start.sh`), never
-`${CLAUDE_PLUGIN_ROOT}`.
+Skills (slash-command skills included) and agents are shared by both hosts. The **Cursor** manifest (`.cursor-plugin/plugin.json`) must declare each component path, plus a `.mdc` mirror wherever a Cursor rule is wanted; **Claude** discovers the default folders automatically. Keep the two manifests' `name`/`version`/`description`/`author` identical (`scripts/validate.py` checks parity), and the Cursor hook command **workspace-relative** (`bash hooks/session-start.sh`), never `${CLAUDE_PLUGIN_ROOT}`.
 
 ## Before committing
 
-Run `./scripts/validate.sh` and `claude plugin validate .`, then test triggering locally; see
-[testing.md](testing.md). When adding or renaming a component, sync **AGENTS.md**, **README.md**,
-and **CHANGELOG.md** in lockstep.
+Run `./scripts/validate.sh` and `claude plugin validate .`, then test triggering locally; see [testing.md](testing.md). When adding or renaming a component, sync **AGENTS.md**, **README.md**, and **CHANGELOG.md** in lockstep.
