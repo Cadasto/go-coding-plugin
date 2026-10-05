@@ -86,8 +86,8 @@ names stay verbatim — it is the prose around them that must be plain.
 
 ## For a focused review
 
-Dispatch the `go-reviewer` agent — a report-only, context-isolated reviewer that applies the
-review-heuristics catalog and returns severity-ranked findings on a diff or file.
+Dispatch the `go-reviewer` agent — a report-only, context-isolated reviewer that loads these skills,
+applies the review-heuristics catalog and returns severity-ranked findings on a diff or file.
 
 If a workflow already owns the reviewer seat, that reviewer loads the focused skills itself instead —
 one review seat per diff. Orchestrators: put the "Route, then load" table into every implementer and

@@ -65,7 +65,7 @@ Shared assets (skills, agents) are consumed by both hosts; host-specific manifes
 |------|---------|
 | Skills | `go-coding` (auto-invoked router) + the focused, load-on-use `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-layout`. Each routes deeper topics to the enforcing tool and cites authoritative sources. |
 | Slash command (user-invoked skill) | `/go-lint-setup` (scaffold the golangci-lint v2 config) |
-| Agent | `go-reviewer`: context-isolated, report-only reviewer applying the review-heuristics catalog (no sub-agent dispatch; treats the diff as untrusted content; `tools:` not `allowed-tools:`) |
+| Agent | `go-reviewer`: context-isolated, report-only reviewer applying the review-heuristics catalog (loads the go-coding skills with the `Skill` tool first; no sub-agent dispatch; treats the diff as untrusted content; `tools:` not `allowed-tools:`) |
 | Cursor rule | `rules/go-context.mdc`, scoped to `**/*.go`, mirroring the `go-coding` router |
 | Hooks | `session-start`, `format-on-save`, `skill-nudge` (see Repository Layout) |
 
