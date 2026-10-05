@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Agents: `go-reviewer` declares the `Skill` tool and loads `go-coding:go-coding` plus the focused skills before it reviews.
+- Docs: `README.md`, `AGENTS.md`, `skills/go-coding/SKILL.md` and `docs/testing.md` say `go-reviewer` loads the skills itself.
+
 ## [0.6.1] - 2026-10-01
 
 ### Changed

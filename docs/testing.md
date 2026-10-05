@@ -39,7 +39,7 @@ Load your working copy with `--plugin-dir` (see [install.md](install.md)), then 
 - **Standards skills**: a topic prompt should engage the matching skill (for example error wrapping → `go-errors`, a flaky time-based test → `go-testing`/`go-concurrency`, linter setup → `go-lint-setup`).
 - **Format-on-save hook**: save a deliberately mis-formatted `*.go` file; `format-on-save.sh` should reformat that one file in place (`gofumpt -w`, or `gofmt -w -s` when `gofumpt` is absent) and say nothing when neither is installed.
 - **Skill-nudge hook**: edit a `_test.go` file; the nudge should name `go-coding:go-testing` (as a `systemMessage` under Claude Code, a plain line under Cursor), and the model should **act** on it by loading the skill; the line appearing in the transcript is not enough. A second edit to a `_test.go` file in the same session should be silent (once per skill per session), and so should an edit that does not itself touch the topic: a doc-comment fix in a file that defines a sentinel elsewhere must not claim the edit touches an error path.
-- **`go-reviewer` agent**: ask for a Go code review; it returns severity-ranked findings and does not spawn sub-agents.
+- **`go-reviewer` agent**: ask for a Go code review; it loads `go-coding:go-coding` and the focused skills for the diff with the Skill tool, returns severity-ranked findings that cite them, and does not spawn sub-agents.
 - **`/go-lint-setup`**: run it in a Go repo without a golangci-lint config and confirm it writes the reference v2 config; run it in a repo that already has one and confirm it does not overwrite it unprompted.
 - **Cursor rule**: in Cursor, open a `.go` file and confirm `go-context.mdc` attaches.
 
