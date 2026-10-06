@@ -26,7 +26,7 @@ Structural checks:
 
 Three invariants specific to this plugin:
 
-- **Advice equals tooling**: every linter a component teaches (through `--enable-only=…` or "the `<name>` linter") must be enabled in `references/golangci.v2.yml`, so no skill tells an agent to rely on a linter the reference config does not ship.
+- **Advice equals tooling**: every linter a component teaches (through `--enable-only=…` or "the `<name>` linter") must be enabled in `references/golangci.v2.yml`, so no skill tells an agent to rely on a linter the reference config does not ship; and the `/go-lint-setup` scaffold block must enable the same default, linters and formatters as that file, so a scaffolded repo lints with the config the components are checked against.
 - **Fixer column**: when a Go toolchain at the floor minor (`GO_FLOOR_MINOR`) is on `PATH`, the `go-idioms` **Fixer** column is verified against `go tool fix help`: plain names must be registered, † names must not be, so a renamed or retired fixer fails the build instead of shipping as advice. Locally it soft-skips without that toolchain; CI installs it.
 - **Tie-break sentence**: the Google readability tie-break sentence, which ranks clarity first and consistency last (`TIE_BREAK_SENTENCE` in the script holds the exact text), must appear verbatim in each of the `go-coding` router, `rules/go-context.mdc`, and `go-reviewer`.
 

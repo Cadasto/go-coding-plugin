@@ -14,7 +14,8 @@ Checks:
     Claude Code silently ignores so the agent inherits *all* tools — flagged as an error);
   * advice == tooling: every linter a component *teaches* (via ``--enable-only=...`` or
     "the `<name>` linter") must be enabled in ``references/golangci.v2.yml`` — a skill must
-    not tell agents to rely on a linter no config copy ships;
+    not tell agents to rely on a linter no config copy ships — and the go-lint-setup
+    scaffold block must enable the same set as that file;
   * when a Go toolchain at the floor minor (``GO_FLOOR_MINOR``) is on PATH, the go-idioms
     **Fixer** column is verified against ``go tool fix help``: plain names must be registered,
     † names must not be. Soft-skips locally without Go; CI installs the floor toolchain.
@@ -199,6 +200,15 @@ def validate_rules():
             err(f"{rel}: frontmatter missing 'description'")
 
 
+def _config_entries(text: str) -> tuple:
+    """(linters.default, enabled linters, enabled formatters) of a golangci-lint v2 config,
+    comments ignored. Order-insensitive: the copies must enable the same set, not list it alike."""
+    linters, _, formatters = text.partition("formatters:")
+    default = re.search(r"^\s+default:\s*([a-z]+)", linters, re.MULTILINE)
+    pick = lambda t: sorted(re.findall(r"^\s+-\s+([a-z0-9-]+)", t, re.MULTILINE))
+    return (default.group(1) if default else None), pick(linters), pick(formatters)
+
+
 def validate_linter_references():
     """Advice == tooling: every linter a component *teaches* must be shipped by the reference
     lint config. A linter counts as taught when a component names it as the enforcing tool —
@@ -210,6 +220,18 @@ def validate_linter_references():
     if not ref.is_file():
         return
     # Only the `linters:` section — formatters are a different contract.
+    # The /go-lint-setup scaffold block is the second config copy: a repo scaffolded from it
+    # must lint with exactly what the reference config enables.
+    scaffold = ROOT / "skills" / "go-lint-setup" / "SKILL.md"
+    if scaffold.is_file():
+        block = re.search(r"^```yaml\n(.*?)^```", scaffold.read_text(), re.DOTALL | re.MULTILINE)
+        if not block:
+            err(f"{scaffold.relative_to(ROOT)}: no ```yaml scaffold block to compare with "
+                f"references/golangci.v2.yml")
+        elif _config_entries(block.group(1)) != _config_entries(ref.read_text()):
+            err(f"{scaffold.relative_to(ROOT)}: the scaffold block {_config_entries(block.group(1))} "
+                f"differs from references/golangci.v2.yml {_config_entries(ref.read_text())} — "
+                f"keep the two config copies identical")
     linters_section = ref.read_text().split("formatters:")[0]
     allowed = set(re.findall(r"^\s+-\s+([a-z0-9-]+)", linters_section, re.MULTILINE))
     allowed |= STANDARD_LINTERS
@@ -699,12 +721,18 @@ def _selftest_tree(root: Path, *, break_it=None):
     (root / "hooks" / "hooks.json").write_text(json.dumps(SELFTEST_HOOKS_CLAUDE))
     cursor = {"hooks": {"afterFileEdit": []}} if break_it == "hook_parity" else SELFTEST_HOOKS_CURSOR
     (root / "hooks" / "cursor-hooks.json").write_text(json.dumps(cursor))
-    (root / "references" / "golangci.v2.yml").write_text("linters:\n  enable:\n    - revive\n")
+    ref_config = "linters:\n  enable:\n    - revive\n"
+    (root / "references" / "golangci.v2.yml").write_text(ref_config)
+    (root / "skills" / "go-lint-setup").mkdir()
+    scaffold = ref_config + ("    - errorlint\n" if break_it == "scaffold_drift" else "")
+    (root / "skills" / "go-lint-setup" / "SKILL.md").write_text(
+        f"---\nname: go-lint-setup\ndescription: scaffolds\n---\n\n```yaml\n{scaffold}```\n")
     inventory = "" if break_it == "doc_inventory" else "go-thing "
     for doc in ("README.md", "AGENTS.md"):
-        (root / doc).write_text(f"# Doc\n\n{inventory}go-coding go-reviewer go-checker a\n")
+        (root / doc).write_text(f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a\n")
     for doc in ("testing.md", "install.md"):
-        (root / "docs" / doc).write_text(f"# Doc\n\n{inventory}go-coding go-reviewer go-checker a\n")
+        (root / "docs" / doc).write_text(
+            f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a\n")
 
 
 SELFTEST_CASES = (
@@ -717,6 +745,7 @@ SELFTEST_CASES = (
     ("agent declares allowed-tools", "agent_tools",
      (lambda: validate_md_components("agents", require_name=True, is_agent=True),)),
     ("taught linter not in the reference config", "taught_linter", (validate_linter_references,)),
+    ("scaffold config drifts from the reference", "scaffold_drift", (validate_linter_references,)),
     ("Google tie-break sentence drifts between files", "tie_break", (validate_tie_break_parity,)),
 )
 
