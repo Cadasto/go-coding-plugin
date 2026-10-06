@@ -85,7 +85,7 @@ rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sedit"*
 printf 'package a\nimport "fmt"\nvar e = fmt.Errorf("x")\n' > "$t/e2.go"
 sjson="$s-json"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sjson."*
 out="$(CLAUDE_PLUGIN_ROOT=/x hook j "$(p_edit "$sjson" "$t/e2.go" '' 'fmt.Errorf')")"
-chk "CLAUDE_PLUGIN_ROOT delivers a systemMessage" "$out" '{"systemMessage":'
+chk "CLAUDE_PLUGIN_ROOT delivers additionalContext" "$out" '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":'
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sjson."*
 
 # hook_event_name alone must be enough — CLAUDE_PLUGIN_ROOT is not set for hooks in every context,
@@ -93,8 +93,8 @@ rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$sjson."*
 shook="$s-hookevent"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$shook."*
 out="$(printf '%s' "$(p_edit "$shook" "$t/e2.go" '' 'fmt.Errorf')" | env -u CLAUDE_PLUGIN_ROOT bash "$here/hooks/skill-nudge.sh")"; st=$?
 [ "$st" -eq 0 ] || { echo "FAIL hook_event_name without CLAUDE_PLUGIN_ROOT: exited $st"; fails=$((fails+1)); }
-chk "hook_event_name alone delivers a systemMessage" "$out" '{"systemMessage":'
-chk "that systemMessage names the skill"             "$out" "go-coding:go-errors"
+chk "hook_event_name alone delivers additionalContext" "$out" '"additionalContext":'
+chk "that additionalContext names the skill"          "$out" "go-coding:go-errors"
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$shook."*
 
 scursor="$s-cursor"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*

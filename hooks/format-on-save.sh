@@ -8,14 +8,14 @@
 # recommends installing one), and ALWAYS exits 0 so it can never block an edit.
 #
 # File-path resolution, in order:
-#   1. $CLAUDE_FILE_PATH          — set by Claude Code for Write/Edit hooks (fast path).
-#   2. tool payload JSON on stdin — Claude (`tool_input.file_path`) or Cursor
+#   1. $CLAUDE_FILE_PATH          — explicit override for tests and manual runs; no host sets it.
+#   2. tool payload JSON on stdin — Claude (`tool_input.file_path`, always absolute) or Cursor
 #      `afterFileEdit` (`file_path`). Extracted without a jq/python dependency.
 set -u
 
 f="${CLAUDE_FILE_PATH:-}"
 
-# Fall back to the JSON the host pipes in on stdin (Cursor; newer Claude payloads).
+# Otherwise read the JSON payload both hosts pipe in on stdin.
 # Guard on a non-tty stdin so a manual run without a pipe doesn't block on `cat`.
 if [ -z "$f" ] && [ ! -t 0 ]; then
   payload="$(cat)"

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PostToolUse / afterFileEdit hook: after a Go file is edited, name ONE go-coding skill the edit
-# calls for — printed as a hook systemMessage (Claude Code) or a plain line (Cursor). Deterministic
+# calls for — printed as hookSpecificOutput.additionalContext (Claude Code) or a plain line (Cursor). Deterministic
 # trigger for three focused skills a usage analysis showed load far less often than the router:
 # go-testing, go-concurrency, go-errors. Always exits 0; never blocks an edit.
 #
@@ -46,7 +46,9 @@ marker="${TMPDIR:-/tmp}/go-coding-nudge.${sid}.${skill}"
 # variable/external text instead, escape it first — printf does no JSON escaping of its own.
 msg="› go-coding: ${what} touches ${topic} — load go-coding:${skill} before continuing."
 if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || printf '%s' "$payload" | grep -q '"hook_event_name"'; then
-  printf '{"systemMessage":"%s"}\n' "$msg"      # Claude Code: systemMessage reaches the model's context on exit 0
+  # Claude Code: additionalContext is the channel that reaches the model; a top-level
+  # systemMessage is only shown to the user (https://code.claude.com/docs/en/hooks).
+  printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$msg"
 else
   printf '%s\n' "$msg"                           # Cursor afterFileEdit: plain line
 fi

@@ -57,7 +57,7 @@ See [docs/install.md](docs/install.md) for marketplace, local-development, updat
 | Agent `go-reviewer` | Report-only, context-isolated Go reviewer for what linters miss. Returns severity-ranked findings and dispatches no sub-agents. Its tool grant excludes `Write` and `Edit` but includes `Bash` to run the linters, so report-only is a contract it keeps rather than a sandbox that enforces it, and `Skill`, so it loads `go-coding:go-coding` and the focused skills before it reviews. |
 | Session-start hook | Detects a Go workspace (`go.mod` or `*.go`) and prints one standards line; dual-host. |
 | Format-on-save hook | After each `Write`/`Edit` of a `*.go` file, runs `gofumpt -w` (or `gofmt -w -s`) on that file, on the host; dual-host. A silent no-op when no formatter is installed. |
-| Skill-nudge hook | After each `Write`/`Edit` of a `*.go` file, names one matching go-coding skill, once per skill per session; dual-host. Arrives as a hook `systemMessage` under Claude Code and as a plain line under Cursor. |
+| Skill-nudge hook | After each `Write`/`Edit` of a `*.go` file, names one matching go-coding skill, once per skill per session; dual-host. Arrives as hook `additionalContext` (model context) under Claude Code and as a plain line under Cursor. |
 | Lint config `references/golangci.v2.yml` | Reference golangci-lint v2 config (`modernize` plus the stack linters). |
 | Cursor rule `go-context.mdc` | `**/*.go`-scoped guidance mirroring the router for Cursor. |
 
