@@ -6,7 +6,7 @@ description: Go coding-standards router — Go 1.26.4+ (1.27 supported, its addi
 # go-coding — Go standards router
 
 Route the Go task to the right standard and tool — this skill is a router, not an encyclopedia.
-Two principles from the project research drive it:
+Two principles drive it:
 
 - **Deterministic beats prose.** Whatever a formatter or linter enforces, run the tool — don't
   reason it out by hand. The plugin's value is judgment the model lacks, not re-deriving tooling.
@@ -24,10 +24,6 @@ Two principles from the project research drive it:
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
 | Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`, `blank-imports`, `dot-imports`), `go vet` (`composites`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
-| Code intelligence (defs/refs/diagnostics/rename/vulncheck) | install the **`gopls-lsp`** plugin | — |
-
-Open the focused `go-*` skill for the topic — it carries the cited rules and the judgment; run the
-tool in the middle column to enforce them. Don't invent rules: each skill cites its sources.
 
 ## Route, then load
 
@@ -90,8 +86,7 @@ Dispatch the `go-reviewer` agent — a report-only, context-isolated reviewer th
 applies the review-heuristics catalog and returns severity-ranked findings on a diff or file.
 
 If a workflow already owns the reviewer seat, that reviewer loads the focused skills itself instead —
-one review seat per diff. Orchestrators: put the "Route, then load" table into every implementer and
-reviewer brief.
+one review seat per diff.
 
 `/go-lint-setup` scaffolds the reference golangci-lint v2 config into a repo.
 

@@ -16,22 +16,18 @@ go fix ./...                                        # apply; -<fixer> runs one, 
 golangci-lint run --enable-only=modernize --fix     # the x/tools modernize suite — includes the † fixers below
 ```
 
-Both draw on the same `golang.org/x/tools` engine as gopls, but golangci-lint pins its own (usually
-newer) snapshot of it — that gap is what the **†** marker below tracks. This skill explains *why*
-and catches what review notices before the tool runs. The **baseline is Go 1.26.4+** (Go 1.27 is
-supported too; its additions are flagged as hints in **Newer in Go 1.27** below), so every row
-below applies as written — the `Since` column is provenance: it explains why older code looks
-different, and what an older module would have to bump to before adopting the idiom.
+Both draw on the same `golang.org/x/tools` engine as gopls; golangci-lint pins its own, usually
+newer, snapshot, which is the gap the **†** marker below tracks. On the **Go 1.26.4+** baseline every
+row applies as written; the `Since` column is provenance (why older code looks different, and what
+an older module must bump to before adopting the idiom).
 
 ## Prefer → over (since)
 
 The **Fixer** column names the analyzer that owns each rewrite. Plain = registered in the Go 1.26.4
 toolchain's `go fix` (ground truth: `go tool fix help`; per-fixer docs: `go tool fix help <name>`).
 **†** = only in the newer `x/tools` suite so far — golangci-lint's `modernize` and gopls run it, the
-1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it. Two † rows
-below (`atomictypes`, `slicesbackward`) graduate into the stock `go fix` on 1.27, which also renames
-`waitgroup` → `waitgroupgo` and drops `fmtappendf` (<https://go.dev/doc/go1.27>) — see
-**Newer in Go 1.27** below rather than reading that as a change to this table.
+1.26.4 toolchain's `go fix` does not. `—` = no fixer exists: review has to catch it. This table is
+the 1.26 floor; the 1.27 toolchain's fixer changes are in **Newer in Go 1.27**.
 
 | Prefer | Over | Since | Fixer |
 |---|---|---|---|
@@ -58,13 +54,11 @@ below (`atomictypes`, `slicesbackward`) graduate into the stock `go fix` on 1.27
 | `for b.Loop()` | `for i := 0; i < b.N; i++` → `go-testing` | 1.24 | `bloop` † |
 | typed `atomic.Int64` | bare-int `atomic.Add*` → `go-concurrency` | 1.19 | `atomictypes` † |
 
-Idioms are a moving target — let the tool (pinned to the repo's toolchain) be the source of
-truth so advice never drifts from the user's `go fix`. Go 1.26 also lifts the ban on a generic type
-referencing itself in its own type-parameter list (e.g. `type Adder[A Adder[A]] interface{ Add(A) A }`),
-so self-referential constraints no longer need a workaround — but that's a hand-written pattern, not
-something a modernizer rewrites.
-
 ## Modern, but no fixer automates it
+
+- **Self-referential constraints** (1.26): a generic type may reference itself in its own
+  type-parameter list (`type Adder[A Adder[A]] interface{ Add(A) A }`), so the old workaround is no
+  longer needed.
 
 - **`os.OpenRoot(dir)` → `*os.Root`** (1.24) for anything that opens a caller-supplied path: its
   methods cannot escape the directory, including via symlink. Replaces `filepath.Join` plus
@@ -87,18 +81,12 @@ something a modernizer rewrites.
   Earlier in a case a `break` still does work — it leaves the `switch` from that point — and a
   labelled `break` leaves the enclosing loop instead; neither of those is dead text.
 
-*Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) graduates several † fixers into the toolchain's
-`go fix` (`atomictypes`, `slicesbackward`, plus new `embedlit` and `unsafefuncs`), renames `waitgroup`
-→ `waitgroupgo`, and drops `fmtappendf`; it also lands `encoding/json/v2` + `encoding/json/jsontext`
-(v1 is reimplemented on v2, opt out with `GOEXPERIMENT=nojsonv2`) and `strings.CutLast`/`bytes.CutLast`.
-Source: <https://go.dev/doc/go1.27>. See **Newer in Go 1.27** below for the hints these enable — none
-of it is required on the 1.26 floor.*
-
 ## Newer in Go 1.27 (hints, not requirements)
 
-Go 1.27 is additive over 1.26 — every 1.26 rule above still applies unchanged, and nothing here is
-required while a module's `go` directive stays at 1.26. Once a repo's toolchain (and `go` directive)
-moves to 1.27, these are worth reaching for.
+Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) is additive over 1.26: every rule above still
+applies, and nothing here is required while a module's `go` directive stays at 1.26. Once the
+toolchain and `go` directive move to 1.27, these are worth reaching for. Its `go fix` also renames
+`waitgroup` → `waitgroupgo` and drops `fmtappendf`.
 
 | Idiom (available from 1.27) | Supersedes / complements | Fixer / linter | Since | Source |
 |---|---|---|---|---|
@@ -107,6 +95,7 @@ moves to 1.27, these are worth reaching for.
 | `atomictypes` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | raw `sync/atomic` functions | `atomictypes` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `slicesbackward` — graduates into the stock `go fix` (previously † golangci-lint-only, row above) | `for i := len(s)-1; i >= 0; i--` | `slicesbackward` | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `embedlit` — initialise a field promoted from an embedded struct directly in the parent literal: `T{U: U{x: 1}}` → `T{x: 1}` | the nested literal an embedded struct used to require | `embedlit` | 1.27 | [modernize](https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize) |
+| `strings.CutLast` / `bytes.CutLast` | `LastIndex` + manual slicing | — | 1.27 | [go.dev/doc/go1.27](https://go.dev/doc/go1.27) |
 | `unsafefuncs` — `unsafe.Pointer(uintptr(ptr) + uintptr(n))` → `unsafe.Add(ptr, n)` | hand-rolled unsafe pointer arithmetic (`unsafe.Add` itself is 1.17; the fixer is new) | `unsafefuncs` | 1.27 | [modernize](https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize) |
 
 - **`go test` runs the `stdversion` vet check by default from 1.27.** The check itself is not new —

@@ -2,7 +2,11 @@
 name: go-lint-setup
 description: Scaffold, adopt, or debug the golangci-lint v2 config in a Go repo. This skill should be used when the user runs `/go-lint-setup`, asks to "set up", "scaffold", "add" or "bootstrap" golangci-lint or a `.golangci.yml`, or asks why golangci-lint v2 rejects a config, how to migrate a v1 config, which linters the default set enables, how to adopt modernize/errorlint in an existing repo, what `golangci-lint fmt` does, how to write a `linters.exclusions` rule, or how to suppress a finding with `//nolint`. Writes the reference v2 config (modernize + stack linters); never overwrites an existing one unprompted. Go only.
 argument-hint: optional target path (defaults to .golangci.yml)
-allowed-tools: Read, Write, Glob, Bash
+allowed-tools:
+  - Read
+  - Write
+  - Glob
+  - Bash(golangci-lint *)
 ---
 
 # go-lint-setup — scaffold, adopt, or debug golangci-lint v2
@@ -23,13 +27,11 @@ Steps:
    `.golangci.json`. If one exists, do **not** overwrite it: show how it differs from the reference
    and ask before changing anything. If it's a **v1** config (no `version` key and/or an
    `enable-all`/top-level `linters:` list), warn that v1 will not parse under golangci-lint v2 and
-   offer to migrate — the supported path is `golangci-lint migrate` (in-place, keeps a `.bck` backup,
-   drops comments), not a hand-port.
+   offer `golangci-lint migrate` (see *Adopting or debugging an existing config*), not a hand-port.
 2. **Write** the config below to `.golangci.yml` (or the path given in `$ARGUMENTS`).
 3. **Report how to run it:** `golangci-lint run`, and `golangci-lint run --fix` for the auto-fixable
-   findings (`modernize` + the formatters). Suggest pinning an exact `golangci-lint` version in CI in
-   one place (the action's `version:` input) with an automated bump PR — see *Adopting or debugging
-   an existing config* below; don't invent a version number here, point at the releases page.
+   findings (`modernize` + the formatters). Suggest pinning an exact version in CI, as
+   *Discipline once adopted* below describes; name no version number.
 
 Config to write (mirrors `references/golangci.v2.yml` — keep the two in sync):
 
@@ -57,8 +59,7 @@ formatters:
     - goimports
 ```
 
-For what each linter does and why, see *Adopting or debugging an existing config* below, or the
-inline comments in `references/golangci.v2.yml`.
+For what each linter does, see the inline comments in `references/golangci.v2.yml`.
 
 ## Adopting or debugging an existing config
 
@@ -72,8 +73,8 @@ golangci-lint **v2** (Mar 2025) changed the config schema from v1 — **a v1 con
 - **Exclusions moved under `linters`**: v1's `issues.exclude-rules` → `linters.exclusions.rules`,
   and `issues.exclude-dirs`/`exclude-files` → `linters.exclusions.paths`. `linters-settings` split
   into `linters.settings` + `formatters.settings`. A config that still uses the old key names —
-  `issues:`, `linters-settings:`, `enable-all` — is v1 and needs `golangci-lint migrate` (Step 1
-  above), not a hand-port; `migrate` rewrites in place, keeps a `.golangci.bck.yml` backup, and
+  `issues:`, `linters-settings:`, `enable-all` — is v1 and needs `golangci-lint migrate`, not a
+  hand-port; `migrate` rewrites in place, keeps a `.golangci.bck.yml` backup, and
   takes `--format {yml,yaml,toml,json}` — it drops comments and unknown/deprecated keys, so re-add
   comments and diff the result.
 
