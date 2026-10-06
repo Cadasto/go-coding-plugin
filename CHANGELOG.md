@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-10-06
+
 ### Changed
 - Skills: `go-idioms` states the Go 1.27 `go fix` changes once, in *Newer in Go 1.27*, which gains a `strings.CutLast`/`bytes.CutLast` row.
 - Skills: `go-coding`, `go-errors`, `go-testing` and `go-lint-setup` drop guidance each stated twice.
