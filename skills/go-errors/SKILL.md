@@ -12,11 +12,10 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
 
 - **Wrap with `%w` when the caller may need to inspect the cause** (Go 1.13):
   `return fmt.Errorf("read config %s: %w", path, err)`. Use `%v` *only* to deliberately sever the
-  chain (e.g. to avoid leaking an internal error type across an API boundary) — and say so.
-  Put `%w` **last** so the message reads outside-in; a leading `%w` is right only when the sentinel
-  *is* the sentence: `fmt.Errorf("%w: %s", ErrNotFound, key)`.
-- **The `%v`-where-`%w` trap:** formatting a cause with `%v` discards the chain, so downstream
-  `errors.Is`/`errors.As` silently fail. `errorlint` flags it.
+  chain (e.g. to avoid leaking an internal error type across an API boundary) — and say so;
+  anywhere else `%v` discards the chain and downstream `errors.Is`/`errors.As` silently fail
+  (`errorlint` flags it). Put `%w` **last** so the message reads outside-in; a leading `%w` is right
+  only when the sentinel *is* the sentence: `fmt.Errorf("%w: %s", ErrNotFound, key)`.
 - **Inspect with `errors.Is` (sentinel) / `errors.AsType[E]` (typed)** — never `err == ErrX` or a
   type assertion once any layer wraps, or the result is *sentinel breakage* (the comparison silently
   stops matching). `if perr, ok := errors.AsType[*fs.PathError](err); ok { … }` (Go 1.26): the

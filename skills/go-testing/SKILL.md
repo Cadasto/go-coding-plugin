@@ -5,10 +5,15 @@ description: Idiomatic Go testing. This skill should be used when the user write
 
 # go-testing — Go testing
 
-Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`, `go test -fuzz`.
+Deterministic backstop: `go test -race ./...` (non-negotiable for code touching goroutines; wire it
+into CI), `go test -bench`, `go test -fuzz`.
 
 ## Rules
 
+- **Prove each guard can fail.** A test for a guard (a validation, a bounds check, a refusal) must
+  turn red when the guard is deleted or inverted; a test that still passes was never testing it.
+  "Temporarily broke it by hand and it failed" is not evidence: commit the case only the guard
+  rejects, so the refactor that later drops the guard fails the build.
 - **Table-driven tests:** a named-case slice + `t.Run(tc.name, func(t *testing.T){ … })`. Since Go
   1.22 the `tc := tc` copy is unnecessary — drop it (`modernize`/`copyloopvar` flag it).
 - **`t.Parallel()`** on independent tests to cut wall-clock; watch for shared mutable state and
@@ -33,7 +38,6 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   key/value metadata into `go test -json` output.
 - **Benchmarks: `for b.Loop() { … }`** (Go 1.24) — it handles timer reset and run scaling; replaces
   `for i := 0; i < b.N; i++` plus manual `b.ResetTimer()`.
-- **`-race` is non-negotiable** for any code touching goroutines; wire it into CI.
 - **Goroutine-leak detection:** `go.uber.org/goleak` — `goleak.VerifyTestMain(m)` or per-test
   `defer goleak.VerifyNone(t)`.
 - **`testing/synctest` (stable since Go 1.25) is the default for time/concurrency tests** — timeouts,
@@ -51,14 +55,11 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
   A golden pins *shape*, not behaviour — when it records something another system executes (SQL,
   wire requests, rendered configs), pair it with at least one test that executes the artefact for
-  real; a snapshot can be stable and wrong. (Go 1.27) Never assert on compressed bytes verbatim —
-  `compress/flate`'s encoder changed, so `gzip`/`zip`/`zlib`/PNG output differs byte-for-byte from
-  1.26 even though decompression is unaffected; compare decompressed content or a stable digest of
-  it instead. Source: <https://go.dev/doc/go1.27>.
+  real; a snapshot can be stable and wrong.
 - **Deterministic crypto tests (Go 1.26):** `testing/cryptotest.SetGlobalRandom(t, seed)` pins a
   deterministic randomness source for the test's duration — reach for it instead of hand-injecting a
-  custom `io.Reader` when testing code that draws from `crypto/rand`. It's process-global, so it
-  can't run inside a `t.Parallel()` test (or one with a parallel ancestor).
+  custom `io.Reader` when testing code that draws from `crypto/rand` (process-global: see the
+  `t.Parallel` rule above).
 - **Failure messages must diagnose without a debugger:** name the call, the input, the result, and
   the expectation — `t.Errorf("Parse(%q) = %v, want %v", in, got, want)` — never a bare
   `t.Error("failed")`. For structs and slices print a diff (`cmp.Diff(want, got)`), not two blobs.
@@ -74,7 +75,10 @@ Deterministic backstop: `go test -race ./...` (always, in CI), `go test -bench`,
 - **Compare stable results.** Output whose exact bytes belong to a package the repo does not own —
   `json.Marshal`, a formatted string, map iteration order — can change under a dependency bump. Parse
   it back and compare values; sort map-derived slices first (`slices.Sorted(maps.Keys(m))`); compare
-  structs with `cmp.Diff`, not `reflect.DeepEqual` on their text form.
+  structs with `cmp.Diff`, not `reflect.DeepEqual` on their text form. Compressed bytes are the
+  sharpest case: Go 1.27's `compress/flate` encoder changed, so `gzip`/`zip`/`zlib`/PNG output
+  differs byte-for-byte from 1.26 while decompression is unaffected; compare the decompressed
+  content or a digest of it (<https://go.dev/doc/go1.27>).
 - **Helpers set up; the test body asserts.** Call `t.Helper()` so a failure points at the caller's
   line, and prefer a helper that *returns* a value or `error` over one that fails internally —
   assertion logic belongs where the case's context is visible. `t.Fatal` in a setup helper is fine;

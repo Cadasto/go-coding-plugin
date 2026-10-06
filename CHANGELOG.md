@@ -6,7 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+- Skills: `go-idioms` states the Go 1.27 `go fix` changes once, in *Newer in Go 1.27*, which gains a `strings.CutLast`/`bytes.CutLast` row.
+- Skills: `go-coding`, `go-errors`, `go-testing` and `go-lint-setup` drop guidance each stated twice.
+- Skills: `go-lint-setup` pre-approves `Bash(golangci-lint *)` instead of all of `Bash`.
+- Agents: `go-reviewer` description under 1,000 characters and body under 10,000, dropping repeated instructions.
+- Cursor rule `rules/go-context.mdc`: the layout row names the same `revive` rules and `gofmt` doc-comment layout as the router.
+- Scripts: `scripts/validate.py` fails when the `go-lint-setup` scaffold block and `references/golangci.v2.yml` enable different linters; `--selftest` covers it.
+
 ### Fixed
+- Hooks: `skill-nudge.sh` delivers the nudge as `hookSpecificOutput.additionalContext` under Claude Code; a `systemMessage` reached only the user, never the model.
+- Hooks: `hooks/hooks.json` quotes `${CLAUDE_PLUGIN_ROOT}`, so a plugin path containing a space no longer splits the command.
+- Hooks: `format-on-save.sh` and `AGENTS.md` describe `$CLAUDE_FILE_PATH` as a test override; no host sets it.
+- Skills: `go-testing` carries the can-fail control rule its description already promised.
 - Agents: `go-reviewer` declares the `Skill` tool and loads `go-coding:go-coding` plus the focused skills before it reviews.
 - Docs: `README.md`, `AGENTS.md`, `skills/go-coding/SKILL.md` and `docs/testing.md` say `go-reviewer` loads the skills itself.
 
