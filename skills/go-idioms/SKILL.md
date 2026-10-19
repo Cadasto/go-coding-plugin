@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (`modernize`) — Go 1.26+, 1.27 additions noted. This skill should be used when a diff contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`, iterators, `omitzero`, `os.Root`, `new(expr)`, `errors.AsType`, and Go 1.27's `atomictypes`, `embedlit`, `slicesbackward`, `unsafefuncs` — rewrites go to `go fix ./...` or `golangci-lint --enable-only=modernize`, a nested `:=` that shadows `err` to the opt-in `shadow` analyzer, a redundant `break` in a `switch` to staticcheck S1023. Not for linter configuration (go-lint-setup). Go only.
+description: Modern idiomatic Go (`modernize`) — Go 1.26+, 1.27 additions noted. This skill should be used when a diff contains a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite — range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`, `any`, iterators, `omitzero`, `os.Root`, `new(expr)`, `errors.AsType`, and Go 1.27's `atomictypes`, `embedlit`, `slicesbackward`, `unsafefuncs`, a nested `:=` that shadows `err`, or a redundant `break` in a `switch`. Not for linter configuration (go-lint-setup). Go only.
 ---
 
 # go-idioms — modern Go (modernize)
