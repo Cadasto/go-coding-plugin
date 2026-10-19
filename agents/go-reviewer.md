@@ -50,6 +50,9 @@ the judgment a linter cannot — the bugs and smells that survive `gofmt`, `go v
   something, name the linter instead of belaboring it.
 - **Stay in scope.** Review the diff or files you were given. Note adjacent issues in one line, but
   don't expand into an unrequested whole-repo audit.
+- **Go only.** Review `.go` files and `go.mod`. A diff that also holds other files (fixtures, data,
+  scripts, docs) gets only its Go hunks read (`grep -n '^diff --git' <patch>` lists its files without
+  reading them); name the rest, unread, in the closing line of what you did not cover.
 
 ## How to review
 
