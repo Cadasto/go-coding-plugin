@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+- Agents: `go-reviewer` reviews only `.go` files and `go.mod`; it names the other files in a diff, unread, in its closing not-covered line.
+
 ## [0.6.2] - 2026-10-06
 
 ### Changed
