@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-27
+
+Fixes the Cursor hooks: the session-start line and the skill nudge now reach the model, on Cursor 3.9.8 or newer for the nudge.
+
 ### Added
 - Scripts: `scripts/validate.py` requires `"version": 1` and no `${CLAUDE_PLUGIN_ROOT}` in `hooks/cursor-hooks.json`, a `matcher` on each Cursor `postToolUse` entry, and no `additional_context` script on Cursor `afterFileEdit`.
 - Scripts: `scripts/validate.py --selftest` passes a case only on that check's own error, with a can-fail control.
