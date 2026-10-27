@@ -76,6 +76,11 @@ exported signature are part of the API — they are as reviewable as the code.
 - **Accept interfaces, return concrete types.** Define an interface in the package that *consumes*
   it, keep it to a method or three, and return the concrete type so callers get the full surface and
   new methods don't break them.
+- **Adding a method to an exported interface is a breaking change:** every type that implemented it
+  stops satisfying it. Before adding one, list its implementers with
+  `gopls implementation <file>:<line>:<col>` on the interface name (this module only; implementers in
+  other modules stay invisible). The compatible route is a new interface carrying the method,
+  checked for with a type assertion where the old one is accepted (*Keeping Your Modules Compatible*).
 - **Prefer synchronous signatures** — let the caller add concurrency (→ `go-concurrency`).
 - **Make the zero value useful where possible** (`bytes.Buffer`, `sync.Mutex` need no constructor). If
   a type genuinely requires a `New…`, the doc comment must say so.
@@ -105,6 +110,7 @@ exported signature are part of the API — they are as reviewable as the code.
 - Google Go Style Decisions (Import grouping, Import blank, Import dot, Field names, Getters, Receiver names, Initialisms) — <https://google.github.io/styleguide/go/decisions>; Best Practices (naming, option structs, documentation, test doubles, program initialization) — <https://google.github.io/styleguide/go/best-practices>
 - `go vet` analyzers (`composites`, `copylocks`) — <https://pkg.go.dev/cmd/vet>; revive rules (`blank-imports`, `dot-imports`, `exported`, `var-naming`, `receiver-naming`) — <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>
 - Uber Go Style Guide (Exit in Main, Avoid init()) — <https://github.com/uber-go/guide>
+- Keeping Your Modules Compatible (Working with interfaces) — <https://go.dev/blog/module-compatibility>; `gopls` command line — <https://go.dev/gopls/command-line>
 - Doc comment syntax — <https://go.dev/doc/comment>; `internal/` — <https://pkg.go.dev/cmd/go#hdr-Internal_Directories>
 
 ---

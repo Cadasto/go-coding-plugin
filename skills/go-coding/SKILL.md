@@ -10,8 +10,12 @@ Two principles drive it:
 
 - **Deterministic beats prose.** Whatever a formatter or linter enforces, run the tool — don't
   reason it out by hand. The plugin's value is judgment the model lacks, not re-deriving tooling.
-- **Don't rebuild code intelligence.** For defs/refs/diagnostics/rename/vulncheck, recommend the
-  official **`gopls-lsp`** plugin (`@claude-plugins-official`).
+- **Don't rebuild code intelligence.** Ask `gopls`, not `grep`, where a symbol is defined, who uses
+  it, who implements it and who calls it: `grep` matches the name, so it cannot tell `a.Close` from
+  `b.Close`, and it cannot see which types satisfy an interface (Go never writes `implements`). Use
+  the `LSP` tool (the official **`gopls-lsp`** plugin, `@claude-plugins-official`; also diagnostics,
+  rename, vulncheck) when the session is rooted in the checkout being changed; otherwise (a git
+  worktree, or a subagent without the LSP tool) run the `gopls` command line (*Symbol questions* row below).
 
 ## Routing table
 
@@ -24,6 +28,7 @@ Two principles drive it:
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
 | Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`, `blank-imports`, `dot-imports`), `go vet` (`composites`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
+| Symbol questions (where defined, who uses it, who implements it, who calls it) | `cd` into the checkout or worktree being changed in the same shell command: `cd <checkout> && gopls workspace_symbol <name>` prints where it is defined (pick the hit in the package and type you mean); pass that `<file>:<line>:<col>` (1-based, as printed) to `gopls references` / `implementation` / `call_hierarchy`; `gopls definition` resolves a name where it is used. `grep` stays for text, docs and config | — |
 
 ## Route, then load
 
@@ -40,8 +45,9 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 | `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |
 
 One load per skill per session is enough; the skill stays in context. Orchestrators dispatching
-implementer or reviewer subagents carry this table into every brief — a subagent does not inherit
-the parent session's skills.
+implementer or reviewer subagents carry this table and the *Symbol questions* row into every brief,
+with the absolute path of the checkout or worktree to run `gopls` in — a subagent does not inherit
+the parent session's skills, and may start in a different folder.
 
 ## Minimum checklist (when a second load is not affordable)
 
@@ -78,6 +84,7 @@ names stay verbatim — it is the prose around them that must be plain.
 - Google Go Style Guide — <https://google.github.io/styleguide/go/> — three documents, cite the one a rule comes from: the *Guide* (<https://google.github.io/styleguide/go/guide>, normative and canonical: the principles), *Style Decisions* (<https://google.github.io/styleguide/go/decisions>, normative: the reviewer rulebook), *Best Practices* (<https://google.github.io/styleguide/go/best-practices>, advisory)
 - Uber Go Style Guide — <https://github.com/uber-go/guide>
 - Package & toolchain docs — <https://pkg.go.dev>
+- `gopls` command line — <https://go.dev/gopls/command-line> (documented as experimental; `gopls help <command>` shows what the installed version takes)
 - Linter rule catalogues (name the rule, not just the tool) — `go vet` <https://pkg.go.dev/cmd/vet>; staticcheck <https://staticcheck.dev/docs/checks/>; revive <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; golangci-lint linters <https://golangci-lint.run/docs/linters/>
 
 ## For a focused review
