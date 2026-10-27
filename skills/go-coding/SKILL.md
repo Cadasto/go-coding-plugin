@@ -1,17 +1,20 @@
 ---
 name: go-coding
-description: Go coding-standards router — Go 1.26.4+ (1.27 supported, its additions flagged as hints), golangci-lint v2. This skill should be used when a Go task spans several areas, is unspecified, or the question is which tool or standard applies — it names the deterministic tool to run, then the focused skill that owns the topic (go-errors, go-concurrency, go-testing, go-idioms, go-layout, go-lint-setup). Loading the router alone does not apply the standards — load the skill it names next. For one already-identified topic, load that skill directly. Go only; not for business rules.
+description: Go coding-standards router. This skill should be used when a Go task spans several areas, is unspecified, or the question is which tool or standard applies, including where a Go symbol is defined, used, implemented or called — it names the deterministic tool to run, then the focused skill that owns the topic (go-errors, go-concurrency, go-testing, go-idioms, go-layout, go-lint-setup). Loading the router alone does not apply the standards — load the skill it names next. For one already-identified topic, load that skill directly. Go only; not for business rules.
 ---
 
 # go-coding — Go standards router
 
-Route the Go task to the right standard and tool — this skill is a router, not an encyclopedia.
-Two principles drive it:
+Route the Go task to the right standard and tool (Go 1.26.4+, with Go 1.27 additions flagged as
+hints; golangci-lint v2) — this skill is a router, not an encyclopedia. Two principles drive it:
 
 - **Deterministic beats prose.** Whatever a formatter or linter enforces, run the tool — don't
   reason it out by hand. The plugin's value is judgment the model lacks, not re-deriving tooling.
-- **Don't rebuild code intelligence.** For defs/refs/diagnostics/rename/vulncheck, recommend the
-  official **`gopls-lsp`** plugin (`@claude-plugins-official`).
+- **Don't rebuild code intelligence.** Ask `gopls`, not `grep`, where a symbol is defined, who uses
+  it, who implements it and who calls it: `grep` matches the name, so it cannot tell `a.Close` from
+  `b.Close`, and it cannot see which types satisfy an interface (Go never writes `implements`). The
+  official **`gopls-lsp`** plugin (`@claude-plugins-official`) provides the `LSP` tool, which also
+  covers diagnostics, rename and vulncheck. How to ask: *Symbol questions* below.
 
 ## Routing table
 
@@ -24,6 +27,24 @@ Two principles drive it:
 | Concurrency (goroutine leaks, ctx lifecycle, atomics) | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing (table-driven, `t.Parallel`, `t.Context`, `B.Loop`, `testing/synctest`) | `go test -race ./...`; use `testing/synctest` for time/concurrency tests | `go-testing` |
 | Layout, naming & API surface (`internal/`, imports, initialisms, receiver type, in-band errors, struct literals, doc comments) | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`, `blank-imports`, `dot-imports`), `go vet` (`composites`), `gofmt` for doc-comment layout; the rest is judgment | `go-layout` |
+| Symbol questions (where defined, who uses it, who implements it, who calls it) | `gopls`, per *Symbol questions* below; `grep` stays for text, docs and config | — |
+
+## Symbol questions
+
+Where a Go symbol is defined, who uses it, who implements it, who calls it:
+
+1. With a language-server tool (Claude Code's `LSP`) whose root is the checkout being changed, use it.
+2. Otherwise run `gopls` from the shell, with `cd` in the same command so it answers from the
+   checkout or worktree being changed: `cd <checkout> && gopls workspace_symbol -matcher casesensitive <Name>`.
+   Each hit prints `<file>:<line>:<col>-<col> <Name> <Kind>`; its first field is the definition.
+3. Pass that first field, unchanged, to `gopls references` (every use, resolved by type),
+   `gopls implementation` (an interface's types, or the interfaces a type satisfies) or
+   `gopls call_hierarchy` (callers and callees; functions and methods only). `gopls definition`
+   takes the position of a use, not a name. A position off the identifier makes `gopls` exit 2.
+4. If `gopls` is missing, the call is refused, or it exits non-zero, use `grep` and say so.
+
+The command line is experimental (<https://go.dev/gopls/command-line>); `gopls help <command>`
+shows what the installed version takes.
 
 ## Route, then load
 
@@ -40,8 +61,9 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 | `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |
 
 One load per skill per session is enough; the skill stays in context. Orchestrators dispatching
-implementer or reviewer subagents carry this table into every brief — a subagent does not inherit
-the parent session's skills.
+implementer or reviewer subagents carry this table and the *Symbol questions* section into every
+brief, with the absolute path of the checkout or worktree being changed — a subagent does not
+inherit the parent session's skills, and may start in a different folder.
 
 ## Minimum checklist (when a second load is not affordable)
 

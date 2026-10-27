@@ -21,6 +21,8 @@ printf 'module x\n\ngo 1.26.0\n' > "$t/go-with-lint/go.mod"; : > "$t/go-with-lin
 printf 'module x\n\ngo 1.26.0\n' > "$t/go-no-lint/go.mod"
 run_case "go repo with lint config names the hop"      "$t/go-with-lint" "load go-coding then the skill for your diff"
 run_case "go repo with lint config names go-reviewer"  "$t/go-with-lint" "go-reviewer for a diff review"
+run_case "go repo banner routes symbol lookups to gopls" "$t/go-with-lint" "gopls for symbol lookups"
+run_case "go repo banner names the gopls shell route"  "$t/go-with-lint" "gopls references/implementation from the shell"
 run_case_absent "go repo with lint config omits lint-setup" "$t/go-with-lint" "/go-lint-setup"
 run_case_absent "banner names no removed skill"        "$t/go-no-lint"   "go-explain"
 run_case "go repo without lint config offers setup"    "$t/go-no-lint"   "/go-lint-setup"

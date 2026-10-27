@@ -51,7 +51,7 @@ See [docs/install.md](docs/install.md) for marketplace, local-development, updat
 
 | Component | Purpose |
 |-----------|---------|
-| Skill `go-coding` | Auto-invoked router: sends each Go topic to the enforcing tool and the focused skill that owns it; recommends the official `gopls-lsp` plugin. |
+| Skill `go-coding` | Auto-invoked router: sends each Go topic to the enforcing tool and the focused skill that owns it; sends symbol questions (where defined, who uses it) to `gopls`, through the official `gopls-lsp` plugin or its command line. |
 | Skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-layout` | Load-on-use standards, each rule cited and framed around the enforcing linter (`modernize`, `errorlint`, `-race`, …). `go-layout` also owns naming, doc comments, and exported-API shape. |
 | Skill `/go-lint-setup` | User-invoked: scaffolds, adopts, or debugs the golangci-lint v2 config in a repo. Never overwrites an existing config unprompted. |
 | Agent `go-reviewer` | Report-only, context-isolated Go reviewer for what linters miss. Returns severity-ranked findings and dispatches no sub-agents. Its tool grant excludes `Write` and `Edit` but includes `Bash` to run the linters, so report-only is a contract it keeps rather than a sandbox that enforces it, and `Skill`, so it loads `go-coding:go-coding` and the focused skills before it reviews. |
@@ -67,8 +67,8 @@ The guidance draws on [Effective Go](https://go.dev/doc/effective_go), [Go Code 
 
 Subagents do not inherit the parent session's skills. A plan runner that dispatches implementers and reviewers must tell them, in every brief, to load the skills:
 
-- **Implementer brief**: "Before writing code, invoke the Skill tool with `go-coding:go-coding`, then the focused skills matching your diff (see its *Route, then load* table). Run `golangci-lint run` on every touched package before committing."
-- **Reviewer brief**: "Before reading the diff, load `go-coding:go-coding` plus `go-errors`, `go-testing` and the skills the diff calls for; cite the rule a finding rests on. Do not dispatch `go-reviewer`: you are the review seat."
+- **Implementer brief**: "Before writing code, invoke the Skill tool with `go-coding:go-coding`, then the focused skills matching your diff (see its *Route, then load* table). Answer where-defined and who-calls questions with `gopls` in `<checkout path>`, per its *Symbol questions*. Run `golangci-lint run` on every touched package before committing."
+- **Reviewer brief**: "Before reading the diff, load `go-coding:go-coding` plus `go-errors`, `go-testing` and the skills the diff calls for; cite the rule a finding rests on. Find what a change affects with `gopls` in `<checkout path>`, per its *Symbol questions*. Do not dispatch `go-reviewer`: you are the review seat."
 
 Use `go-reviewer` directly when no such seat exists, as with an ad-hoc "review this file" request. It loads the skills itself, so its brief need not name them.
 

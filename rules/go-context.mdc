@@ -10,8 +10,10 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 
 - **Deterministic beats prose** — whatever a formatter or linter enforces, run the tool; don't
   hand-derive it.
-- **Don't rebuild code intelligence** — use `gopls` (the `gopls-lsp` plugin) for
-  defs/refs/diagnostics/rename/vulncheck.
+- **Don't rebuild code intelligence** — ask `gopls`, not `grep`, where a symbol is defined, who
+  uses it, who implements it and who calls it: `grep` matches the name, so it cannot tell `a.Close`
+  from `b.Close`, and it cannot see which types satisfy an interface (Go never writes `implements`).
+  How to ask: *Symbol questions* below.
 
 | Topic | Run (deterministic) | Deeper skill |
 |---|---|---|
@@ -22,6 +24,24 @@ This Cursor rule mirrors the `go-coding` router skill — apply it when editing 
 | Concurrency | `go test -race ./...`, `go vet ./...` | `go-concurrency` |
 | Testing | `go test -race ./...`; `testing/synctest` for time/concurrency | `go-testing` |
 | Layout, naming & API surface | `golangci-lint run --enable-only=revive` (`var-naming`, `receiver-naming`, `exported`, `blank-imports`, `dot-imports`), `go vet` (`composites`), `gofmt` for doc-comment layout; rest is judgment | `go-layout` |
+| Symbol questions (where defined, who uses it, who implements it, who calls it) | `gopls`, per *Symbol questions* below; `grep` stays for text, docs and config | — |
+
+## Symbol questions
+
+Where a Go symbol is defined, who uses it, who implements it, who calls it:
+
+1. With a language-server tool (Claude Code's `LSP`) whose root is the checkout being changed, use it.
+2. Otherwise run `gopls` from the shell, with `cd` in the same command so it answers from the
+   checkout or worktree being changed: `cd <checkout> && gopls workspace_symbol -matcher casesensitive <Name>`.
+   Each hit prints `<file>:<line>:<col>-<col> <Name> <Kind>`; its first field is the definition.
+3. Pass that first field, unchanged, to `gopls references` (every use, resolved by type),
+   `gopls implementation` (an interface's types, or the interfaces a type satisfies) or
+   `gopls call_hierarchy` (callers and callees; functions and methods only). `gopls definition`
+   takes the position of a use, not a name. A position off the identifier makes `gopls` exit 2.
+4. If `gopls` is missing, the call is refused, or it exits non-zero, use `grep` and say so.
+
+The command line is experimental (<https://go.dev/gopls/command-line>); `gopls help <command>`
+shows what the installed version takes.
 
 ## Route, then load
 

@@ -43,7 +43,7 @@ Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or
 
 ## Host toolchain (minimal requirements)
 
-Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`. The plugin targets **Go 1.26.4+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.25 or older modules.
+Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`, which the skills and `go-reviewer` also run directly from the shell for symbol questions. The plugin targets **Go 1.26.4+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.25 or older modules.
 
 At minimum the host should provide:
 
@@ -53,7 +53,7 @@ At minimum the host should provide:
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a: always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |
-| **`gopls`** (v0.23.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck) | no code intelligence |
+| **`gopls`** (v0.23.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck); also run directly from the shell (`gopls references`, `implementation`, `call_hierarchy`) where the LSP tool cannot reach: a git worktree, a subagent | no code intelligence; symbol questions fall back to `grep` |
 
 ### Install / upgrade Go (official tarball, Linux)
 
@@ -77,7 +77,7 @@ go version                                                 # → go version go1.
 ```bash
 go install mvdan.cc/gofumpt@latest                    # stricter gofmt superset (hook primary)
 go install golang.org/x/tools/cmd/goimports@latest    # import grouping / pruning
-go install golang.org/x/tools/gopls@v0.23.0           # language server for the gopls-lsp plugin (pinned: v0.23.x — the gopls line that adds Go 1.27 support; use @latest for the newest patch)
+go install golang.org/x/tools/gopls@v0.23.0           # language server for the gopls-lsp plugin, and the symbol-query CLI (pinned: v0.23.x — the gopls line that adds Go 1.27 support; use @latest for the newest patch)
 ```
 
 Verify:
@@ -89,6 +89,8 @@ gofumpt --version
 command -v goimports  # goimports has no --version flag
 gopls version        # → golang.org/x/tools/gopls v0.23.x
 ```
+
+Subagents, `go-reviewer` included, run under the session's permission rules, so an unapproved `gopls` call can be refused and the lookup falls back to `grep`. To avoid that in Claude Code, allow the read-only queries in your settings: `Bash(gopls workspace_symbol *)`, `Bash(gopls definition *)`, `Bash(gopls references *)`, `Bash(gopls implementation *)`, `Bash(gopls call_hierarchy *)`. Leave out `gopls rename`, `format` and `imports`, which can write files.
 
 These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately (often in a pinned container), so it does not depend on these host binaries. On Go 1.27, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support); see the [golangci-lint v2.13.0 changelog](https://golangci-lint.run/docs/product/changelog/#2130). Anything older predates 1.27 support.
 
