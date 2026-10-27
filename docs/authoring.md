@@ -88,7 +88,7 @@ When asked to *refresh the skills against current Go practice*, re-read these so
 
 ## Dual-host parity
 
-Skills (slash-command skills included) and agents are shared by both hosts. The **Cursor** manifest (`.cursor-plugin/plugin.json`) must declare each component path, plus a `.mdc` mirror wherever a Cursor rule is wanted; **Claude** discovers the default folders automatically. Keep the two manifests' `name`/`version`/`description`/`author` identical (`scripts/validate.py` checks parity), and the Cursor hook command **workspace-relative** (`bash hooks/session-start.sh`), never `${CLAUDE_PLUGIN_ROOT}`.
+Skills (slash-command skills included) and agents are shared by both hosts. The **Cursor** manifest (`.cursor-plugin/plugin.json`) must declare each component path, plus a `.mdc` mirror wherever a Cursor rule is wanted; **Claude** discovers the default folders automatically. Keep the two manifests' `name`/`version`/`description`/`author` identical (`scripts/validate.py` checks parity), and the Cursor hook command **relative to the plugin install** (`bash hooks/session-start.sh`), never `${CLAUDE_PLUGIN_ROOT}`. A nudge that must reach the model uses Cursor `postToolUse` and `additional_context`. A formatter stays on `afterFileEdit`, which documents no output fields; the validator rejects a script that prints `additional_context` there.
 
 ## Before committing
 
