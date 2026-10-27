@@ -11,17 +11,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go-version: ['1.26.x', '1.27.x']
+        go-version: ['1.27.x']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.x'
-      # The floor-minor (1.26.x) leg activates the validator's Fixer-column check
+      # The floor-minor (1.27.x) leg activates the validator's Fixer-column check
       # (go tool fix help is the authority for what `go fix` ships); keep that minor
       # in step with GO_FLOOR_MINOR in scripts/validate.py and the documented baseline.
-      # The 1.27.x leg proves the plugin also validates on the next Go version — its
-      # Fixer-column check soft-skips (a note, not a failure) since it isn't the floor.
+      # Once the next Go minor is released, add it as a second leg: it proves the plugin
+      # also validates there, and its Fixer-column check soft-skips (a note, not a failure).
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
@@ -31,5 +31,5 @@ jobs:
       - run: python3 scripts/validate.py
       # A green validator proves the tree is valid, not that the checks still check.
       - run: python3 scripts/validate.py --selftest
-      # Bash-only hook test harness; runs on both matrix legs.
+      # Bash-only hook test harness; runs on every matrix leg.
       - run: ./scripts/hooks-test.sh
