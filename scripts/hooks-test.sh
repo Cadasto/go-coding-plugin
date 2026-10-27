@@ -27,6 +27,19 @@ run_case_absent "go repo with lint config omits lint-setup" "$t/go-with-lint" "/
 run_case_absent "banner names no removed skill"        "$t/go-no-lint"   "go-explain"
 run_case "go repo without lint config offers setup"    "$t/go-no-lint"   "/go-lint-setup"
 run_case "non-go repo is silent"                        "$t/not-go"       ""
+# Cursor runs the hook in the plugin install and reads additional_context. The plugin
+# directory here is the other fixture, so a missed cd would inspect the wrong tree.
+out="$(cd "$t/not-go" && CURSOR_PLUGIN_ROOT="$t/not-go" CURSOR_PROJECT_DIR="$t/go-no-lint" bash "$here/hooks/session-start.sh")"
+case "$out" in
+  '{"additional_context":"› Go workspace — go-coding: open /go-coding'*) echo "ok   Cursor session-start inspects CURSOR_PROJECT_DIR";;
+  *) echo "FAIL Cursor session-start inspects CURSOR_PROJECT_DIR: got '$out'"; fails=$((fails+1));;
+esac
+case "$out" in *"/go-errors"*) echo "ok   Cursor banner names a slash skill";; *) echo "FAIL Cursor banner names a slash skill: got '$out'"; fails=$((fails+1));; esac
+if command -v python3 >/dev/null 2>&1; then
+  if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then echo "ok   Cursor session-start emits valid JSON"; else echo "FAIL Cursor session-start emits valid JSON: '$out'"; fails=$((fails+1)); fi
+fi
+out="$(cd "$t/go-no-lint" && CURSOR_PLUGIN_ROOT="$t/go-no-lint" CURSOR_PROJECT_DIR="$t/not-go" bash "$here/hooks/session-start.sh")"
+if [ -z "$out" ]; then echo "ok   Cursor session-start ignores a non-Go project"; else echo "FAIL Cursor session-start ignores a non-Go project: got '$out'"; fails=$((fails+1)); fi
 
 # --- skill-nudge -------------------------------------------------------------------------------
 # Payload builders. p_edit/p_write mirror a real Claude Code PostToolUse payload: hook_event_name,
@@ -100,16 +113,43 @@ chk "that additionalContext names the skill"          "$out" "go-coding:go-error
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$shook."*
 
 scursor="$s-cursor"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*
-# Built directly (not via hook()): env -u only strips CLAUDE_PLUGIN_ROOT from an external-command
-# invocation, and the path-only payload already lacks hook_event_name.
+# A path-only payload with no Cursor marker is a manual run: a plain line, not JSON.
 out="$(printf '%s' "$(p_path "$scursor" "$t/e2.go")" | env -u CLAUDE_PLUGIN_ROOT bash "$here/hooks/skill-nudge.sh")"; st=$?
-[ "$st" -eq 0 ] || { echo "FAIL nudge is a plain line under Cursor: exited $st"; fails=$((fails+1)); }
+[ "$st" -eq 0 ] || { echo "FAIL manual path-only nudge: exited $st"; fails=$((fails+1)); }
 case "$out" in
-  '{'*) echo "FAIL nudge is a plain line under Cursor: got JSON '$out'"; fails=$((fails+1));;
-  *"go-coding:go-errors"*) echo "ok   nudge is a plain line under Cursor";;
-  *) echo "FAIL nudge is a plain line under Cursor: got '$out'"; fails=$((fails+1));;
+  '{'*) echo "FAIL manual path-only nudge is a plain line: got JSON '$out'"; fails=$((fails+1));;
+  *"go-coding:go-errors"*) echo "ok   manual path-only nudge is a plain line";;
+  *) echo "FAIL manual path-only nudge is a plain line: got '$out'"; fails=$((fails+1));;
 esac
 rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor."*
+
+# Cursor postToolUse carries cursor_version and hook_event_name. The nudge must be
+# additional_context naming /go-errors, not Claude's hookSpecificOutput.
+p_cursor_edit() { # CONVERSATION FILE NEW
+  printf '{"conversation_id":"%s","hook_event_name":"postToolUse","cursor_version":"1.7.2","workspace_roots":["/w"],"tool_name":"StrReplace","tool_input":{"path":"%s","old_string":"x","new_string":"%s"},"tool_output":"{}","duration":1}' \
+    "$1" "$2" "$3"
+}
+scursor2="$s-cursor2"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor2."*
+out="$(printf '%s' "$(p_cursor_edit "$scursor2" "$t/e2.go" 'return fmt.Errorf(\"x\")')" | env -u CLAUDE_PLUGIN_ROOT bash "$here/hooks/skill-nudge.sh")"; st=$?
+[ "$st" -eq 0 ] || { echo "FAIL Cursor StrReplace nudge: exited $st"; fails=$((fails+1)); }
+case "$out" in
+  '{"additional_context":"› go-coding: this edit touches an error path — read /go-errors'*) echo "ok   Cursor StrReplace nudge returns additional_context";;
+  *) echo "FAIL Cursor StrReplace nudge returns additional_context: got '$out'"; fails=$((fails+1));;
+esac
+if command -v python3 >/dev/null 2>&1; then
+  if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then echo "ok   Cursor skill-nudge emits valid JSON"; else echo "FAIL Cursor skill-nudge emits valid JSON: '$out'"; fails=$((fails+1)); fi
+fi
+rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$scursor2."*
+printf 'package a\nfunc f() {}\n' > "$t/rel.go"
+srel="$s-rel"; rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$srel."*
+out="$(printf '%s' "$(p_cursor_edit "$srel" "rel.go" 'go func(){}()')" | env -u CLAUDE_PLUGIN_ROOT bash "$here/hooks/skill-nudge.sh")"
+if [ -z "$out" ]; then echo "ok   relative Cursor path without CURSOR_PROJECT_DIR is silent"; else echo "FAIL relative Cursor path without CURSOR_PROJECT_DIR is silent: got '$out'"; fails=$((fails+1)); fi
+out="$(printf '%s' "$(p_cursor_edit "$srel" "rel.go" 'go func(){}()')" | env -u CLAUDE_PLUGIN_ROOT CURSOR_PROJECT_DIR="$t" bash "$here/hooks/skill-nudge.sh")"
+case "$out" in
+  *'read /go-concurrency'*) echo "ok   relative Cursor path is joined to CURSOR_PROJECT_DIR";;
+  *) echo "FAIL relative Cursor path is joined to CURSOR_PROJECT_DIR: got '$out'"; fails=$((fails+1));;
+esac
+rm -f "${TMPDIR:-/tmp}/go-coding-nudge.$srel."*
 
 # --- format-on-save ----------------------------------------------------------------------------
 # Needs a formatter; without gofmt or gofumpt on PATH the hook is a deliberate no-op and there is

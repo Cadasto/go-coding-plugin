@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# PostToolUse / afterFileEdit hook: after a Go file is edited, name ONE go-coding skill the edit
-# calls for — printed as hookSpecificOutput.additionalContext (Claude Code) or a plain line (Cursor). Deterministic
+# PostToolUse hook: after a Go file is edited, name ONE go-coding skill the edit calls for.
+# Claude Code reads hookSpecificOutput.additionalContext. Cursor postToolUse (Write|StrReplace)
+# reads additional_context. afterFileEdit documents no output, so the nudge is not wired there. Deterministic
 # trigger for three focused skills a usage analysis showed load far less often than the router:
 # go-testing, go-concurrency, go-errors. Always exits 0; never blocks an edit.
 #
@@ -10,10 +11,21 @@ set -u
 f="${CLAUDE_FILE_PATH:-}"; sid=""; payload=""
 if [ ! -t 0 ]; then
   payload="$(cat)"
-  [ -n "$f" ] || f="$(printf '%s' "$payload" | grep -oE '"file_?[Pp]ath"[[:space:]]*:[[:space:]]*"[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')"
-  sid="$(printf '%s' "$payload" | grep -oE '"session_id"[[:space:]]*:[[:space:]]*"[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')"
+  [ -n "$f" ] || f="$(printf '%s' "$payload" | grep -oE '"(file_?[Pp]ath|path)"[[:space:]]*:[[:space:]]*"[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')"
+  sid="$(printf '%s' "$payload" | grep -oE '"(session|conversation)_id"[[:space:]]*:[[:space:]]*"[^"]+"' | head -n1 | sed -E 's/.*"([^"]+)"$/\1/')"
 fi
 [ -n "$f" ] || exit 0
+# Cursor plugin hooks run in the plugin install. A relative tool path is relative to the workspace.
+cursor=0
+if [ -n "${CURSOR_PLUGIN_ROOT:-}" ] || printf '%s' "$payload" | grep -q '"cursor_version"'; then
+  cursor=1
+fi
+if [ "$cursor" -eq 1 ] && [ -n "${CURSOR_PROJECT_DIR:-}" ]; then
+  case "$f" in
+    /*) ;;
+    *) f="${CURSOR_PROJECT_DIR%/}/$f" ;;
+  esac
+fi
 case "$f" in *.go) ;; *) exit 0 ;; esac
 [ -f "$f" ] || exit 0
 [ -n "$sid" ] || sid="ppid$PPID"
@@ -22,15 +34,13 @@ case "$f" in *.go) ;; *) exit 0 ;; esac
 # escaped character or an ordinary one, so an embedded \" does not end the match early.
 json_field() { printf '%s' "$payload" | grep -oE "\"$1\"[[:space:]]*:[[:space:]]*\"(\\\\.|[^\"\\\\])*\""; }
 
-# What gets matched: the text the edit ADDS, where the host hands it over — Edit's new_string,
-# Write's content. old_string and tool_response are deliberately excluded: deleting an fmt.Errorf
-# is not an error path this edit introduces, and tool_response echoes surrounding lines the edit
-# never touched. Cursor's afterFileEdit passes only a path, so that host matches the whole file
-# and the message says so. No fallback from one to the other — falling back to the file on an
-# empty extraction would restore exactly the false positives this avoids.
+# What gets matched: the text the edit ADDS — Edit or StrReplace new_string, or Write content.
+# old_string and tool_response are excluded. A payload with neither key (a path-only run, or a
+# Cursor Write whose input fields are absent) matches the whole file. An empty new_string does
+# not fall back to the file: that would treat a deletion as the surrounding code.
 case "$payload" in
-  *'"tool_input"'*) subject="$(json_field new_string; json_field content)"; what="this edit";;
-  *)                subject="$(cat "$f")"; what="this file";;
+  *'"new_string"'*|*'"content"'*) subject="$(json_field new_string; json_field content)"; what="this edit";;
+  *)                              subject="$(cat "$f")"; what="this file";;
 esac
 
 skill=""; topic=""
@@ -44,12 +54,19 @@ marker="${TMPDIR:-/tmp}/go-coding-nudge.${sid}.${skill}"
 # what/topic/skill above are fixed literals set in this script (no quotes or backslashes), so the
 # message below needs no JSON escaping before it goes into printf. If any is ever built from
 # variable/external text instead, escape it first — printf does no JSON escaping of its own.
-msg="› go-coding: ${what} touches ${topic} — load go-coding:${skill} before continuing."
-if [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || printf '%s' "$payload" | grep -q '"hook_event_name"'; then
-  # Claude Code: additionalContext is the channel that reaches the model; a top-level
-  # systemMessage is only shown to the user (https://code.claude.com/docs/en/hooks).
+if [ "$cursor" -eq 1 ]; then
+  how="read /${skill}"
+else
+  how="load go-coding:${skill}"
+fi
+msg="› go-coding: ${what} touches ${topic} — ${how} before continuing."
+# Cursor first: its payload also carries hook_event_name, and postToolUse reads additional_context.
+if [ "$cursor" -eq 1 ]; then
+  printf '{"additional_context":"%s"}\n' "$msg"
+elif [ -n "${CLAUDE_PLUGIN_ROOT:-}" ] || printf '%s' "$payload" | grep -q '"hook_event_name"'; then
+  # Claude Code: additionalContext reaches the model; a top-level systemMessage reaches only the user.
   printf '{"hookSpecificOutput":{"hookEventName":"PostToolUse","additionalContext":"%s"}}\n' "$msg"
 else
-  printf '%s\n' "$msg"                           # Cursor afterFileEdit: plain line
+  printf '%s\n' "$msg"                           # a manual run: plain line
 fi
 exit 0

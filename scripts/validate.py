@@ -70,9 +70,13 @@ STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 # minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
 # floor, so the check skips on any other minor. Bump together with the documented baseline.
 GO_FLOOR_MINOR = "1.27"
-# Hook events that mean the same thing on each host, so the same scripts must be wired for
-# both. Claude event -> Cursor event.
-EQUIVALENT_HOOK_EVENTS = {"SessionStart": "sessionStart", "PostToolUse": "afterFileEdit"}
+# Hook events that mean the same thing on each host. Claude PostToolUse is Cursor
+# afterFileEdit (a formatter; that event has no output) or postToolUse (context back
+# to the model). A script may use either Cursor event.
+EQUIVALENT_HOOK_EVENTS = {
+    "SessionStart": ("sessionStart",),
+    "PostToolUse": ("afterFileEdit", "postToolUse"),
+}
 # Docs that inventory the component surface, and which kinds each one claims to cover.
 # install.md enumerates the hooks (it documents what they need on PATH) but is not a skill
 # catalogue, so it is held to the hook list only.
@@ -368,20 +372,39 @@ def validate_hook_parity():
     claude, cursor = load_json(claude_path, "Claude hooks"), load_json(cursor_path, "Cursor hooks")
     if claude is None or cursor is None:
         return
+    if cursor.get("version") != 1:
+        err("hooks/cursor-hooks.json: needs \"version\": 1, which Cursor requires of a hooks file")
+    for event, entries in (cursor.get("hooks") or {}).items():
+        stack = [entries]
+        while stack:
+            node = stack.pop()
+            if isinstance(node, dict):
+                cmd = node.get("command")
+                if isinstance(cmd, str) and "CLAUDE_PLUGIN_ROOT" in cmd:
+                    err(f"hooks/cursor-hooks.json: {event} command '{cmd}' uses CLAUDE_PLUGIN_ROOT, "
+                        f"which Cursor does not set; keep the path relative to the plugin install")
+                stack.extend(node.values())
+            elif isinstance(node, list):
+                stack.extend(node)
     claude_events, cursor_events = _hook_scripts(claude), _hook_scripts(cursor)
+    cursor_equiv = {ev for names in EQUIVALENT_HOOK_EVENTS.values() for ev in names}
     wired = set()
-    for claude_event, cursor_event in EQUIVALENT_HOOK_EVENTS.items():
-        here, there = claude_events.get(claude_event, set()), cursor_events.get(cursor_event, set())
+    for claude_event, cursor_names in EQUIVALENT_HOOK_EVENTS.items():
+        here = claude_events.get(claude_event, set())
+        there = set()
+        for name in cursor_names:
+            there |= cursor_events.get(name, set())
         wired |= here | there
+        joined = " or ".join(cursor_names)
         for name in sorted(here - there):
             err(f"hooks/cursor-hooks.json: '{name}' is wired for Claude's {claude_event} but "
-                f"not for Cursor's {cursor_event} (dual-host parity)")
+                f"not for Cursor's {joined} (dual-host parity)")
         for name in sorted(there - here):
-            err(f"hooks/hooks.json: '{name}' is wired for Cursor's {cursor_event} but not for "
+            err(f"hooks/hooks.json: '{name}' is wired for Cursor's {joined} but not for "
                 f"Claude's {claude_event} (dual-host parity)")
     for event in set(claude_events) - set(EQUIVALENT_HOOK_EVENTS):
         wired |= claude_events[event]
-    for event in set(cursor_events) - set(EQUIVALENT_HOOK_EVENTS.values()):
+    for event in set(cursor_events) - cursor_equiv:
         wired |= cursor_events[event]
     for name in sorted(wired):
         script = ROOT / "hooks" / name
@@ -671,7 +694,7 @@ def _selftest_fetch_policy() -> int:
 
 SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
     {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
-SELFTEST_HOOKS_CURSOR = {"hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
+SELFTEST_HOOKS_CURSOR = {"version": 1, "hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
 
 
 def _selftest_tree(root: Path, *, break_it=None):
@@ -719,7 +742,13 @@ def _selftest_tree(root: Path, *, break_it=None):
         stray.write_text("#!/usr/bin/env bash\nexit 0\n")
         stray.chmod(0o755)
     (root / "hooks" / "hooks.json").write_text(json.dumps(SELFTEST_HOOKS_CLAUDE))
-    cursor = {"hooks": {"afterFileEdit": []}} if break_it == "hook_parity" else SELFTEST_HOOKS_CURSOR
+    cursor = json.loads(json.dumps(SELFTEST_HOOKS_CURSOR))
+    if break_it == "hook_parity":
+        cursor = {"hooks": {"afterFileEdit": []}}
+    elif break_it == "cursor_no_version":
+        del cursor["version"]
+    elif break_it == "cursor_plugin_root":
+        cursor["hooks"]["afterFileEdit"] = [{"command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]
     (root / "hooks" / "cursor-hooks.json").write_text(json.dumps(cursor))
     ref_config = "linters:\n  enable:\n    - revive\n"
     (root / "references" / "golangci.v2.yml").write_text(ref_config)
@@ -739,6 +768,8 @@ SELFTEST_CASES = (
     ("hook wired for one host only", "hook_parity", (validate_hook_parity,)),
     ("wired hook not executable", "hook_not_executable", (validate_hook_parity,)),
     ("hook script left unwired", "hook_unwired", (validate_hook_parity,)),
+    ("Cursor hook config without version 1", "cursor_no_version", (validate_hook_parity,)),
+    ("Cursor hook command uses CLAUDE_PLUGIN_ROOT", "cursor_plugin_root", (validate_hook_parity,)),
     ("shipped skill missing from the docs", "doc_inventory", (validate_doc_inventories,)),
     ("unquoted ': ' in a description", "frontmatter_colon", (validate_skills,)),
     ("skill name != directory", "skill_name", (validate_skills,)),

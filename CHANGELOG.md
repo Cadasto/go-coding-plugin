@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Fixed
+- Hooks: Cursor `session-start.sh` reads `CURSOR_PROJECT_DIR` and returns `additional_context`. `skill-nudge.sh` moves to `postToolUse` (`Write|StrReplace`) and names `/<skill>`. `format-on-save.sh` stays on `afterFileEdit`. `hooks/cursor-hooks.json` has `"version": 1`.
+
 ## [0.8.0] - 2026-10-27
 
 Moves the standards baseline to **Go 1.27+** and routes Go symbol questions to the `gopls` command line.
