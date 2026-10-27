@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Skills: `go-coding` routing table gains a *Symbol questions* row: `gopls workspace_symbol`, `definition`, `references`, `implementation`, `call_hierarchy` from the shell inside the checkout being changed; `grep` stays for text, docs and config.
+- Skills: `go-layout` states that adding a method to an exported interface breaks its implementers, and lists them with `gopls implementation` first.
+- Scripts: `scripts/hooks-test.sh` checks that the session-start banner names `gopls` for symbol lookups.
+
+### Changed
+- Skills: `go-coding` sends symbol questions to the `LSP` tool (`gopls-lsp` plugin) when the session is rooted in the checkout being changed and to the `gopls` command line otherwise (a git worktree, a subagent without the LSP tool); orchestrators carry the *Symbol questions* row and the checkout path into every brief.
+- Agents: `go-reviewer` lists what a change to an exported identifier, error, interface or paired dispatch affects with `gopls references`/`implementation`, and names a fallback to `grep` in its closing note.
+- Agents: `go-reviewer` body back under 10,000 characters, dropping instructions it stated twice.
+- Cursor rule `rules/go-context.mdc`: sends symbol questions to the `gopls` command line, with the router's *Symbol questions* row.
+- Hooks: `session-start.sh` banner names `gopls` for symbol lookups, by the plugin or from the shell.
+- Docs: `docs/install.md` and `README.md` say `gopls` also runs from the shell for symbol questions; `docs/install.md` lists the read-only `gopls` allow rules; `README.md` subagent briefs give the checkout path; `docs/testing.md` adds the `go-reviewer` check.
+
 ## [0.7.0] - 2026-10-19
 
 ### Changed
