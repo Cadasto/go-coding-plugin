@@ -6,8 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Scripts: `scripts/validate.py` requires `"version": 1` and no `${CLAUDE_PLUGIN_ROOT}` in `hooks/cursor-hooks.json`, a `matcher` on each Cursor `postToolUse` entry, and no `additional_context` script on Cursor `afterFileEdit`.
+- Scripts: `scripts/validate.py --selftest` passes a case only on that check's own error, with a can-fail control.
+- Scripts: `scripts/hooks-test.sh` covers the Cursor session-start JSON, both reported Cursor edit payloads, the once-per-conversation nudge and relative Cursor paths in both edit hooks.
+
 ### Fixed
-- Hooks: Cursor `session-start.sh` reads `CURSOR_PROJECT_DIR` and returns `additional_context`. `skill-nudge.sh` moves to `postToolUse` (`Write|StrReplace`) and names `/<skill>`. `format-on-save.sh` stays on `afterFileEdit`. `hooks/cursor-hooks.json` has `"version": 1`.
+- Hooks: under Cursor, `session-start.sh` inspects `CURSOR_PROJECT_DIR` (silent without it) and returns `additional_context` naming `/<skill>`.
+- Hooks: `skill-nudge.sh` moves from Cursor `afterFileEdit` to `postToolUse` (matcher `Write|StrReplace`) and returns `additional_context` naming `/<skill>`.
+- Hooks: under Cursor, `skill-nudge.sh` says "this file" for a `Write`, whose `content` can be the whole file.
+- Hooks: `format-on-save.sh` and `skill-nudge.sh` join a relative Cursor path to `CURSOR_PROJECT_DIR`.
+- Hooks: `skill-nudge.sh` prints nothing to stderr when its once-per-session marker cannot be written.
+- Hooks: `hooks/cursor-hooks.json` carries `"version": 1` and per-hook timeouts.
+- Docs: `docs/install.md` names Cursor 3.9.8 as the first build that passes `postToolUse` context to the model, and the edit payloads the Cursor wiring reads.
 
 ## [0.8.0] - 2026-10-27
 

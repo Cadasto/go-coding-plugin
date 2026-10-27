@@ -4,15 +4,17 @@
 #
 # Claude Code runs the hook in the project directory and reads plain stdout.
 # Cursor runs a plugin hook from the plugin install and reads additional_context
-# from JSON, so there the hook moves to CURSOR_PROJECT_DIR.
+# from JSON, so there the script first changes into CURSOR_PROJECT_DIR.
 set -u
 
 # CURSOR_PLUGIN_ROOT is set only for a Cursor plugin hook, so Claude Code started from a
-# Cursor terminal still takes the Claude Code path.
+# Cursor terminal still takes the Claude Code path. Without a usable CURSOR_PROJECT_DIR the
+# hook stays silent rather than inspect the plugin install.
 cursor=""
 if [ -n "${CURSOR_PLUGIN_ROOT:-}" ]; then
   cursor=1
-  cd "${CURSOR_PROJECT_DIR:-.}" 2>/dev/null || exit 0
+  [ -n "${CURSOR_PROJECT_DIR:-}" ] || exit 0
+  cd "$CURSOR_PROJECT_DIR" 2>/dev/null || exit 0
 fi
 
 is_go_workspace() {
@@ -30,7 +32,8 @@ if is_go_workspace; then
   for cfg in .golangci.yml .golangci.yaml .golangci.toml .golangci.json; do
     [ -e "$cfg" ] && lint="" && break
   done
-  # No quotes or backslashes, so the JSON form needs no escaping.
+  # No quotes or backslashes, so the JSON form needs no escaping; escape first if any part is
+  # ever built from outside text.
   tail="; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2; gopls for symbol lookups (gopls-lsp plugin, or gopls references/implementation from the shell)."
   if [ -n "$cursor" ]; then
     line="› Go workspace — go-coding: open /go-coding, then the skill for your diff (/go-errors · /go-testing · /go-idioms · /go-concurrency · /go-layout)${tail}"

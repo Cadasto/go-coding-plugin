@@ -70,9 +70,10 @@ STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 # minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
 # floor, so the check skips on any other minor. Bump together with the documented baseline.
 GO_FLOOR_MINOR = "1.27"
-# Hook events that mean the same thing on each host. Claude PostToolUse is Cursor
-# afterFileEdit (a formatter; that event has no output) or postToolUse (context back
-# to the model). A script may use either Cursor event.
+# Hook events that mean the same thing on each host. Claude PostToolUse maps to Cursor
+# afterFileEdit (no documented output, so it fits a formatter) or postToolUse (its
+# additional_context reaches the model). A script may use either Cursor event, but one that
+# prints additional_context must not sit on afterFileEdit.
 EQUIVALENT_HOOK_EVENTS = {
     "SessionStart": ("sessionStart",),
     "PostToolUse": ("afterFileEdit", "postToolUse"),
@@ -362,10 +363,13 @@ def _hook_scripts(config: dict) -> dict:
 
 
 def validate_hook_parity():
-    """Dual-host hook parity: the same scripts must be wired for the equivalent event on both
-    hosts, every wired script must exist and be executable, and no `hooks/*.sh` may sit in the
-    tree unwired. Catches the drift where a new hook reaches Claude Code but never Cursor —
-    previously only findable by reading both configs side by side."""
+    """Cursor hook config and dual-host hook parity. Cursor's file must carry `"version": 1`
+    and no command may name CLAUDE_PLUGIN_ROOT. Each script is wired for the equivalent event on
+    both hosts (Claude PostToolUse <-> Cursor afterFileEdit or postToolUse); a script that prints
+    `additional_context` is not on afterFileEdit, which documents no output; every postToolUse
+    entry has a matcher; every wired script exists and is executable, and no `hooks/*.sh` sits in
+    the tree unwired. Catches the drift where a new hook reaches Claude Code but never Cursor, or
+    reaches Cursor on an event that drops what it prints."""
     claude_path, cursor_path = ROOT / "hooks" / "hooks.json", ROOT / "hooks" / "cursor-hooks.json"
     if not (claude_path.is_file() and cursor_path.is_file()):
         return
@@ -382,11 +386,23 @@ def validate_hook_parity():
                 cmd = node.get("command")
                 if isinstance(cmd, str) and "CLAUDE_PLUGIN_ROOT" in cmd:
                     err(f"hooks/cursor-hooks.json: {event} command '{cmd}' uses CLAUDE_PLUGIN_ROOT, "
-                        f"which Cursor does not set; keep the path relative to the plugin install")
+                        f"which Cursor does not document setting; keep the path relative to the "
+                        f"plugin install")
                 stack.extend(node.values())
             elif isinstance(node, list):
                 stack.extend(node)
+    # Cursor reads an empty matcher, or "*", as every tool, so a nudge would also fire after a Read.
+    for entry in (cursor.get("hooks") or {}).get("postToolUse") or []:
+        if isinstance(entry, dict) and str(entry.get("matcher") or "").strip() in ("", "*"):
+            err(f"hooks/cursor-hooks.json: postToolUse command '{entry.get('command')}' has no "
+                f"matcher, so it runs after every tool; name the edit tools")
     claude_events, cursor_events = _hook_scripts(claude), _hook_scripts(cursor)
+    for name in sorted(cursor_events.get("afterFileEdit", set())):
+        script = ROOT / "hooks" / name
+        if script.is_file() and '"additional_context"' in script.read_text():
+            err(f"hooks/cursor-hooks.json: '{name}' prints additional_context but is wired on "
+                f"afterFileEdit, which documents no output, so the model never sees it; wire it "
+                f"on postToolUse")
     cursor_equiv = {ev for names in EQUIVALENT_HOOK_EVENTS.values() for ev in names}
     wired = set()
     for claude_event, cursor_names in EQUIVALENT_HOOK_EVENTS.items():
@@ -692,9 +708,14 @@ def _selftest_fetch_policy() -> int:
         RETRY_DELAY = real_delay
 
 
+# a.sh stands for the nudge (prints additional_context, so Cursor postToolUse), b.sh for the
+# formatter (prints nothing, so Cursor afterFileEdit): both Cursor alternatives are exercised.
 SELFTEST_HOOKS_CLAUDE = {"hooks": {"PostToolUse": [{"matcher": "Write|Edit", "hooks": [
-    {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]}]}}
-SELFTEST_HOOKS_CURSOR = {"version": 1, "hooks": {"afterFileEdit": [{"command": "bash hooks/a.sh"}]}}
+    {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"},
+    {"type": "command", "command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"}]}]}}
+SELFTEST_HOOKS_CURSOR = {"version": 1, "hooks": {
+    "afterFileEdit": [{"command": "bash hooks/b.sh"}],
+    "postToolUse": [{"command": "bash hooks/a.sh", "matcher": "Write"}]}}
 
 
 def _selftest_tree(root: Path, *, break_it=None):
@@ -735,20 +756,31 @@ def _selftest_tree(root: Path, *, break_it=None):
     (root / "agents" / "go-checker.md").write_text(
         f"---\nname: go-checker\ndescription: checks\n{tools} Read\n---\n\nBody.\n")
     script = root / "hooks" / "a.sh"
-    script.write_text("#!/usr/bin/env bash\nexit 0\n")
+    script.write_text("#!/usr/bin/env bash\nprintf '{\"additional_context\":\"x\"}\\n'\n")
     script.chmod(0o644 if break_it == "hook_not_executable" else 0o755)
+    (root / "hooks" / "b.sh").write_text("#!/usr/bin/env bash\nexit 0\n")
+    (root / "hooks" / "b.sh").chmod(0o755)
     if break_it == "hook_unwired":
         stray = root / "hooks" / "stray.sh"
         stray.write_text("#!/usr/bin/env bash\nexit 0\n")
         stray.chmod(0o755)
-    (root / "hooks" / "hooks.json").write_text(json.dumps(SELFTEST_HOOKS_CLAUDE))
+    claude = json.loads(json.dumps(SELFTEST_HOOKS_CLAUDE))
+    if break_it == "hook_parity_cursor_only":
+        del claude["hooks"]["PostToolUse"][0]["hooks"][1]
+    (root / "hooks" / "hooks.json").write_text(json.dumps(claude))
+    # Each defect changes one thing only, so no other hook check fires in its place.
     cursor = json.loads(json.dumps(SELFTEST_HOOKS_CURSOR))
     if break_it == "hook_parity":
-        cursor = {"hooks": {"afterFileEdit": []}}
+        cursor["hooks"]["postToolUse"] = []
     elif break_it == "cursor_no_version":
         del cursor["version"]
     elif break_it == "cursor_plugin_root":
-        cursor["hooks"]["afterFileEdit"] = [{"command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/a.sh"}]
+        cursor["hooks"]["afterFileEdit"] = [{"command": "bash ${CLAUDE_PLUGIN_ROOT}/hooks/b.sh"}]
+    elif break_it == "context_on_after_file_edit":
+        cursor["hooks"]["afterFileEdit"].append({"command": "bash hooks/a.sh"})
+        cursor["hooks"]["postToolUse"] = []
+    elif break_it == "post_tool_use_no_matcher":
+        del cursor["hooks"]["postToolUse"][0]["matcher"]
     (root / "hooks" / "cursor-hooks.json").write_text(json.dumps(cursor))
     ref_config = "linters:\n  enable:\n    - revive\n"
     (root / "references" / "golangci.v2.yml").write_text(ref_config)
@@ -758,36 +790,75 @@ def _selftest_tree(root: Path, *, break_it=None):
         f"---\nname: go-lint-setup\ndescription: scaffolds\n---\n\n```yaml\n{scaffold}```\n")
     inventory = "" if break_it == "doc_inventory" else "go-thing "
     for doc in ("README.md", "AGENTS.md"):
-        (root / doc).write_text(f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a\n")
+        (root / doc).write_text(f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a b\n")
     for doc in ("testing.md", "install.md"):
         (root / "docs" / doc).write_text(
-            f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a\n")
+            f"# Doc\n\n{inventory}go-coding go-lint-setup go-reviewer go-checker a b\n")
 
 
+# (label, defect, checks, a substring of the error that defect must raise). The substring keeps
+# one check's error from passing for another's: a case passes only on its own check's message.
 SELFTEST_CASES = (
-    ("hook wired for one host only", "hook_parity", (validate_hook_parity,)),
-    ("wired hook not executable", "hook_not_executable", (validate_hook_parity,)),
-    ("hook script left unwired", "hook_unwired", (validate_hook_parity,)),
-    ("Cursor hook config without version 1", "cursor_no_version", (validate_hook_parity,)),
-    ("Cursor hook command uses CLAUDE_PLUGIN_ROOT", "cursor_plugin_root", (validate_hook_parity,)),
-    ("shipped skill missing from the docs", "doc_inventory", (validate_doc_inventories,)),
-    ("unquoted ': ' in a description", "frontmatter_colon", (validate_skills,)),
-    ("skill name != directory", "skill_name", (validate_skills,)),
+    ("hook wired for Claude only", "hook_parity", (validate_hook_parity,),
+     "not for Cursor's afterFileEdit or postToolUse"),
+    ("hook wired for Cursor only", "hook_parity_cursor_only", (validate_hook_parity,),
+     "not for Claude's PostToolUse"),
+    ("wired hook not executable", "hook_not_executable", (validate_hook_parity,), "not executable"),
+    ("hook script left unwired", "hook_unwired", (validate_hook_parity,), "wired by neither host"),
+    ("Cursor hook config without version 1", "cursor_no_version", (validate_hook_parity,),
+     'needs "version": 1'),
+    ("Cursor hook command uses CLAUDE_PLUGIN_ROOT", "cursor_plugin_root", (validate_hook_parity,),
+     "uses CLAUDE_PLUGIN_ROOT"),
+    ("context hook on Cursor afterFileEdit", "context_on_after_file_edit", (validate_hook_parity,),
+     "prints additional_context but is wired on afterFileEdit"),
+    ("Cursor postToolUse hook without a matcher", "post_tool_use_no_matcher",
+     (validate_hook_parity,), "has no matcher"),
+    ("shipped skill missing from the docs", "doc_inventory", (validate_doc_inventories,),
+     "component inventory is stale"),
+    ("unquoted ': ' in a description", "frontmatter_colon", (validate_skills,), "unquoted ': '"),
+    ("skill name != directory", "skill_name", (validate_skills,), "!= directory"),
     ("agent declares allowed-tools", "agent_tools",
-     (lambda: validate_md_components("agents", require_name=True, is_agent=True),)),
-    ("taught linter not in the reference config", "taught_linter", (validate_linter_references,)),
-    ("scaffold config drifts from the reference", "scaffold_drift", (validate_linter_references,)),
-    ("Google tie-break sentence drifts between files", "tie_break", (validate_tie_break_parity,)),
+     (lambda: validate_md_components("agents", require_name=True, is_agent=True),),
+     "not 'allowed-tools:'"),
+    ("taught linter not in the reference config", "taught_linter", (validate_linter_references,),
+     "teaches the 'nosuchlinter' linter"),
+    ("scaffold config drifts from the reference", "scaffold_drift", (validate_linter_references,),
+     "keep the two config copies identical"),
+    ("Google tie-break sentence drifts between files", "tie_break", (validate_tie_break_parity,),
+     "tie-break sentence verbatim"),
 )
+
+
+def _selftest_case(defect, checks, expected) -> str:
+    """Run one self-test case on a broken and a clean tree; return why it fails, or ""."""
+    global ROOT, errors
+    real_root, real_errors, outcomes = ROOT, errors, {}
+    for variant, break_it in (("broken", defect), ("clean", None)):
+        with tempfile.TemporaryDirectory() as tmp:
+            ROOT = Path(tmp)
+            _selftest_tree(ROOT, break_it=break_it)
+            errors = []
+            for check in checks:
+                check()
+            outcomes[variant] = list(errors)
+    ROOT, errors = real_root, real_errors
+    if not outcomes["broken"]:
+        return "the check did not catch it"
+    if not any(expected in e for e in outcomes["broken"]):
+        return f"no error mentions '{expected}'; got: {outcomes['broken'][0]}"
+    if outcomes["clean"]:
+        return f"the check also fires on a clean tree: {outcomes['clean'][0]}"
+    return ""
 
 
 def run_selftest() -> int:
     """Every structural check, run against a tree built to break it. A check that has quietly
     stopped checking — a renamed field, a regex that no longer matches — still exits 0 on a valid
-    tree, so 'the suite is green' proves nothing on its own. Each case is also run against the
-    same tree with the defect removed, so a check that always fires fails too."""
-    global ROOT, errors
-    real_root, real_errors, failures = ROOT, errors, 0
+    tree, so 'the suite is green' proves nothing on its own. A case passes only when the error it
+    expects appears, so another check's error cannot stand in for it. Each case is also run
+    against the same tree with the defect removed, so a check that always fires fails too."""
+    global ROOT
+    real_root, failures = ROOT, 0
     # The link collector: a templated URL is a pattern, not a link, and is skipped whole — never
     # truncated at the placeholder and checked as a shorter, real-looking URL.
     with tempfile.TemporaryDirectory() as tmp:
@@ -803,25 +874,16 @@ def run_selftest() -> int:
         print(f"FAIL link collector: collected {sorted(got)}")
         failures += 1
     failures += _selftest_fetch_policy()
-    for label, defect, checks in SELFTEST_CASES:
-        outcomes = {}
-        for variant, break_it in (("broken", defect), ("clean", None)):
-            with tempfile.TemporaryDirectory() as tmp:
-                ROOT = Path(tmp)
-                _selftest_tree(ROOT, break_it=break_it)
-                errors = []
-                for check in checks:
-                    check()
-                outcomes[variant] = list(errors)
-        ROOT, errors = real_root, real_errors
-        if not outcomes["broken"]:
-            print(f"FAIL {label}: the check did not catch it")
-            failures += 1
-        elif outcomes["clean"]:
-            print(f"FAIL {label}: the check also fires on a clean tree: {outcomes['clean'][0]}")
-            failures += 1
-        else:
-            print(f"ok   {label}")
+    for label, defect, checks, expected in SELFTEST_CASES:
+        why = _selftest_case(defect, checks, expected)
+        print(f"FAIL {label}: {why}" if why else f"ok   {label}")
+        failures += bool(why)
+    # Can-fail control: a case whose defect raises another check's error must not pass.
+    if _selftest_case("cursor_no_version", (validate_hook_parity,), "dual-host parity"):
+        print("ok   can-fail: a case does not pass on another check's error")
+    else:
+        print("FAIL can-fail: a case passed on another check's error")
+        failures += 1
     if failures:
         print(f"FAIL: {failures} check(s) do not actually check")
         return 1
