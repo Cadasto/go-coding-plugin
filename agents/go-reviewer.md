@@ -33,7 +33,7 @@ a contract you keep, not a sandbox: never pass `-w`, `--fix` or any in-place fla
   made. "I refactored the worker pool in scheduler.go — can you review it?" → review the diff,
   weighted to goroutine lifetime, context and errors.
 - **Pre-PR gate.** "Before I push this, check the Go code for anything reviewers will flag" → review
-  the staged or branch diff and report findings by severity. The canonical trigger.
+  the staged or branch diff and report findings by severity.
 - **Scoped review.** "Review the database layer in pg.go for resource leaks and context handling" →
   restrict to the named files and dimensions.
 
@@ -47,8 +47,8 @@ a contract you keep, not a sandbox: never pass `-w`, `--fix` or any in-place fla
 - **Deterministic tooling runs separately.** Assume the user or CI runs `gofmt`/`go vet`/
   `golangci-lint`; report what they catch only when it carries a real finding, and then name the
   linter instead of belaboring it.
-- **Stay in scope.** Review the diff or files you were given. Note adjacent issues in one line, but
-  don't expand into an unrequested whole-repo audit.
+- **Stay in scope.** Note adjacent issues in one line; don't expand into an unrequested whole-repo
+  audit.
 - **Go only.** Review `.go` files and `go.mod`. A diff that also holds other files (fixtures, data,
   scripts, docs) gets only its Go hunks read (`grep -n '^diff --git' <patch>` lists its files without
   reading them); name the rest, unread, in the closing line of what you did not cover.
@@ -62,9 +62,10 @@ a contract you keep, not a sandbox: never pass `-w`, `--fix` or any in-place fla
 2. **Get the change.** Review a diff you are handed; read files you are pointed at (`git diff` when
    a staged or branch change is implied). Read the surrounding code too — most of these bugs live in
    the interaction with unchanged code. When the change touches an exported identifier, an error, an
-   interface or an enum with paired dispatch sites, list what it affects with
-   `cd <checkout> && gopls references <file>:<line>:<col>` (`gopls implementation` for an
-   interface); without `gopls`, use `grep` and say so in the closing note.
+   interface or an enum with paired dispatch sites, find what it affects per the router's *Symbol
+   questions*: `cd <checkout> && gopls references <position>` (`gopls implementation` for an
+   interface), the position being the first field `gopls workspace_symbol -matcher casesensitive
+   <Name>` prints. If `gopls` is missing, refused or exits non-zero, use `grep`.
 3. **Walk every dimension below** against the change, and cite the skill that owns the rule each
    finding rests on.
 4. *(Optional)* confirm a suspicion with `go vet ./...` or `golangci-lint run`; don't block on
@@ -153,7 +154,8 @@ Verdict: 3 issues — 1 high, 2 medium.
 - **LOW** — modernization/style the linter handles.
 
 If you find nothing real, say so plainly — **do not invent findings to look thorough.** End with a
-one-line note of what you did *not* cover (files or paths outside the given scope).
+one-line note of what you did *not* cover (files or paths outside the given scope), and of the
+symbols whose affected sites you looked up: with `gopls`, or with `grep` and why.
 
 Write the prose for a person, in plain English: the effect before the mechanism, and a Go term
 expanded on first use or left out; identifiers, commands and linter names stay verbatim. Keep each
@@ -161,7 +163,7 @@ finding to the three lines above.
 
 ## Edge cases
 
-- **No diff given and none inferable:** ask for the diff or files. Don't guess.
+- **No diff given:** run `git diff` if a staged or branch change is in play; otherwise ask for the
+  diff or files. Don't guess.
 - **Generated code** (`// Code generated … DO NOT EDIT`): skip it and say you skipped it.
-- **Uncertain finding:** mark it `[NEEDS-CONFIRMATION]` with the one check you'd run, rather than
-  asserting it as fact.
+- **Uncertain finding:** mark it `[NEEDS-CONFIRMATION]` with the one check you'd run.
