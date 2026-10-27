@@ -56,28 +56,30 @@ When asked to *refresh the skills against current Go practice*, re-read these so
 - `modernize` per-fixer docs: <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>. These track x/tools **tip**, which is usually ahead of the toolchain, so they are the source for **†** rows and never evidence that a fixer ships in `go fix`
 - golangci-lint docs: <https://golangci-lint.run/docs/> · v1→v2 migration: <https://golangci-lint.run/docs/product/migration-guide/> · changelog (for the CI pin): <https://golangci-lint.run/docs/product/changelog/>
 - `go.dev/blog` for feature-specific posts (`synctest`, `testing-b-loop`, `slog`, `range-functions`, `examples`)
-- **Linter rule catalogues**: when a skill says a tool catches something, the rule id or name comes from here, not from memory: `go vet` analyzers <https://pkg.go.dev/cmd/vet>; staticcheck checks <https://staticcheck.dev/docs/checks/>; revive rules <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; errorlint <https://github.com/polyfloyd/go-errorlint>; gofumpt rules <https://github.com/mvdan/gofumpt#added-rules>; the golangci-lint linters index <https://golangci-lint.run/docs/linters/>
+- **Linter rule catalogues**: when a skill says a tool catches something, the rule id or name comes from here, not from memory: `go vet` analyzers <https://pkg.go.dev/cmd/vet>; staticcheck checks <https://staticcheck.dev/docs/checks/>; revive rules <https://github.com/revive-lint/revive/blob/master/RULES_DESCRIPTIONS.md>; errorlint <https://github.com/polyfloyd/go-errorlint>; gofumpt rules <https://github.com/mvdan/gofumpt#added-rules>; the golangci-lint linters index <https://golangci-lint.run/docs/linters/>
 
 **Revision record**: the mutable sources, as last read. A refresh diffs each against its recorded revision first, so it reads what changed rather than everything, then updates this table.
 
 | Source | Revision read | Checked |
 |---|---|---|
-| Go Code Review Comments (`golang/wiki` mirror, `CodeReviewComments.md`) | `228ca0b` (2026-09-01) | 2026-09-09 |
-| Google Go Style Guide (`google/styleguide`, `go/`) | `c098353` (2026-03-18) | 2026-09-09 |
-| Uber Go Style Guide (`uber-go/guide`) | `1d60a91` (2026-04-15) | 2026-09-09 |
-| revive rule descriptions (`mgechev/revive`, `RULES_DESCRIPTIONS.md`) | `803cd04` (2026-09-03) | 2026-09-09 |
-| Effective Go, doc comment syntax, `cmd/vet`, package docs | versioned with the Go release; read at go1.27.1 | 2026-09-09 |
+| Go Code Review Comments (`golang/wiki` mirror, `CodeReviewComments.md`) | `228ca0b` (2026-09-01) | 2026-10-27 |
+| Google Go Style Guide (`google/styleguide`, `go/`) | `c098353` (2026-03-18) | 2026-10-27 |
+| Uber Go Style Guide (`uber-go/guide`) | `1d60a91` (2026-04-15) | 2026-10-27 |
+| revive rule descriptions (`revive-lint/revive`, formerly `mgechev/revive`; `RULES_DESCRIPTIONS.md`) | `ae0df46` (2026-10-19) | 2026-10-27 |
+| Go 1.27 release notes (`golang/website`, `_content/doc/go1.27.md`; late entries do land) | `586fb19` (2026-10-02) | 2026-10-27 |
+| x/tools `modernize` suite as golangci-lint pins it (`go.mod` of the latest golangci-lint release) | x/tools v0.52.0 in golangci-lint v2.15.0 | 2026-10-27 |
+| Effective Go, doc comment syntax, `cmd/vet`, package docs | versioned with the Go release; read at go1.27.3 | 2026-10-27 |
 
 **Procedure**
 
 1. Confirm the current *released* Go version (release history); a draft `go1.NN` page is not a baseline. Guidance for an unreleased version goes in as one *italic, explicitly labelled* sentence (`*Go 1.NN (draft, expected …)*`), never as a rule.
 
-   **The baseline is a hard floor** (currently **Go 1.26.4+**; Go 1.27 is supported too, with its additions flagged as hints rather than folded into the floor): recommend the modern form flat, with no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the version annotation (`Since`, "(Go 1.24)"): that is provenance, and it tells a reader on an older module what a bump would buy. When the floor moves, delete the guidance below it.
+   **The baseline is a hard floor** (currently **Go 1.27+**): recommend the modern form flat, with no "on 1.NN+ modules prefer…" hedging and no fallback branch for older toolchains. Keep the version annotation (`Since`, "(Go 1.24)"): that is provenance, and it tells a reader on an older module what a bump would buy. When the floor moves, delete the guidance below it.
 2. Diff each `go-*` skill against Tier 1 for the baseline and the two prior versions. The common miss is a stdlib API that landed *after* a skill was written (`errors.AsType`, `t.ArtifactDir`).
 3. Verify every version gate in `pkg.go.dev`'s "added in" annotation before writing a `Since` cell.
-4. Re-check the Tier 3 tool names: a renamed or dropped fixer/linter turns a rule into a wrong command (`waitgroup` → `waitgroupgo`).
+4. Re-check the Tier 3 tool names: a renamed or dropped fixer/linter turns a rule into a wrong command (`waitgroup` → `waitgroupgo`). A registered name can still lack a rewrite its x/tools docs describe (`stringscut` gained `CutLast` in x/tools before the toolchain shipped it), so before writing a Fixer cell for a new idiom, run `go fix -diff` on a small module that uses the old form.
 
-   **Run the tool, don't read about it:** when a floor-version toolchain is available, `go tool fix help` settles fixer names in one command, whereas pkg.go.dev's modernize page tracks x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters (`golangci-lint help linters` on the pinned build). `scripts/validate.py` enforces both halves: every linter taught in components must be enabled in `references/golangci.v2.yml`, and, when a floor-minor Go toolchain is on PATH (CI's matrix installs both `1.26.x` and `1.27.x`; locally it soft-skips with a note), the `go-idioms` Fixer column is verified against `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill teaches as *opt-in* (`shadow` in `go-idioms`) is the deliberate exception to the first half: it is taught together with the config line that switches it on, and is not added to the reference config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.26.x`); move all three (docs baseline included) together.
+   **Run the tool, don't read about it:** when a floor-version toolchain is available, `go tool fix help` settles fixer names in one command, whereas pkg.go.dev's modernize page tracks x/tools tip, which is usually ahead of what `go fix` ships; same idea for linters (`golangci-lint help linters` on the pinned build). `scripts/validate.py` enforces both halves: every linter taught in components must be enabled in `references/golangci.v2.yml`, and, when a floor-minor Go toolchain is on PATH (CI's matrix installs the floor minor, `1.27.x`; locally it soft-skips with a note on any other minor), the `go-idioms` Fixer column is verified against `go tool fix help`: plain names must be registered, † names must not be. An analyzer a skill teaches as *opt-in* (`shadow` in `go-idioms`) is the deliberate exception to the first half: it is taught together with the config line that switches it on, and is not added to the reference config at a refresh. The floor minor lives in `GO_FLOOR_MINOR` in the script and in the workflow's matrix floor entry (`1.27.x`); move all three (docs baseline included) together.
 
    **Never hardcode a tool version in a component.** A named `golangci-lint` release rots within weeks and nobody remembers why it was chosen; the skills carry the *pin policy* (pin exactly, one source of truth, automated bump PR) plus the changelog URL, and let the consuming repo own the number. The same goes for `gopls`/`gofumpt` versions outside `docs/install.md`.
 5. Keep the two copies of the reference lint config in sync: `references/golangci.v2.yml` and the scaffold block in `go-lint-setup`.

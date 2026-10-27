@@ -110,7 +110,7 @@ exported signature are part of the API — they are as reviewable as the code.
 - Effective Go — <https://go.dev/doc/effective_go>
 - Code Review Comments (Package/Variable/Receiver Names, Initialisms, Mixed Caps, In-Band Errors, Named Result Parameters, Pass Values, Interfaces, Doc Comments) — <https://go.dev/wiki/CodeReviewComments>
 - Google Go Style Decisions (Import grouping, Import blank, Import dot, Field names, Getters, Receiver names, Initialisms) — <https://google.github.io/styleguide/go/decisions>; Best Practices (naming, option structs, documentation, test doubles, program initialization) — <https://google.github.io/styleguide/go/best-practices>
-- `go vet` analyzers (`composites`, `copylocks`) — <https://pkg.go.dev/cmd/vet>; revive rules (`blank-imports`, `dot-imports`, `exported`, `var-naming`, `receiver-naming`) — <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>
+- `go vet` analyzers (`composites`, `copylocks`) — <https://pkg.go.dev/cmd/vet>; revive rules (`blank-imports`, `dot-imports`, `exported`, `var-naming`, `receiver-naming`) — <https://github.com/revive-lint/revive/blob/master/RULES_DESCRIPTIONS.md>
 - Uber Go Style Guide (Exit in Main, Avoid init()) — <https://github.com/uber-go/guide>
 - Keeping Your Modules Compatible (Working with interfaces) — <https://go.dev/blog/module-compatibility>; `gopls` command line — <https://go.dev/gopls/command-line>
 - Doc comment syntax — <https://go.dev/doc/comment>; `internal/` — <https://pkg.go.dev/cmd/go#hdr-Internal_Directories>

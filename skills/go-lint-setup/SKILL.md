@@ -81,6 +81,8 @@ golangci-lint **v2** (Mar 2025) changed the config schema from v1 — **a v1 con
 **Common breakage when bumping the pin:** run `--fix` first, then either land the leftover findings
 or add an explicit `linters.exclusions.rules` entry with a reason. If the pinned build rejects a
 linter name from the reference config, the pin is too old — bump it rather than deleting the linter.
+A `linters.settings.modernize.disable` entry naming `fmtappendf` (removed) or `waitgroup` (renamed
+`waitgroupgo`) now only logs a warning and disables nothing; rename or drop it.
 
 **Adopting `modernize`:** it is the single highest-leverage linter in the reference set — it
 operationalizes most `go-idioms` rules on the same engine as gopls/`go fix`, so the plugin's advice
@@ -90,9 +92,10 @@ reproducibly against the pinned version rather than whatever toolchain a develop
 `errorlint` pairs with it in the reference config (`%w` + `errors.Is`/`AsType` discipline — see
 `go-errors`).
 
-**Go 1.27 needs golangci-lint ≥ v2.13.0** (released 2026-08-19 — the same day as Go 1.27 itself) for
-Go 1.27 support; anything v2.12.x or earlier predates it — a compatibility floor, not a pin (see
-*Discipline once adopted*). Source: <https://golangci-lint.run/docs/product/changelog/#2130>.
+**The Go 1.27 baseline needs golangci-lint ≥ v2.13.0** (released 2026-08-19 — the same day as Go
+1.27 itself), the first release with Go 1.27 support; anything v2.12.x or earlier predates it — a
+compatibility floor, not a pin (see *Discipline once adopted*). Source:
+<https://golangci-lint.run/docs/product/changelog/#2130>.
 
 ### Discipline once adopted
 
@@ -107,7 +110,11 @@ Go 1.27 support; anything v2.12.x or earlier predates it — a compatibility flo
 - **Install the release binary, not from source.** Upstream states that `go install`/`go get`, the
   tools pattern, and `tool` directives "aren't guaranteed to work" — they compile golangci-lint with
   whatever local Go version is around. Use the binary, the action, or the Docker image, from a
-  release built with Go ≥ the module's toolchain (1.26+) so it can parse the language version.
+  release built with Go ≥ the module's toolchain (1.27+) so it can parse the language version.
+- **Format with one Go minor.** Go 1.27 changed the column-alignment logic in `gofmt` and
+  `go/format`, so it can re-space a few files a 1.26 `gofmt` left alone. golangci-lint's formatters
+  use the `go/format` of the Go release its binary was built with, so keep CI, the pinned build and
+  developers' toolchains on one Go minor, or the format check flips between them.
 - **Suppress narrowly, and say why.** `//nolint:errcheck // best-effort close on a read-only handle`
   — never a bare `//nolint` (it disables every linter on that line) and never a blanket
   file-level disable where a `linters.exclusions.rules` entry with a path pattern is the honest
@@ -116,7 +123,8 @@ Go 1.27 support; anything v2.12.x or earlier predates it — a compatibility flo
 ## Sources
 - golangci-lint docs — <https://golangci-lint.run/docs/>; v1→v2 migration guide (`migrate`, key moves) — <https://golangci-lint.run/docs/product/migration-guide/>
 - v2 announcement (`fmt`, `formatters`) — <https://ldez.github.io/blog/2025/03/23/golangci-lint-v2/>
-- `modernize` — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>
+- `modernize` — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>; golangci-lint's handling of the removed and renamed analyzers — <https://github.com/golangci/golangci-lint/blob/3ad7cb06d673241671520c4b194a989c3d725b3d/pkg/golinters/modernize/modernize.go>
+- Go 1.27 release notes (`gofmt` alignment, `go fix` changes) — <https://go.dev/doc/go1.27>
 
 ---
 *Decomposition inspired by [`samber/cc-skills-golang`](https://github.com/samber/cc-skills-golang) (MIT © 2026 Samuel Berthe); rules grounded in the sources above.*

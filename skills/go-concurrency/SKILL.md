@@ -7,13 +7,13 @@ description: Idiomatic, leak-free Go concurrency. This skill should be used when
 
 Deterministic backstop: `go test -race ./...`, `go vet ./...` (catches copylocks, lost cancel),
 and `go.uber.org/goleak`. The race detector is the source of truth — run it before reasoning.
-The runtime also ships an experimental `goroutineleak` profile in `runtime/pprof` (Go 1.26)
-that reports leaked goroutines — a toolchain-native complement to `goleak` for leak hunts (on Go
-1.26, enable it with `GOEXPERIMENT=goroutineleakprofile` at build time). The implementation is
-production-ready; the experiment flag is only about API feedback, and it costs nothing unless in use.
-*On Go 1.27 the profile is generally available with no build flag — read it via
-`pprof.Lookup("goroutineleak")` or the `net/http/pprof` endpoint `/debug/pprof/goroutineleak`. Source:
-<https://go.dev/doc/go1.27>; <https://pkg.go.dev/runtime/pprof>.*
+The runtime also reports leaked goroutines itself: the `goroutineleak` profile (Go 1.27, no build
+flag) — `pprof.Lookup("goroutineleak")`, or `/debug/pprof/goroutineleak` under `net/http/pprof`.
+It finds goroutines blocked forever on a channel, a `select`, or a `sync` lock, `WaitGroup` or
+`Cond`, with few false positives, but misses a leak whose channel or lock stays reachable from a
+global or a running goroutine, and never counts I/O or syscalls. Keep `goleak` and `synctest` in
+tests; the profile covers production, where they cannot. Collect it infrequently (every few hours —
+a leak stays visible once it happens); each collection slows that garbage-collection cycle.
 
 ## Rules
 
@@ -54,12 +54,16 @@ production-ready; the experiment flag is only about API feedback, and it costs n
   (Go 1.24, preferred over the older `runtime.SetFinalizer`: multiple cleanups per object, works on
   interior pointers, no leak on reference cycles) is a backstop for OS/native handles only — a
   cleanup may never run, so no correctness may depend on it.
+- **Keep secrets out of goroutine labels.** On a module at Go 1.27 or later, a crash traceback prints
+  each goroutine's `runtime/pprof` labels, so a label ends up wherever crash output goes. Label with
+  classes (route, job kind, tenant tier), never tokens or personal data; `GODEBUG=tracebacklabels=0`
+  turns the printing off.
 - **Testing time/concurrency:** use **`testing/synctest`** (stable since Go 1.25) — fake clock +
   deterministic scheduling. See `go-testing`.
 
 ## Sources
 - synctest — <https://go.dev/blog/synctest>; Go 1.25/1.26 release notes — <https://go.dev/doc/go1.26>
-- `goroutineleak` profile (Go 1.26, experimental) — <https://pkg.go.dev/runtime/pprof>
+- `goroutineleak` profile (generally available in Go 1.27; limitations, cost) — <https://go.dev/blog/goroutine-leak-profiles>, <https://pkg.go.dev/runtime/pprof>; traceback labels — <https://go.dev/doc/go1.27>
 - `context` (`Cause`, `WithoutCancel`, `AfterFunc`, `WithTimeoutCause`) — <https://pkg.go.dev/context>; `runtime.AddCleanup` — <https://pkg.go.dev/runtime#AddCleanup>
 - Code Review Comments (Goroutine Lifetimes, Contexts, Synchronous Functions) — <https://go.dev/wiki/CodeReviewComments>
 - Uber Go Style Guide (Concurrency) — <https://github.com/uber-go/guide>

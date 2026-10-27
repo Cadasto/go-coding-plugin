@@ -17,8 +17,8 @@ run_case_absent() { # NAME DIR UNEXPECTED_SUBSTRING
 }
 t="$(mktemp -d)"; trap 'rm -rf "$t"' EXIT
 mkdir -p "$t/go-with-lint" "$t/go-no-lint" "$t/not-go"
-printf 'module x\n\ngo 1.26.0\n' > "$t/go-with-lint/go.mod"; : > "$t/go-with-lint/.golangci.yml"
-printf 'module x\n\ngo 1.26.0\n' > "$t/go-no-lint/go.mod"
+printf 'module x\n\ngo 1.27.0\n' > "$t/go-with-lint/go.mod"; : > "$t/go-with-lint/.golangci.yml"
+printf 'module x\n\ngo 1.27.0\n' > "$t/go-no-lint/go.mod"
 run_case "go repo with lint config names the hop"      "$t/go-with-lint" "load go-coding then the skill for your diff"
 run_case "go repo with lint config names go-reviewer"  "$t/go-with-lint" "go-reviewer for a diff review"
 run_case "go repo banner routes symbol lookups to gopls" "$t/go-with-lint" "gopls for symbol lookups"

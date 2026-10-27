@@ -69,7 +69,7 @@ STANDARD_LINTERS = {"errcheck", "govet", "ineffassign", "staticcheck", "unused"}
 # The plugin's Go hard floor (minor). The go-idioms Fixer column is verified against THIS
 # minor's `go tool fix help` — a newer/older toolchain's list would prove nothing about the
 # floor, so the check skips on any other minor. Bump together with the documented baseline.
-GO_FLOOR_MINOR = "1.26"
+GO_FLOOR_MINOR = "1.27"
 # Hook events that mean the same thing on each host, so the same scripts must be wired for
 # both. Claude event -> Cursor event.
 EQUIVALENT_HOOK_EVENTS = {"SessionStart": "sessionStart", "PostToolUse": "afterFileEdit"}

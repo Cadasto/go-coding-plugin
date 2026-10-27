@@ -21,7 +21,7 @@ Detail lives in `docs/`; keep a one-line rule here and point to the doc that own
 
 This plugin encodes **Go (golang) coding standards**. Guidance must be grounded in authoritative, verifiable sources rather than personal preference:
 
-- **Baseline**: **Go 1.26.4+** is a hard floor (Go 1.27 supported; its additions are flagged as hints). No fallback guidance for 1.25 or older; version annotations remain as provenance.
+- **Baseline**: **Go 1.27+** is a hard floor. No fallback guidance for 1.26 or older; version annotations remain as provenance, and a module on an older `go` directive skips what is newer than it (the compiler rejects newer language features, `go vet`'s `stdversion` check newer standard-library symbols, and `go fix` offers only rewrites the directive allows).
 - **Formatting**: `gofmt` is the canonical formatter; `gofumpt` is a stricter superset. Formatting is non-negotiable and machine-enforced, not a matter of opinion.
 - **Vetting & static analysis**: `go vet` (suspicious constructs in the toolchain), `staticcheck`, and `golangci-lint` (the de-facto meta-linter that aggregates many analyzers).
 - **Style references** (cite these when a rule depends on them):
@@ -29,7 +29,7 @@ This plugin encodes **Go (golang) coding standards**. Guidance must be grounded 
   - **Go Code Review Comments**: <https://go.dev/wiki/CodeReviewComments>
   - **Google Go Style Guide**: <https://google.github.io/styleguide/go/>. Cite the document a rule comes from: the *Guide* (normative and canonical; the ordered principles), *Style Decisions* (normative; the reviewer rulebook), *Best Practices* (advisory).
   - **Uber Go Style Guide**: <https://github.com/uber-go/guide>
-  - **Linter rule catalogues**: name the rule when a skill says a tool catches something: `go vet` <https://pkg.go.dev/cmd/vet>, staticcheck <https://staticcheck.dev/docs/checks/>, revive <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>
+  - **Linter rule catalogues**: name the rule when a skill says a tool catches something: `go vet` <https://pkg.go.dev/cmd/vet>, staticcheck <https://staticcheck.dev/docs/checks/>, revive <https://github.com/revive-lint/revive/blob/master/RULES_DESCRIPTIONS.md>
 - **Standard library & toolchain**: package docs at <https://pkg.go.dev>; modules, `go test`, table-driven tests, and the race detector (`go test -race`) are the baseline testing conventions.
 
 When a recommendation derives from one of the above, attribute it explicitly and distinguish cited rules from inference.
@@ -56,7 +56,7 @@ Shared assets (skills, agents) are consumed by both hosts; host-specific manifes
 - **References**: `references/golangci.v2.yml`, the shipped golangci-lint v2 reference config. Shared reference material lives here, **not** under `commands/`.
 - **MCP config** *(not present)*: `.mcp.json` only if the plugin later integrates an MCP server.
 - **Scripts**: `scripts/validate.sh` (wraps the stdlib-only `scripts/validate.py`), `scripts/hooks-test.sh`, `scripts/usage-report.py` (adoption measurement; see [docs/testing.md](docs/testing.md#measuring-adoption)).
-- **CI**: `.github/workflows/validate.yml` (validator, `--selftest`, hook tests; Go `1.26.x` + `1.27.x` matrix) and `.github/workflows/links.yml` (link check). `.github/` also holds issue + PR templates and `copilot-instructions.md`.
+- **CI**: `.github/workflows/validate.yml` (validator, `--selftest`, hook tests; Go `1.27.x`, the floor minor) and `.github/workflows/links.yml` (link check). `.github/` also holds issue + PR templates and `copilot-instructions.md`.
 - **Contributor docs**: `docs/install.md`, `testing.md`, `versioning.md`, `authoring.md`. Planning and research notes live under `docs/plans/` and `docs/research/`, **gitignored**, not part of the published plugin.
 
 ## Components
@@ -84,7 +84,7 @@ claude plugin validate .                 # manifest + component structure (no ex
 claude --plugin-dir /path/to/go-coding-plugin # load locally for one session (dogfooding)
 ```
 
-`scripts/validate.sh` warns and exits 0 if Python is absent; CI pins Python and runs `python3 scripts/validate.py` strictly. The Fixer-column check runs strictly only with a floor-minor (`1.26.x`) Go on PATH and soft-skips on other minors. What each check covers is in [docs/testing.md](docs/testing.md#validation). On Cursor, install via its plugin flow and verify the same skills/agents/rules load.
+`scripts/validate.sh` warns and exits 0 if Python is absent; CI pins Python and runs `python3 scripts/validate.py` strictly. The Fixer-column check runs strictly only with a floor-minor (`1.27.x`) Go on PATH and soft-skips on other minors. What each check covers is in [docs/testing.md](docs/testing.md#validation). On Cursor, install via its plugin flow and verify the same skills/agents/rules load.
 
 ### File Conventions
 

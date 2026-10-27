@@ -10,7 +10,7 @@ An AI plugin by **Cadasto B.V.** that teaches AI coding assistants idiomatic Go 
 
 The plugin owns the judgement layer of Go standards. Formatting, vetting, and linting stay with the deterministic tools (`gofmt`/`gofumpt`, `go vet`, `staticcheck`, `golangci-lint`, `go test -race`): each skill names the tool that enforces a rule and cites the source a judgement rule comes from, and the `go-reviewer` agent reports what those tools miss. It covers Go only and carries no business rules.
 
-**Requirements.** A Claude Code or Cursor host. The plugin is pure Markdown + JSON, with no build step and no MCP server, and it installs without a Go toolchain. Its hooks and enforcement guidance expect **Go 1.26.4+** (Go 1.27 supported; its additions are flagged as hints) with `gofmt`, `gofumpt`, `goimports`, and `gopls` on the host `PATH`, and golangci-lint v2 (v2.13.0 or newer on Go 1.27) for full-tree linting. See [Host toolchain (minimal requirements)](docs/install.md#host-toolchain-minimal-requirements) for what each tool drives and copy-paste install commands.
+**Requirements.** A Claude Code or Cursor host. The plugin is pure Markdown + JSON, with no build step and no MCP server, and it installs without a Go toolchain. Its hooks and enforcement guidance expect **Go 1.27+** with `gofmt`, `gofumpt`, `goimports`, and `gopls` on the host `PATH`, and golangci-lint v2 (v2.13.0 or newer, the first with Go 1.27 support) for full-tree linting. See [Host toolchain (minimal requirements)](docs/install.md#host-toolchain-minimal-requirements) for what each tool drives and copy-paste install commands.
 
 ## Table of contents
 
