@@ -5,8 +5,11 @@ description: Go coding-standards router. This skill should be used when a Go tas
 
 # go-coding — Go standards router
 
-Route the Go task to the right standard and tool (Go 1.26.4+, with Go 1.27 additions flagged as
-hints; golangci-lint v2) — this skill is a router, not an encyclopedia. Two principles drive it:
+Route the Go task to the right standard and tool (Go 1.27+, golangci-lint v2) — this skill is a
+router, not an encyclopedia. Every rule targets Go 1.27. On a module whose `go` directive is older,
+skip what is marked newer (a `Since` cell or a `(1.NN)` note): the compiler, `go vet`'s
+`stdversion` check (run by `go test`) and `go fix` all follow the directive, so no older variant of
+a rule is kept. Two principles drive it:
 
 - **Deterministic beats prose.** Whatever a formatter or linter enforces, run the tool — don't
   reason it out by hand. The plugin's value is judgment the model lacks, not re-deriving tooling.
@@ -55,7 +58,7 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 |---|---|
 | any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim | `go-testing` |
 | `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `Must` helper, a `switch` over an enum | `go-errors` |
-| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a nested `:=` on `err` | `go-idioms` |
+| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a nested `:=` on `err`, `encoding/json`, a UUID, an HTTP response body | `go-idioms` |
 | `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned resource | `go-concurrency` |
 | a new package, an exported identifier, a `cmd/` or `internal/` decision, an import block, a struct literal of a foreign type, a doc comment on an API | `go-layout` |
 | `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |
@@ -100,7 +103,7 @@ names stay verbatim — it is the prose around them that must be plain.
 - Google Go Style Guide — <https://google.github.io/styleguide/go/> — three documents, cite the one a rule comes from: the *Guide* (<https://google.github.io/styleguide/go/guide>, normative and canonical: the principles), *Style Decisions* (<https://google.github.io/styleguide/go/decisions>, normative: the reviewer rulebook), *Best Practices* (<https://google.github.io/styleguide/go/best-practices>, advisory)
 - Uber Go Style Guide — <https://github.com/uber-go/guide>
 - Package & toolchain docs — <https://pkg.go.dev>
-- Linter rule catalogues (name the rule, not just the tool) — `go vet` <https://pkg.go.dev/cmd/vet>; staticcheck <https://staticcheck.dev/docs/checks/>; revive <https://github.com/mgechev/revive/blob/master/RULES_DESCRIPTIONS.md>; golangci-lint linters <https://golangci-lint.run/docs/linters/>
+- Linter rule catalogues (name the rule, not just the tool) — `go vet` <https://pkg.go.dev/cmd/vet>; staticcheck <https://staticcheck.dev/docs/checks/>; revive <https://github.com/revive-lint/revive/blob/master/RULES_DESCRIPTIONS.md>; golangci-lint linters <https://golangci-lint.run/docs/linters/>
 
 ## For a focused review
 

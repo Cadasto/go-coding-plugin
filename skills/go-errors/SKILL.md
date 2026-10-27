@@ -21,8 +21,11 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
   stops matching). `if perr, ok := errors.AsType[*fs.PathError](err); ok { … }` (Go 1.26): the
   generic form — compile-time-checked target, no pointer to prepare, no reflection, cannot panic on
   a mistyped target. `errors.As` (Go 1.13) is not deprecated and existing call sites are not bugs —
-  the `errorsastype` modernizer converts them (via golangci-lint's `modernize`; not yet in the
-  1.26.4 toolchain's `go fix`).
+  `go fix` (`errorsastype`) converts them.
+- **Don't `%w` a pointer to an error type with value receivers.** `fmt.Errorf("…: %w", p)` where
+  `p` is a `*E` and `E` itself implements `error` puts a `*E` in the chain, so `errors.Is` and type
+  checks for `E` miss it; wrap `*p`. A pointer-receiver error such as `*fs.PathError` is wrapped as
+  the pointer, as usual. `go vet` (`printf`) reports the mistake from Go 1.27.
 - **Sentinel errors** (`var ErrNotFound = errors.New("not found")`) for expected, comparable
   conditions that are part of the API contract — keep the set small and documented.
   **Typed errors** (a struct implementing `error`) when callers need fields (`*PathError`).
@@ -61,7 +64,7 @@ Deterministic backstop: `golangci-lint run --enable-only=errorlint`, plus `errch
 - **Error strings:** lowercase, no trailing punctuation (they get wrapped): `"cannot parse %q"`.
 
 ## Sources
-- Go 1.13 errors — <https://go.dev/blog/go1.13-errors>; `errors.AsType` (Go 1.26) — <https://pkg.go.dev/errors#AsType>
+- Go 1.13 errors — <https://go.dev/blog/go1.13-errors>; `errors.AsType` (Go 1.26) — <https://pkg.go.dev/errors#AsType>; `printf` vet check on `%w` of `*E` — <https://go.dev/doc/go1.27>
 - Code Review Comments (Error Strings, Handle Errors, Indent Error Flow, Don't Panic) — <https://go.dev/wiki/CodeReviewComments>
 - Google Go Style Decisions (Must functions, Returning errors, Error strings, Handle errors, In-band errors, Don't panic) — <https://google.github.io/styleguide/go/decisions>; Best Practices (Error handling, Panics, `%w` placement) — <https://google.github.io/styleguide/go/best-practices>
 - Uber Go Style Guide (Errors) — <https://github.com/uber-go/guide>

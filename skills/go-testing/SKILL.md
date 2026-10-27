@@ -37,7 +37,10 @@ into CI), `go test -bench`, `go test -fuzz`.
   parallel tests, instead of `fmt.Println` escaping to raw stdout. `t.Attr` (1.25) emits structured
   key/value metadata into `go test -json` output.
 - **Benchmarks: `for b.Loop() { … }`** (Go 1.24) — it handles timer reset and run scaling; replaces
-  `for i := 0; i < b.N; i++` plus manual `b.ResetTimer()`.
+  `for i := 0; i < b.N; i++` plus manual `b.ResetTimer()`. Convert an old loop by hand: the
+  automatic rewrite was withdrawn after it turned a benchmark that pauses the timer inside the loop
+  (`b.StopTimer`/`b.StartTimer`) from seconds into a ten-minute timeout (golang/go#74967), so
+  restructure such a loop and re-check the run time.
 - **Goroutine-leak detection:** `go.uber.org/goleak` — `goleak.VerifyTestMain(m)` or per-test
   `defer goleak.VerifyNone(t)`.
 - **`testing/synctest` (stable since Go 1.25) is the default for time/concurrency tests** — timeouts,
@@ -45,12 +48,10 @@ into CI), `go test -bench`, `go test -fuzz`.
   scheduling, so "5-second" waits complete in microseconds and flakiness disappears. Wrap with
   `synctest.Test(t, func(t *testing.T){ … })`; `synctest.Wait()` blocks until every goroutine in the
   bubble is durably blocked. Reach for it instead of `time.Sleep`-based polling. (Always
-  `synctest.Test` — the pre-stable `synctest.Run` no longer exists.)
-  *Go 1.27 (released 2026-08-19, <https://go.dev/dl/>) adds `synctest.Sleep` (`time.Sleep` + `Wait`
-  in one) and `httptest.NewTestServer(t, handler)` — signature
-  `func NewTestServer(t testing.TB, handler http.Handler) *Server`, note the `testing.TB` first
-  argument that `httptest.NewServer` does not take — an in-memory server usable inside a bubble.
-  Sources: <https://go.dev/doc/go1.27>, <https://pkg.go.dev/net/http/httptest#NewTestServer>.*
+  `synctest.Test` — the pre-stable `synctest.Run` no longer exists.) `synctest.Sleep(d)` (Go 1.27)
+  is `time.Sleep(d)` followed by `synctest.Wait()` in one call. For HTTP inside a bubble, use
+  `httptest.NewTestServer(t, handler)` (1.27) — an in-memory network, unlike `httptest.NewServer`'s
+  real listener; note the `testing.TB` first argument `NewServer` does not take.
 - **Fuzzing** (`func FuzzX(f *testing.F)`) for parsers, codecs, and anything consuming untrusted
   bytes. **Golden files** (an `-update` flag writing `testdata/*.golden`) for large structured output.
   A golden pins *shape*, not behaviour — when it records something another system executes (SQL,
@@ -59,7 +60,7 @@ into CI), `go test -bench`, `go test -fuzz`.
 - **Deterministic crypto tests (Go 1.26):** `testing/cryptotest.SetGlobalRandom(t, seed)` pins a
   deterministic randomness source for the test's duration — reach for it instead of hand-injecting a
   custom `io.Reader` when testing code that draws from `crypto/rand` (process-global: see the
-  `t.Parallel` rule above).
+  `t.Parallel` rule above). It also replaces `crypto/tls`'s `Config.Rand`, deprecated in Go 1.27.
 - **Failure messages must diagnose without a debugger:** name the call, the input, the result, and
   the expectation — `t.Errorf("Parse(%q) = %v, want %v", in, got, want)` — never a bare
   `t.Error("failed")`. For structs and slices print a diff (`cmp.Diff(want, got)`), not two blobs.
@@ -68,7 +69,8 @@ into CI), `go test -bench`, `go test -fuzz`.
   and `go test` also runs it and compares stdout, so the example cannot rot. Name them `ExampleT`,
   `ExampleT_Method`, `ExampleF_suffix` (lowercase suffix) — `go vet` (`tests`) rejects a malformed
   name. Style Decisions asks for one where feasible — for the entry points a reader meets first — as
-  advice, not a per-export rule.
+  advice, not a per-export rule. `go doc -ex <pkg>` (Go 1.27) lists a package's examples, and
+  `go doc <pkg>.ExampleName` prints one with its comments.
 - **Name the fields in table-case literals** when a case spans many lines, when adjacent fields share
   a type, or when zero-value fields are left out — `{input: "a,b", sep: ",", want: 2}` reads on its
   own; `{"a,b", ",", 2}` has to be decoded against the struct.
@@ -88,6 +90,7 @@ into CI), `go test -bench`, `go test -fuzz`.
 ## Sources
 - synctest — <https://go.dev/blog/synctest>; `testing.B.Loop` — <https://go.dev/blog/testing-b-loop>
 - `testing` package (`T.Context`, `T.Chdir`, `T.Output`, `T.Attr`, `T.ArtifactDir`) — <https://pkg.go.dev/testing>; Go 1.22/1.24/1.25/1.26 release notes — <https://go.dev/doc/go1.26>
+- Go 1.27 release notes (`synctest.Sleep`, `httptest.NewTestServer`, `go doc -ex`, `compress/flate`, `Config.Rand`) — <https://go.dev/doc/go1.27>; `b.Loop` rewrite withdrawn — <https://go.dev/issue/74967>; `httptest.NewTestServer` — <https://pkg.go.dev/net/http/httptest#NewTestServer>
 - Code Review Comments (Useful Test Failures) — <https://go.dev/wiki/CodeReviewComments>; Google Go Style Decisions (Examples, Compare stable results, Useful test failures) — <https://google.github.io/styleguide/go/decisions>; Best Practices (Tests, Use field names in struct literals, `t.Error` vs `t.Fatal`) — <https://google.github.io/styleguide/go/best-practices>
 - Example functions — <https://go.dev/blog/examples>; `go vet` `tests` analyzer — <https://pkg.go.dev/cmd/vet>
 - `testing/cryptotest` (Go 1.26) — <https://pkg.go.dev/testing/cryptotest>
