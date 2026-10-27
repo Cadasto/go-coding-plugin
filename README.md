@@ -67,10 +67,8 @@ The guidance draws on [Effective Go](https://go.dev/doc/effective_go), [Go Code 
 
 Subagents do not inherit the parent session's skills. A plan runner that dispatches implementers and reviewers must tell them, in every brief, to load the skills:
 
-- **Implementer brief**: "Before writing code, invoke the Skill tool with `go-coding:go-coding`, then the focused skills matching your diff (see its *Route, then load* table). Run `golangci-lint run` on every touched package before committing."
-- **Reviewer brief**: "Before reading the diff, load `go-coding:go-coding` plus `go-errors`, `go-testing` and the skills the diff calls for; cite the rule a finding rests on. Do not dispatch `go-reviewer`: you are the review seat."
-
-Both briefs also give the absolute path of the checkout or worktree being changed, so the subagent answers where-defined and who-calls questions with `gopls` there (the router's *Symbol questions* row), not with `grep`.
+- **Implementer brief**: "Before writing code, invoke the Skill tool with `go-coding:go-coding`, then the focused skills matching your diff (see its *Route, then load* table). Answer where-defined and who-calls questions with `gopls` in `<checkout path>`, per its *Symbol questions*. Run `golangci-lint run` on every touched package before committing."
+- **Reviewer brief**: "Before reading the diff, load `go-coding:go-coding` plus `go-errors`, `go-testing` and the skills the diff calls for; cite the rule a finding rests on. Find what a change affects with `gopls` in `<checkout path>`, per its *Symbol questions*. Do not dispatch `go-reviewer`: you are the review seat."
 
 Use `go-reviewer` directly when no such seat exists, as with an ad-hoc "review this file" request. It loads the skills itself, so its brief need not name them.
 
