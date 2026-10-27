@@ -7,16 +7,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ## [Unreleased]
 
 ### Added
-- Skills: `go-coding` routing table gains a *Symbol questions* row: `gopls workspace_symbol`, `definition`, `references`, `implementation`, `call_hierarchy` from the shell inside the checkout being changed; `grep` stays for text, docs and config.
-- Skills: `go-layout` states that adding a method to an exported interface breaks its implementers, and lists them with `gopls implementation` first.
-- Scripts: `scripts/hooks-test.sh` checks that the session-start banner names `gopls` for symbol lookups.
+- Skills: `go-coding` gains a *Symbol questions* section and routing-table row: a language-server tool rooted in the checkout being changed, else `cd <checkout> && gopls workspace_symbol -matcher casesensitive`, its first field passed to `references`, `implementation` or `call_hierarchy`; `grep`, said so, when `gopls` is missing, refused or exits non-zero.
+- Skills: `go-layout` states that adding a method to an exported interface breaks its implementers, and lists them with `gopls implementation` from the checkout being changed first.
+- Scripts: `scripts/hooks-test.sh` checks that the session-start banner names `gopls` for symbol lookups and the shell route.
 
 ### Changed
-- Skills: `go-coding` sends symbol questions to the `LSP` tool (`gopls-lsp` plugin) when the session is rooted in the checkout being changed and to the `gopls` command line otherwise (a git worktree, a subagent without the LSP tool); orchestrators carry the *Symbol questions* row and the checkout path into every brief.
-- Agents: `go-reviewer` lists what a change to an exported identifier, error, interface or paired dispatch affects with `gopls references`/`implementation`, and names a fallback to `grep` in its closing note.
-- Agents: `go-reviewer` body back under 10,000 characters, dropping instructions it stated twice.
+- Skills: `go-coding` description names where a symbol is defined, used, implemented or called as a trigger; the Go and golangci-lint versions move to the body. Orchestrators carry the *Symbol questions* section and the checkout path into every brief.
+- Agents: `go-reviewer` finds what a change to an exported identifier, error, interface or paired dispatch affects per *Symbol questions*, and its closing note names the symbols looked up and whether `gopls` or `grep` answered.
+- Agents: `go-reviewer` body back under 10,000 characters: repeated instructions and some rationale dropped.
 - Agents: `go-reviewer` description opens "Use this agent when", covers `go.mod` and a review of the assistant's own change, and states its triggers in prose instead of repeating the body's examples.
-- Cursor rule `rules/go-context.mdc`: sends symbol questions to the `gopls` command line, with the router's *Symbol questions* row.
+- Cursor rule `rules/go-context.mdc`: carries the router's *Symbol questions* section and row, word for word.
 - Hooks: `session-start.sh` banner names `gopls` for symbol lookups, by the plugin or from the shell.
 - Docs: `docs/install.md` and `README.md` say `gopls` also runs from the shell for symbol questions; `docs/install.md` lists the read-only `gopls` allow rules; `README.md` subagent briefs give the checkout path; `docs/testing.md` adds the `go-reviewer` check.
 
