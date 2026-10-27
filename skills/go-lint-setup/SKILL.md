@@ -123,7 +123,7 @@ compatibility floor, not a pin (see *Discipline once adopted*). Source:
 ## Sources
 - golangci-lint docs — <https://golangci-lint.run/docs/>; v1→v2 migration guide (`migrate`, key moves) — <https://golangci-lint.run/docs/product/migration-guide/>
 - v2 announcement (`fmt`, `formatters`) — <https://ldez.github.io/blog/2025/03/23/golangci-lint-v2/>
-- `modernize` — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>; golangci-lint's handling of the removed and renamed analyzers — <https://github.com/golangci/golangci-lint/blob/main/pkg/golinters/modernize/modernize.go>
+- `modernize` — <https://pkg.go.dev/golang.org/x/tools/go/analysis/passes/modernize>; golangci-lint's handling of the removed and renamed analyzers — <https://github.com/golangci/golangci-lint/blob/3ad7cb06d673241671520c4b194a989c3d725b3d/pkg/golinters/modernize/modernize.go>
 - Go 1.27 release notes (`gofmt` alignment, `go fix` changes) — <https://go.dev/doc/go1.27>
 
 ---

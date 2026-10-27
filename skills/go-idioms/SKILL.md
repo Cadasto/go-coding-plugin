@@ -1,6 +1,6 @@
 ---
 name: go-idioms
-description: Modern idiomatic Go (`modernize`), Go 1.27+. This skill should be used when a diff has a rewritable construct, when the user asks to modernize Go, run `go fix`, or which fixer owns a rewrite (range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`/`CutLast`, `omitzero`, `new(expr)`, `errors.AsType`), or when code could use a newer standard form no fixer applies (generic methods, `encoding/json/v2`, `uuid`, `os.Root`), a shadowed `err`, or a dead `break`. Not for linter configuration (go-lint-setup). Go only.
+description: Modern idiomatic Go (`modernize`), Go 1.27+. This skill should be used when a diff has a rewritable construct, when the user asks to modernize Go or run `go fix`, or asks which fixer owns a rewrite (range-over-int, `min`/`max`, `slices`/`maps`, `strings.Cut`/`CutLast`, `omitzero`, `new(expr)`, `errors.AsType`), or a newer form no fixer applies (generic methods, `encoding/json/v2`, `uuid`, `url.Values.Clone`, an undrained HTTP body, `os.Root`), a shadowed `err`, or a dead `break`. Not for linter configuration (go-lint-setup). Go only.
 ---
 
 # go-idioms — modern Go (modernize)
@@ -19,16 +19,18 @@ golangci-lint run --enable-only=modernize --fix     # the same x/tools suite, at
 Both draw on the same `golang.org/x/tools` engine as gopls; golangci-lint pins its own, often newer,
 snapshot, so it can offer a rewrite before the toolchain's `go fix` does. On the **Go 1.27+**
 baseline every row applies as written. The `Since` column is provenance: a module whose `go`
-directive is older skips the rows newer than it, and the tools hold that line — `go fix` offers
-only rewrites the directive allows, and `go vet`'s `stdversion` check (run by `go test` from Go
-1.27) flags a standard-library symbol newer than the directive.
+directive is older skips the rows newer than it, and the tools hold that line — the compiler
+rejects a newer language feature, `go vet`'s `stdversion` check (run by `go test` from Go 1.27)
+reports a newer standard-library symbol, and `go fix` offers only rewrites the directive allows.
 
 ## Prefer → over (since)
 
 The **Fixer** column names the analyzer that owns each rewrite: plain = registered in the Go 1.27
 toolchain's `go fix` (ground truth: `go tool fix help`; per-fixer docs: `go tool fix help <name>`);
-**†** = only in the newer x/tools suite (golangci-lint's `modernize`, gopls), not yet in the
-toolchain's `go fix` (no row needs it at present); `—` = no fixer: review or a linter has to catch it.
+**†** = a fixer only the newer x/tools suite has (golangci-lint's `modernize`, gopls), absent from
+the toolchain's `go fix`. A fixer the toolchain does register can still lack a rewrite x/tools
+already has; that cell says so in words (the `CutLast` row). `—` = no fixer: review or a linter has
+to catch it.
 
 | Prefer | Over | Since | Fixer |
 |---|---|---|---|
@@ -41,7 +43,7 @@ toolchain's `go fix` (no row needs it at present); `—` = no fixer: review or a
 | `slices.Sort/Contains`, `slices.Collect`, `maps.Keys` | hand-rolled sort/contains/map loops | 1.21–1.23 | `slicescontains`, `slicessort`, `mapsloop` |
 | `for i, v := range slices.Backward(s)` | `for i := len(s)-1; i >= 0; i--` | 1.23 | `slicesbackward` |
 | `strings.Cut` / `CutPrefix` / `CutSuffix` | `Index` + manual slicing | 1.18/1.20 | `stringscut`, `stringscutprefix` |
-| `strings.CutLast` / `bytes.CutLast` | `LastIndex` + manual slicing | 1.27 | `stringscut` through golangci-lint for now; the 1.27 toolchain's fixer rewrites `Index` only |
+| `strings.CutLast` / `bytes.CutLast` | `LastIndex` + manual slicing | 1.27 | `stringscut` through golangci-lint for now; the 1.27 toolchain's version does not rewrite `LastIndex` yet |
 | `strings.SplitSeq` / `FieldsSeq` | ranging over `strings.Split`/`Fields` (allocates a slice) | 1.24 | `stringsseq` |
 | `fmt.Fprintf(w, …)` when the bytes go to a writer; `fmt.Appendf(b, …)` to append to a buffer you already have | `w.Write([]byte(fmt.Sprintf(…)))`; `append(b, fmt.Sprintf(…)...)`. Go 1.27 removed the `fmtappendf` fixer: its `fmt.Appendf(nil, …)` rewrite was rarely the clearer form | 1.19 | — (staticcheck QF1012, standard set, flags the `Write` form) |
 | `omitzero` on a struct-typed json field, and instead of `omitempty` on a bool, number, pointer or interface field | `omitempty`, which does **nothing** for struct fields (a zero `time.Time` still marshals) and which v2 redefines by the JSON value; `omitzero` means the same in v1 and v2. Check a type with an `IsZero` method first: `omitzero` calls it, so a non-nil `*time.Time` at the zero time is dropped | 1.24 | `omitzero` (struct-typed fields only) |

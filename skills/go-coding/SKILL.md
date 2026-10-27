@@ -7,9 +7,10 @@ description: Go coding-standards router. This skill should be used when a Go tas
 
 Route the Go task to the right standard and tool (Go 1.27+, golangci-lint v2) — this skill is a
 router, not an encyclopedia. Every rule targets Go 1.27. On a module whose `go` directive is older,
-skip what is marked newer (a `Since` cell or a `(1.NN)` note): the compiler, `go vet`'s
-`stdversion` check (run by `go test`) and `go fix` all follow the directive, so no older variant of
-a rule is kept. Two principles drive it:
+skip what is marked newer (a `Since` cell or a `(1.NN)` note). The tools hold that line: the
+compiler rejects a newer language feature, `go vet`'s `stdversion` check (run by `go test`) reports
+a newer standard-library symbol, and `go fix` offers only rewrites the directive allows — so no
+older variant of a rule is kept. Two principles drive it:
 
 - **Deterministic beats prose.** Whatever a formatter or linter enforces, run the tool — don't
   reason it out by hand. The plugin's value is judgment the model lacks, not re-deriving tooling.
@@ -58,7 +59,7 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 |---|---|
 | any `_test.go`, a benchmark, a fuzz target, a "verified by temporarily breaking it" claim | `go-testing` |
 | `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `Must` helper, a `switch` over an enum | `go-errors` |
-| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a nested `:=` on `err`, `encoding/json`, a UUID, an HTTP response body | `go-idioms` |
+| a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a nested `:=` on `err`, `encoding/json`, a UUID, an HTTP response body, a `url.Values` copy | `go-idioms` |
 | `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned resource | `go-concurrency` |
 | a new package, an exported identifier, a `cmd/` or `internal/` decision, an import block, a struct literal of a foreign type, a doc comment on an API | `go-layout` |
 | `.golangci.y*ml`, a linter complaint you do not understand | `go-lint-setup` |

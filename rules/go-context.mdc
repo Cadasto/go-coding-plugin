@@ -8,8 +8,9 @@ alwaysApply: false
 
 This Cursor rule mirrors the `go-coding` router skill — apply it when editing Go. Every rule targets
 Go 1.27. On a module whose `go` directive is older, skip what is marked newer (a `Since` cell or a
-`(1.NN)` note): the compiler, `go vet`'s `stdversion` check (run by `go test`) and `go fix` all
-follow the directive, so no older variant of a rule is kept. Two principles:
+`(1.NN)` note). The tools hold that line: the compiler rejects a newer language feature, `go vet`'s
+`stdversion` check (run by `go test`) reports a newer standard-library symbol, and `go fix` offers
+only rewrites the directive allows — so no older variant of a rule is kept. Two principles:
 
 - **Deterministic beats prose** — whatever a formatter or linter enforces, run the tool; don't
   hand-derive it.
@@ -55,7 +56,8 @@ matching the change — it carries the cited rules and the judgment:
   `go-testing`
 - `fmt.Errorf`, `errors.*`, a sentinel, a typed error, a `Must` helper, a `switch` over an enum → `go-errors`
 - a loop, map, slice, string split, `interface{}`, a struct literal that could be `new(expr)`, a
-  nested `:=` on `err`, `encoding/json`, a UUID, an HTTP response body → `go-idioms`
+  nested `:=` on `err`, `encoding/json`, a UUID, an HTTP response body, a `url.Values` copy →
+  `go-idioms`
 - `go func`, `chan`, `sync.`, `atomic.`, `errgroup`, `context.With*`, a `Close` on a goroutine-owned
   resource → `go-concurrency`
 - a new package, an exported identifier, a `cmd/` or `internal/` decision, an import block, a struct

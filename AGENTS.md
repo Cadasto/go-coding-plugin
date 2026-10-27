@@ -21,7 +21,7 @@ Detail lives in `docs/`; keep a one-line rule here and point to the doc that own
 
 This plugin encodes **Go (golang) coding standards**. Guidance must be grounded in authoritative, verifiable sources rather than personal preference:
 
-- **Baseline**: **Go 1.27+** is a hard floor. No fallback guidance for 1.26 or older; version annotations remain as provenance, and a module on an older `go` directive skips what is newer than it (the compiler, `go vet`'s `stdversion` check and `go fix` all follow the directive).
+- **Baseline**: **Go 1.27+** is a hard floor. No fallback guidance for 1.26 or older; version annotations remain as provenance, and a module on an older `go` directive skips what is newer than it (the compiler rejects newer language features, `go vet`'s `stdversion` check newer standard-library symbols, and `go fix` offers only rewrites the directive allows).
 - **Formatting**: `gofmt` is the canonical formatter; `gofumpt` is a stricter superset. Formatting is non-negotiable and machine-enforced, not a matter of opinion.
 - **Vetting & static analysis**: `go vet` (suspicious constructs in the toolchain), `staticcheck`, and `golangci-lint` (the de-facto meta-linter that aggregates many analyzers).
 - **Style references** (cite these when a rule depends on them):

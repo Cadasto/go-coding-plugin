@@ -19,7 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Agents: `go-reviewer` flags a hand-rolled drain before `resp.Body.Close()` as by-hand modernization debt, beside `cmp.Or` chains, which no fixer rewrites either.
 
 ### Changed
-- Skills, agent, Cursor rule, docs: Go 1.27+ is the hard floor (was 1.26.4+); `go-coding`, `rules/go-context.mdc` and `go-reviewer` say a module on an older `go` directive skips what is newer, which the compiler, `go vet` (`stdversion`) and `go fix` enforce.
+- Skills, agent, Cursor rule, docs: Go 1.27+ is the hard floor (was 1.26.4+); `go-coding`, `rules/go-context.mdc` and `go-reviewer` say a module on an older `go` directive skips what is newer: the compiler rejects newer language features, `go vet` (`stdversion`) newer standard-library symbols, and `go fix` offers only the rewrites the directive allows.
 - Skills: `go-idioms` folds *Newer in Go 1.27* into its tables; the Fixer column follows go1.27's `go fix` (`errorsastype`, `atomictypes`, `slicesbackward` ship; `waitgroup` is `waitgroupgo`; `fmtappendf` and `bloop` are gone).
 - Skills: `go-idioms` prefers `fmt.Fprintf(w, …)` for writer output (staticcheck QF1012), and `omitzero` over `omitempty` on bool, number, pointer and interface fields, checking types with an `IsZero` method first.
 - Skills: `go-idioms` description separates fixer-owned rewrites from newer standard forms no fixer applies.

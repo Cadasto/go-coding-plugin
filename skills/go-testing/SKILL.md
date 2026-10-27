@@ -38,9 +38,10 @@ into CI), `go test -bench`, `go test -fuzz`.
   key/value metadata into `go test -json` output.
 - **Benchmarks: `for b.Loop() { … }`** (Go 1.24) — it handles timer reset and run scaling; replaces
   `for i := 0; i < b.N; i++` plus manual `b.ResetTimer()`. Convert an old loop by hand: the
-  automatic rewrite was withdrawn after it turned a benchmark that pauses the timer inside the loop
-  (`b.StopTimer`/`b.StartTimer`) from seconds into a ten-minute timeout (golang/go#74967), so
-  restructure such a loop and re-check the run time.
+  automatic rewrite was withdrawn (golang/go#74967) because a converted loop that pauses the timer
+  (`b.StopTimer`) fails with `B.Loop called with timer stopped`, and because `b.Loop`'s overhead
+  skewed nanosecond-scale benchmarks by up to 65%. Restructure a loop that pauses the timer, and
+  compare results and run time before and after the change.
 - **Goroutine-leak detection:** `go.uber.org/goleak` — `goleak.VerifyTestMain(m)` or per-test
   `defer goleak.VerifyNone(t)`.
 - **`testing/synctest` (stable since Go 1.25) is the default for time/concurrency tests** — timeouts,

@@ -43,7 +43,7 @@ Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or
 
 ## Host toolchain (minimal requirements)
 
-Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`, which the skills and `go-reviewer` also run directly from the shell for symbol questions. The plugin targets **Go 1.27+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.26 or older; a module on an older `go` directive skips what is newer than it, which the compiler, `go vet` and `go fix` enforce.
+Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`, which the skills and `go-reviewer` also run directly from the shell for symbol questions. The plugin targets **Go 1.27+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.26 or older; a module on an older `go` directive skips what is newer than it: the compiler rejects newer language features, `go vet`'s `stdversion` check newer standard-library symbols, and `go fix` offers only rewrites the directive allows.
 
 At minimum the host should provide:
 
