@@ -10,8 +10,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Skills: `go-coding` gains a *Symbol questions* section and routing-table row: a language-server tool rooted in the checkout being changed, else `cd <checkout> && gopls workspace_symbol -matcher casesensitive`, its first field passed to `references`, `implementation` or `call_hierarchy`; `grep`, said so, when `gopls` is missing, refused or exits non-zero.
 - Skills: `go-layout` states that adding a method to an exported interface breaks its implementers, and lists them with `gopls implementation` from the checkout being changed first.
 - Scripts: `scripts/hooks-test.sh` checks that the session-start banner names `gopls` for symbol lookups and the shell route.
+- Skills: `go-idioms` adds generic methods, `encoding/json/v2` for new code (v1 kept in existing code), the standard-library `uuid` package, closing an HTTP response body without draining it, and `net/url`'s `Clone`.
+- Skills: `go-idioms` table rows for `strings.CutLast`/`bytes.CutLast`, `embedlit` and `unsafefuncs`.
+- Skills: `go-errors` covers `%w` applied to a `*E` whose `E` implements `error`, which `go vet` (`printf`) reports from Go 1.27.
+- Skills: `go-concurrency` says what the `goroutineleak` profile misses and what it costs, and keeps secrets out of goroutine labels, which Go 1.27 prints in crash tracebacks.
+- Skills: `go-testing` converts `b.N` loops to `b.Loop` by hand (the rewrite was withdrawn), and names `go doc -ex` and the `crypto/tls` `Config.Rand` deprecation.
+- Skills: `go-lint-setup` says a `modernize` `disable:` entry naming `fmtappendf` or `waitgroup` no longer disables anything, and keeps formatters on one Go minor after Go 1.27's `gofmt` alignment change.
+- Agents: `go-reviewer` flags a hand-rolled drain before `resp.Body.Close()` as by-hand modernization debt, beside `cmp.Or` chains, which no fixer rewrites either.
 
 ### Changed
+- Skills, agent, Cursor rule, docs: Go 1.27+ is the hard floor (was 1.26.4+); `go-coding`, `rules/go-context.mdc` and `go-reviewer` say a module on an older `go` directive skips what is newer, which the compiler, `go vet` (`stdversion`) and `go fix` enforce.
+- Skills: `go-idioms` folds *Newer in Go 1.27* into its tables; the Fixer column follows go1.27's `go fix` (`errorsastype`, `atomictypes`, `slicesbackward` ship; `waitgroup` is `waitgroupgo`; `fmtappendf` and `bloop` are gone).
+- Skills: `go-idioms` prefers `fmt.Fprintf(w, …)` for writer output (staticcheck QF1012), and `omitzero` over `omitempty` on bool, number, pointer and interface fields, checking types with an `IsZero` method first.
+- Skills: `go-idioms` description separates fixer-owned rewrites from newer standard forms no fixer applies.
+- Skills: `go-testing` and `go-concurrency` state `synctest.Sleep`, `httptest.NewTestServer` and the `goroutineleak` profile as plain guidance; `go-errors` says `go fix` converts `errors.As`.
+- Skills: the `go-coding` route table and the Cursor rule send `encoding/json`, UUIDs and HTTP response bodies to `go-idioms`.
+- Scripts: `scripts/validate.py` `GO_FLOOR_MINOR` is `1.27`; CI `.github/workflows/validate.yml` runs the `1.27.x` floor minor only.
+- Docs: `AGENTS.md`, `README.md` and `docs/install.md` (go1.27.3) state the 1.27 floor; `docs/authoring.md` records the 2026-10-27 re-read, tracks the release notes and golangci-lint's x/tools snapshot, and tests a fixer before writing its cell.
+- Docs, skills: revive citations move to `revive-lint/revive`.
 - Skills: `go-coding` description names where a symbol is defined, used, implemented or called as a trigger; the Go and golangci-lint versions move to the body. Orchestrators carry the *Symbol questions* section and the checkout path into every brief.
 - Agents: `go-reviewer` finds what a change to an exported identifier, error, interface or paired dispatch affects per *Symbol questions*, and its closing note names the symbols looked up and whether `gopls` or `grep` answered.
 - Agents: `go-reviewer` body back under 10,000 characters: repeated instructions and some rationale dropped.
