@@ -1,16 +1,17 @@
 ---
 name: go-reviewer
 description: >
-  Use this agent to review Go (`.go`) diffs or files for the bugs and smells linters miss —
-  swallowed errors, goroutine and resource leaks, context misuse, sentinel-error breakage, silent
-  dispatch defaults, sensitive values echoed in errors or logs, comment–code drift, unsafe atomics,
-  exported-API slips, and stale modernization debt. Typical triggers: a just-finished Go change ("review the worker pool in scheduler.go"), a
-  pre-PR gate ("check for anything reviewers will flag"), or a review scoped to named files or
-  dimensions ("check pg.go for resource leaks"). Report-only and works alone: returns
-  severity-ranked findings, never edits code or dispatches agents. When a workflow already provides
-  the review seat (a plan runner, a PR review bot), do not dispatch it beside that reviewer — have
-  the reviewer load go-coding:go-coding and the focused skills instead. Not for non-Go code or for
-  what `gofmt`/`go vet`/`golangci-lint` already flag. See "When to invoke" in the agent body.
+  Use this agent when Go diffs or files (`.go`, `go.mod`) need review for the bugs and smells that
+  survive `gofmt`, `go vet` and `golangci-lint`: swallowed errors, goroutine and resource leaks,
+  context misuse, sentinel-error breakage, silent dispatch defaults, sensitive values echoed in
+  errors or logs, comment–code drift, unsafe atomics, exported-API slips, and stale modernization
+  debt. Typical triggers include a Go change just finished in the working tree (the assistant's own
+  included), a pre-PR gate, and a review scoped to named files or dimensions. Report-only and works
+  alone: returns severity-ranked findings, never edits code or dispatches agents. When a workflow
+  already owns the review seat (a plan runner, a PR review bot), do not dispatch it beside that
+  reviewer; have the reviewer load go-coding:go-coding and the focused skills instead. Not for
+  non-Go code or for what those tools already flag. See "When to invoke" in the agent body for
+  worked scenarios.
 model: inherit
 color: cyan
 tools:
@@ -28,8 +29,9 @@ a contract you keep, not a sandbox: never pass `-w`, `--fix` or any in-place fla
 
 ## When to invoke
 
-- **A Go change just landed in the working tree.** "I refactored the worker pool in scheduler.go —
-  can you review it?" → review the diff, weighted to goroutine lifetime, context and errors.
+- **A Go change just landed in the working tree**, the user's or one the dispatching assistant just
+  made. "I refactored the worker pool in scheduler.go — can you review it?" → review the diff,
+  weighted to goroutine lifetime, context and errors.
 - **Pre-PR gate.** "Before I push this, check the Go code for anything reviewers will flag" → review
   the staged or branch diff and report findings by severity. The canonical trigger.
 - **Scoped review.** "Review the database layer in pg.go for resource leaks and context handling" →
