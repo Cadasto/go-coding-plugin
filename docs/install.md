@@ -43,13 +43,13 @@ Add this repository as a plugin (Cursor **Settings → Plugins**, via Git URL or
 
 ## Host toolchain (minimal requirements)
 
-Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`, which the skills and `go-reviewer` also run directly from the shell for symbol questions. The plugin targets **Go 1.26.4+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.25 or older modules.
+Installing the plugin itself needs no Go toolchain, because the plugin is pure Markdown + JSON. Its **enforcement** layer only delivers value when the standard Go tools are on the host `PATH`: the `format-on-save` hook shells out to a formatter, the golangci-lint v2 reference config lists `gofumpt`/`goimports` as formatters, and the recommended official `gopls-lsp` plugin (`@claude-plugins-official`) drives `gopls`, which the skills and `go-reviewer` also run directly from the shell for symbol questions. The plugin targets **Go 1.27+** and golangci-lint v2 as a hard floor: it carries no fallback guidance for 1.26 or older; a module on an older `go` directive skips what is newer than it, which the compiler, `go vet` and `go fix` enforce.
 
 At minimum the host should provide:
 
 | Tool | Provided by | Used for | If missing |
 |------|-------------|----------|------------|
-| **Go 1.26.4+ (1.27.x recommended)** | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies a `go.mod` `go 1.26.x` or `1.27.x` directive; `go fix ./...` runs the modernizers | no toolchain at all |
+| **Go 1.27+** | [go.dev/dl](https://go.dev/dl/) / package manager | everything; satisfies a `go.mod` `go 1.27.x` directive or any older one; `go fix ./...` runs the modernizers | no toolchain at all |
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a: always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |
@@ -57,22 +57,22 @@ At minimum the host should provide:
 
 ### Install / upgrade Go (official tarball, Linux)
 
-Pick the latest **1.27.x** patch (**go1.27.1** at time of writing) from <https://go.dev/dl/> and the build matching your platform (`linux-amd64` shown). The plugin's floor is **Go 1.26.4 or newer**, so an existing 1.26.4+ toolchain also works and nothing below requires the upgrade:
+Pick the latest **1.27.x** patch (**go1.27.3** at time of writing) from <https://go.dev/dl/> and the build matching your platform (`linux-amd64` shown); the plugin's floor is **Go 1.27**:
 
 ```bash
-# replace the version with the current latest 1.27.x patch (go1.27.1 at time of writing; 1.26.4+ also works)
-curl -fLO https://go.dev/dl/go1.27.1.linux-amd64.tar.gz
+# replace the version with the current latest 1.27.x patch (go1.27.3 at time of writing)
+curl -fLO https://go.dev/dl/go1.27.3.linux-amd64.tar.gz
 sudo rm -rf /usr/local/go                                  # remove any prior install (don't overlay)
-sudo tar -C /usr/local -xzf go1.27.1.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.27.3.linux-amd64.tar.gz
 export PATH=$PATH:/usr/local/go/bin                        # add to your shell profile if not already present
-go version                                                 # → go version go1.27.1 linux/amd64
+go version                                                 # → go version go1.27.3 linux/amd64
 ```
 
-> macOS/Windows or a package manager (Homebrew `go`, `winget`, distro packages) work equally well. The only requirement is that `go version` reports **1.26.4 or newer** (1.27.x recommended). `gofmt` is included in every Go distribution, so nothing extra is needed for the hook's fallback path.
+> macOS/Windows or a package manager (Homebrew `go`, `winget`, distro packages) work equally well. The only requirement is that `go version` reports **1.27 or newer**. `gofmt` is included in every Go distribution, so nothing extra is needed for the hook's fallback path.
 
 ### Install the supporting tools
 
-`go install` drops binaries in `$(go env GOPATH)/bin` (default `~/go/bin`); make sure that directory is on your `PATH`. Run these **after** Go is in place so they compile against your installed toolchain (1.26.4+ or 1.27.x):
+`go install` drops binaries in `$(go env GOPATH)/bin` (default `~/go/bin`); make sure that directory is on your `PATH`. Run these **after** Go is in place so they compile against your installed toolchain (1.27+):
 
 ```bash
 go install mvdan.cc/gofumpt@latest                    # stricter gofmt superset (hook primary)
@@ -83,7 +83,7 @@ go install golang.org/x/tools/gopls@v0.23.0           # language server for the 
 Verify:
 
 ```bash
-go version            # → 1.27.x (or 1.26.4+ on the floor)
+go version            # → 1.27.x
 command -v gofmt      # ships with Go (in GOROOT/bin)
 gofumpt --version
 command -v goimports  # goimports has no --version flag
@@ -92,7 +92,7 @@ gopls version        # → golang.org/x/tools/gopls v0.23.x
 
 Subagents, `go-reviewer` included, run under the session's permission rules, so an unapproved `gopls` call can be refused and the lookup falls back to `grep`. To avoid that in Claude Code, allow the read-only queries in your settings: `Bash(gopls workspace_symbol *)`, `Bash(gopls definition *)`, `Bash(gopls references *)`, `Bash(gopls implementation *)`, `Bash(gopls call_hierarchy *)`. Leave out `gopls rename`, `format` and `imports`, which can write files.
 
-These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately (often in a pinned container), so it does not depend on these host binaries. On Go 1.27, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support); see the [golangci-lint v2.13.0 changelog](https://golangci-lint.run/docs/product/changelog/#2130). Anything older predates 1.27 support.
+These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately (often in a pinned container), so it does not depend on these host binaries. On the Go 1.27 floor, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support); see the [golangci-lint v2.13.0 changelog](https://golangci-lint.run/docs/product/changelog/#2130). Anything older predates 1.27 support.
 
 ## Hooks
 
