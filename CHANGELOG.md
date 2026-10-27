@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-27
+
+Moves the standards baseline to **Go 1.27+** and routes Go symbol questions to the `gopls` command line.
+
 ### Added
 - Skills: `go-coding` gains a *Symbol questions* section and routing-table row: a language-server tool rooted in the checkout being changed, else `cd <checkout> && gopls workspace_symbol -matcher casesensitive`, its first field passed to `references`, `implementation` or `call_hierarchy`; `grep`, said so, when `gopls` is missing, refused or exits non-zero.
 - Skills: `go-layout` states that adding a method to an exported interface breaks its implementers, and lists them with `gopls implementation` from the checkout being changed first.
