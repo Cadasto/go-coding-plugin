@@ -53,7 +53,7 @@ At minimum the host should provide:
 | **`gofmt`** | the Go distribution | `format-on-save.sh` fallback (`gofmt -w -s`) | n/a: always ships with Go |
 | **`gofumpt`** | `go install` | `format-on-save.sh` primary (`gofumpt -w`), stricter gofmt superset | hook degrades to `gofmt` |
 | **`goimports`** | `go install` | `goimports` formatter in the golangci-lint v2 config (import grouping/pruning) | import-group formatting skipped |
-| **`gopls`** (v0.23.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck); also run directly from the shell (`gopls references`, `implementation`, `call_hierarchy`) where the LSP tool cannot reach: a git worktree, a subagent | no code intelligence; symbol questions fall back to `grep` |
+| **`gopls`** (v0.23.x) | `go install` | the `gopls-lsp` plugin (defs/refs/diagnostics/rename/vulncheck); also run from the shell (the router's `scripts/gosym`, or `gopls references`, `implementation`, `call_hierarchy`) where the LSP tool cannot reach: a git worktree, a subagent | no code intelligence; symbol questions fall back to `grep` |
 
 ### Install / upgrade Go (official tarball, Linux)
 
@@ -90,7 +90,7 @@ command -v goimports  # goimports has no --version flag
 gopls version        # → golang.org/x/tools/gopls v0.23.x
 ```
 
-Subagents, `go-reviewer` included, run under the session's permission rules, so an unapproved `gopls` call can be refused and the lookup falls back to `grep`. To avoid that in Claude Code, allow the read-only queries in your settings: `Bash(gopls workspace_symbol *)`, `Bash(gopls definition *)`, `Bash(gopls references *)`, `Bash(gopls implementation *)`, `Bash(gopls call_hierarchy *)`. Leave out `gopls rename`, `format` and `imports`, which can write files.
+Subagents, `go-reviewer` included, run under the session's permission rules, so an unapproved `gopls` call can be refused and the lookup falls back to `grep`. To avoid that in Claude Code, allow the read-only queries in your settings: `Bash(gopls workspace_symbol *)`, `Bash(gopls definition *)`, `Bash(gopls references *)`, `Bash(gopls implementation *)`, `Bash(gopls call_hierarchy *)`, and for the router's read-only helper, whose path carries the plugin version, `Bash(*/skills/go-coding/scripts/gosym *)`. Leave out `gopls rename`, `format` and `imports`, which can write files.
 
 These are **host-only** dev tools; the plugin still works without them (the format hook degrades to `gofmt`, then to a silent no-op). Full-tree `golangci-lint` runs separately (often in a pinned container), so it does not depend on these host binaries. On the Go 1.27 floor, that container/pin needs **golangci-lint ≥ v2.13.0** (released 2026-08-19, the release that added Go 1.27 support); see the [golangci-lint v2.13.0 changelog](https://golangci-lint.run/docs/product/changelog/#2130). Anything older predates 1.27 support.
 

@@ -51,7 +51,7 @@ See [docs/install.md](docs/install.md) for marketplace, local-development, updat
 
 | Component | Purpose |
 |-----------|---------|
-| Skill `go-coding` | Auto-invoked router: sends each Go topic to the enforcing tool and the focused skill that owns it; sends symbol questions (where defined, who uses it) to `gopls`, through the official `gopls-lsp` plugin or its command line. |
+| Skill `go-coding` | Auto-invoked router: sends each Go topic to the enforcing tool and the focused skill that owns it; sends symbol questions (where defined, who uses it) to `gopls`, through the official `gopls-lsp` plugin or its bundled `scripts/gosym`, one shell call per question. |
 | Skills `go-errors`, `go-concurrency`, `go-testing`, `go-idioms`, `go-layout` | Load-on-use standards, each rule cited and framed around the enforcing linter (`modernize`, `errorlint`, `-race`, …). `go-layout` also owns naming, doc comments, and exported-API shape. |
 | Skill `/go-lint-setup` | User-invoked: scaffolds, adopts, or debugs the golangci-lint v2 config in a repo. Never overwrites an existing config unprompted. |
 | Agent `go-reviewer` | Report-only, context-isolated Go reviewer for what linters miss. Returns severity-ranked findings and dispatches no sub-agents. Its tool grant excludes `Write` and `Edit` but includes `Bash` to run the linters, so report-only is a contract it keeps rather than a sandbox that enforces it, and `Skill`, so it loads `go-coding:go-coding` and the focused skills before it reviews. |
@@ -79,6 +79,7 @@ The plugin has no build step. Validate locally:
 ```bash
 ./scripts/validate.sh        # manifests, parity, paths, frontmatter, hooks, doc inventories, linters, fixers, tie-break
 ./scripts/hooks-test.sh      # bash tests for the three hook scripts
+./scripts/gosym-test.sh      # bash tests for the gosym symbol helper
 claude plugin validate .     # manifest + component structure
 ```
 

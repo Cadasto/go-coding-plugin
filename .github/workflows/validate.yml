@@ -33,3 +33,5 @@ jobs:
       - run: python3 scripts/validate.py --selftest
       # Bash-only hook test harness; runs on every matrix leg.
       - run: ./scripts/hooks-test.sh
+      # The gosym helper against a stub gopls: no Go toolchain or gopls needed.
+      - run: ./scripts/gosym-test.sh

@@ -13,7 +13,7 @@ While on the `0.x` line, treat the plugin as pre-stable: a breaking change may s
 ## Release steps
 
 1. Bump `version` in **both** manifests (they must agree): `.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`. Keep `description` and `author` identical across both; `scripts/validate.py` enforces this parity.
-2. Run `./scripts/validate.sh`, `./scripts/hooks-test.sh`, and `claude plugin validate .`.
+2. Run `./scripts/validate.sh`, `./scripts/hooks-test.sh`, `./scripts/gosym-test.sh`, and `claude plugin validate .`.
 3. **Dogfood:** load the working copy (`claude --plugin-dir /path/to/go-coding-plugin`) and exercise the components against a real Go change on **both** hosts; see [testing.md](testing.md).
 4. Fold the accumulated `## [Unreleased]` notes into a dated `## [X.Y.Z] - YYYY-MM-DD` section in [CHANGELOG.md](../CHANGELOG.md) (Keep a Changelog: groups in order Added, Changed, Deprecated, Removed, Fixed, Security; see [AGENTS.md](../AGENTS.md#changelog-style)).
 5. Sync the docs surface (AGENTS.md, README.md) with what shipped, and the component list in the session-start hook's banner (`hooks/session-start.sh`).

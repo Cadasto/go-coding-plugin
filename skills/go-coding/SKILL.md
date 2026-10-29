@@ -38,14 +38,20 @@ older variant of a rule is kept. Two principles drive it:
 Where a Go symbol is defined, who uses it, who implements it, who calls it:
 
 1. With a language-server tool (Claude Code's `LSP`) whose root is the checkout being changed, use it.
-2. Otherwise run `gopls` from the shell, with `cd` in the same command so it answers from the
-   checkout or worktree being changed: `cd <checkout> && gopls workspace_symbol -matcher casesensitive <Name>`.
-   Each hit prints `<file>:<line>:<col>-<col> <Name> <Kind>`; its first field is the definition.
-3. Pass that first field, unchanged, to `gopls references` (every use, resolved by type),
-   `gopls implementation` (an interface's types, or the interfaces a type satisfies) or
-   `gopls call_hierarchy` (callers and callees; functions and methods only). `gopls definition`
-   takes the position of a use, not a name. A position off the identifier makes `gopls` exit 2.
-4. If `gopls` is missing, the call is refused, or it exits non-zero, use `grep` and say so.
+2. Otherwise ask `gosym`, one call per question: `<the folder holding this SKILL.md>/scripts/gosym -C <checkout> def|refs|impl|calls <Name>`.
+   `<Name>` is a package-level name or `Type.Method`; a bare name also finds the methods of that
+   name, and a third argument, a path part, keeps one package's definition. It prints each
+   definition as `== <file>:<line>:<col>-<col> <Name> <Kind>`, then what `gopls references` (every
+   use, resolved by type), `gopls implementation` (an interface's types, or the interfaces a type
+   satisfies) or `gopls call_hierarchy` (callers and callees; functions and methods only) answers
+   there, with paths relative to the checkout.
+3. Without `gosym`, take the same two steps, `cd <checkout> &&` in each command: `gopls
+   workspace_symbol -matcher fuzzy '<Name>$'` (anchored: unanchored, gopls lists at most 100 symbols
+   and may drop the exact one), then pass the exact hit's first field, unchanged, to `gopls
+   references`, `implementation` or `call_hierarchy`. `gopls definition` takes the position of a
+   use, not a name; a position off the identifier makes `gopls` exit 2.
+4. If `gopls` is missing, the call is refused, or it exits non-zero (`gosym`: exit 1 or 3), use
+   `grep` and say so.
 
 The command line is experimental (<https://go.dev/gopls/command-line>); `gopls help <command>`
 shows what the installed version takes.

@@ -34,7 +34,7 @@ if is_go_workspace; then
   done
   # No quotes or backslashes, so the JSON form needs no escaping; escape first if any part is
   # ever built from outside text.
-  tail="; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2; gopls for symbol lookups (gopls-lsp plugin, or gopls references/implementation from the shell)."
+  tail="; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2; gopls for symbol lookups (gopls-lsp plugin, or the go-coding skill's scripts/gosym refs|impl|calls <Name> from the shell)."
   if [ -n "$cursor" ]; then
     line="› Go workspace — go-coding: open /go-coding, then the skill for your diff (/go-errors · /go-testing · /go-idioms · /go-concurrency · /go-layout)${tail}"
     printf '{"additional_context":"%s"}\n' "$line"
