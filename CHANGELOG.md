@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Skills: `go-coding` bundles `scripts/gosym`, which answers a symbol question (`def`, `refs`, `impl`, `calls`) from the symbol's name in one shell call.
+- Scripts: `scripts/gosym-test.sh` tests `gosym` against a stub `gopls`; CI runs it.
+
+### Changed
+- Skills: `go-coding` *Symbol questions*, `go-layout` and `rules/go-context.mdc` route shell lookups through `gosym`.
+- Agents: `go-reviewer` finds what a change affects with `gosym`.
+- Hooks: the session-start banner names `gosym`.
+- Docs: `install.md` gives an allow rule for `gosym`.
+
+### Fixed
+- Skills: the by-hand symbol lookup anchors its `gopls workspace_symbol` query at the name's end, so the exact symbol is not lost past the 100-symbol cap.
+
 ## [0.8.1] - 2026-10-27
 
 Fixes the Cursor hooks: the session-start line and the skill nudge now reach the model, on Cursor 3.9.8 or newer for the nudge.
