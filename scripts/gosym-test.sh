@@ -5,29 +5,41 @@ set -u
 here="$(cd "$(dirname "$0")/.." && pwd)"; fails=0
 gosym="$here/skills/go-coding/scripts/gosym"
 t="$(mktemp -d)"; trap 'rm -rf "$t"' EXIT
-repo="$(cd "$t" && mkdir -p repo stub && cd repo && pwd -P)"
+mkdir -p "$t/repo/internal/q" "$t/stub" "$t/bin" "$t/with space/repo" "$t/nomod"
+repo="$(cd "$t/repo" && pwd -P)"
+printf 'module example.com/r\n' > "$repo/go.mod"
+printf 'module example.com/s\n' > "$t/with space/repo/go.mod"
+ln -s "$repo" "$t/link"
 
-# The stub prints what gopls would for a checkout at $repo: a loose match, an exact function, a method
-# of the same name, the name in a second package, and a hit outside the checkout. GOSYM_STUB_FAIL makes
-# a per-position query fail; GOSYM_STUB_MANY makes the symbol list reach gopls' cap of 100.
+# The stub prints what gopls would for a module at $GOSYM_STUB_ROOT (default $repo): a loose match, an
+# exact function, a method and a field of the same name, the name in a second package, and a hit
+# outside the module, in an order sort changes. GOSYM_STUB_MANY=<n> adds lines until the list holds n;
+# GOSYM_STUB_LOADERR prints a load error and no symbols, exit 0, as gopls does; GOSYM_STUB_FAIL makes a
+# per-position query fail. A per-position answer names the folder gopls ran in.
 cat > "$t/stub/gopls" <<STUB
 #!/usr/bin/env bash
+root="\${GOSYM_STUB_ROOT:-$repo}"
 case "\$1" in
   workspace_symbol)
+    [ "\$2 \$3" = "-matcher fuzzy" ] || { echo "unexpected matcher: \$*" >&2; exit 9; }
     [ "\${4:-}" = 'Parse\$' ] || [ "\${4:-}" = 'Reader.Parse\$' ] || { echo "unexpected query: \$*" >&2; exit 9; }
-    echo "$repo/internal/q/parse.go:10:6-11 Parse Function"
-    echo "$repo/internal/q/reader.go:20:18-23 Reader.Parse Method"
-    echo "$repo/cmd/tool/parse.go:7:6-11 Parse Function"
-    echo "$repo/internal/q/parse_test.go:30:6-15 TestParse Function"
+    if [ -n "\${GOSYM_STUB_LOADERR:-}" ]; then echo "go/packages.Load: go.mod requires a newer go" >&2; exit 0; fi
+    echo "\$root/internal/q/parse.go:10:6-11 Parse Function"
+    echo "\$root/internal/q/reader.go:20:18-23 Reader.Parse Method"
+    echo "\$root/cmd/tool/parse.go:7:6-11 Parse Function"
+    echo "\$root/internal/q/parse_test.go:30:6-15 TestParse Function"
+    echo "\$root/internal/q/conf.go:5:2-7 Config.Parse Field"
     echo "/usr/local/go/src/net/url/url.go:1:6-11 Parse Function"
-    if [ -n "\${GOSYM_STUB_MANY:-}" ]; then for i in \$(seq 1 96); do echo "/x/y.go:\$i:6-11 Parse\$i Function"; done; fi ;;
+    if [ -n "\${GOSYM_STUB_MANY:-}" ]; then for i in \$(seq 7 "\$GOSYM_STUB_MANY"); do echo "/x/y.go:\$i:6-11 Parse\$i Function"; done; fi ;;
   references|implementation|call_hierarchy)
     [ -z "\${GOSYM_STUB_FAIL:-}" ] || { echo "gopls: \$1 refused" >&2; exit 2; }
-    echo "$repo/internal/q/use.go:3:2-7 (\$1 at \$2)" ;;
+    echo "\$root/internal/q/use.go:3:2-7 (\$1 at \$2 from \$PWD)" ;;
   *) echo "unexpected: \$*" >&2; exit 9 ;;
 esac
 STUB
 chmod +x "$t/stub/gopls"
+# A PATH holding only the tools gosym needs, so "no gopls" holds even where the distro ships one.
+for tool in bash env awk grep sort mktemp rm cat seq; do ln -s "$(command -v "$tool")" "$t/bin/$tool"; done
 export PATH="$t/stub:$PATH"
 
 check() { # NAME WANT_EXIT GOT_EXIT OUTPUT WANT_SUBSTRING (empty = no check) [UNWANTED_SUBSTRING]
@@ -39,35 +51,59 @@ check() { # NAME WANT_EXIT GOT_EXIT OUTPUT WANT_SUBSTRING (empty = no check) [UN
 }
 
 out="$(cd "$repo" && "$gosym" def Parse 2>&1)"; rc=$?
-check "def keeps exact names inside the checkout, paths relative" 0 $rc "$out" "== internal/q/parse.go:10:6-11 Parse Function" "TestParse"
-check "def drops a definition outside the checkout"                0 $rc "$out" "== cmd/tool/parse.go:7:6-11 Parse Function" "url.go"
-check "a bare name also finds the methods of that name"            0 $rc "$out" "Reader.Parse Method"
+check "def keeps exact names inside the module, paths relative" 0 $rc "$out" "== internal/q/parse.go:10:6-11 Parse Function" "TestParse"
+check "def drops a definition outside the module"                0 $rc "$out" "== cmd/tool/parse.go:7:6-11 Parse Function" "url.go"
+check "a bare name also finds the methods of that name"          0 $rc "$out" "Reader.Parse Method"
+check "definitions print in a stable order"                      0 $rc "${out%%$'\n'*}" "== cmd/tool/parse.go"
 out="$(cd "$repo" && "$gosym" def Reader.Parse 2>&1)"; rc=$?
-check "a qualified name finds only that method"                    0 $rc "$out" "Reader.Parse Method" "Parse Function"
+check "a qualified name finds only that method"                  0 $rc "$out" "Reader.Parse Method" "Parse Function"
 out="$(cd "$repo" && "$gosym" refs Parse cmd/ 2>&1)"; rc=$?
-check "refs asks gopls references at the definition"               0 $rc "$out" "internal/q/use.go:3:2-7 (references at cmd/tool/parse.go:7:6-11)"
-check "a path part keeps the matching definition only"             0 $rc "$out" "== cmd/tool/parse.go" "internal/q/parse.go:10"
+check "refs asks gopls references at the definition"             0 $rc "$out" "internal/q/use.go:3:2-7 (references at cmd/tool/parse.go:7:6-11"
+check "a path part keeps the matching definition only"           0 $rc "$out" "== cmd/tool/parse.go" "internal/q/parse.go:10"
+out="$(cd "$repo" && "$gosym" refs Parse repo/ 2>&1)"; rc=$?
+check "a path part is matched below the root, not on it"         1 $rc "$out" "use grep and say so"
 out="$(cd "$repo" && "$gosym" impl Reader.Parse 2>&1)"; rc=$?
-check "impl asks gopls implementation"                             0 $rc "$out" "(implementation at"
-out="$(cd "$repo" && "$gosym" calls Reader.Parse 2>&1)"; rc=$?
-check "calls asks gopls call_hierarchy"                            0 $rc "$out" "(call_hierarchy at"
-out="$(cd / && "$gosym" -C "$repo" def Reader.Parse 2>&1)"; rc=$?
-check "-C answers for another checkout"                            0 $rc "$out" "== internal/q/reader.go:20:18-23"
+check "impl asks gopls implementation"                           0 $rc "$out" "(implementation at"
+out="$(cd "$repo" && "$gosym" calls Parse 2>&1)"; rc=$?
+check "calls asks gopls call_hierarchy"                          0 $rc "$out" "(call_hierarchy at"
+check "a question that does not apply to a kind says so, exit 0" 0 $rc "$out" "(n/a: Field)"
+out="$(cd "$repo" && "$gosym" impl Parse 2>&1)"; rc=$?
+check "impl skips a function"                                    0 $rc "$out" "(n/a: Function)" "(implementation at internal/q/parse.go"
+out="$(cd / && "$gosym" -C "$repo" refs Reader.Parse 2>&1)"; rc=$?
+check "-C runs gopls in that folder"                             0 $rc "$out" "from $repo)"
+out="$(cd / && "$gosym" -C "$repo/internal/q" def Parse 2>&1)"; rc=$?
+check "-C a package folder answers for its whole module"         0 $rc "$out" "== cmd/tool/parse.go:7:6-11 Parse Function"
+out="$(cd / && GOSYM_STUB_ROOT="$t/link" "$gosym" -C "$t/link" def Reader.Parse 2>&1)"; rc=$?
+check "a symlinked checkout prints paths relative to it"         0 $rc "$out" "== internal/q/reader.go:20:18-23" "$t"
+out="$(cd / && GOSYM_STUB_ROOT="$t/with space/repo" "$gosym" -C "$t/with space/repo" def Reader.Parse 2>&1)"; rc=$?
+check "a checkout path with a space still finds definitions"     0 $rc "$out" "== internal/q/reader.go:20:18-23 Reader.Parse Method"
+out="$(cd "$t/nomod" && GOSYM_STUB_ROOT="$t/nomod" "$gosym" def Reader.Parse 2>&1)"; rc=$?
+check "outside any module it says so and uses the folder"        0 $rc "$out" "no go.mod or go.work above"
 out="$(cd "$repo" && "$gosym" refs Parse nowhere/ 2>&1)"; rc=$?
-check "no matching definition exits 1 and says to use grep"        1 $rc "$out" "use grep and say so"
+check "no matching definition exits 1 and says to use grep"      1 $rc "$out" "use grep and say so"
+out="$(cd "$repo" && GOSYM_STUB_LOADERR=1 "$gosym" def Parse 2>&1)"; rc=$?
+check "a load error with no symbols exits 3 with its message"    3 $rc "$out" "go.mod requires a newer go" "no definition"
 out="$(cd "$repo" && GOSYM_STUB_FAIL=1 "$gosym" refs Reader.Parse 2>&1)"; rc=$?
-check "a failing gopls exits 3 with its message"                   3 $rc "$out" "refused"
-out="$(cd "$repo" && GOSYM_STUB_MANY=1 "$gosym" def Parse 2>&1)"; rc=$?
-check "a list at gopls' cap says a definition may be missing"      0 $rc "$out" "stopped at 100 symbols"
-out="$(cd "$repo" && PATH=/usr/bin:/bin "$gosym" def Parse 2>&1)"; rc=$?
-check "without gopls it exits 3 and says to use grep"              3 $rc "$out" "use grep and say so"
+check "a failing gopls exits 3 with its message"                 3 $rc "$out" "refused"
+out="$(cd "$repo" && GOSYM_STUB_MANY=100 "$gosym" def Parse 2>&1)"; rc=$?
+check "a list of exactly 100 says a definition may be missing"   0 $rc "$out" "stopped at 100 symbols ending in Parse, so a definition may be missing; ask again as Type.Method"
+out="$(cd "$repo" && GOSYM_STUB_MANY=99 "$gosym" def Parse 2>&1)"; rc=$?
+check "a list under the cap says nothing about it"               0 $rc "$out" "== internal/q/parse.go" "stopped at 100"
+out="$(cd "$repo" && PATH="$t/bin" "$gosym" def Parse 2>&1)"; rc=$?
+check "without gopls it exits 3 and says to use grep"            3 $rc "$out" "gopls is not on PATH; use grep and say so"
 out="$("$gosym" find Parse 2>&1)"; rc=$?
-check "an unknown question is a usage error"                       2 $rc "$out" "usage: gosym"
+check "an unknown question is a usage error"                     2 $rc "$out" "usage: gosym"
 out="$("$gosym" def 'Parse;rm' 2>&1)"; rc=$?
-check "a name that is not a Go name is refused"                    2 $rc "$out" "not a Go name"
+check "a name that is not a Go name is refused"                  2 $rc "$out" "not a Go name"
+out="$("$gosym" -C "$t/none" def Parse 2>&1)"; rc=$?
+check "a missing folder is a usage error"                        2 $rc "$out" "cannot enter"
 
 # The helper itself must fail on bad input, or a broken check could hide a regression above.
 probe="$( fails=0; check "probe" 0 1 "x" "" )"
 case "$probe" in FAIL*) echo "ok   can-fail: check rejects a wrong exit";; *) echo "FAIL can-fail: check passed a wrong exit"; fails=$((fails+1));; esac
+probe="$( fails=0; check "probe" 0 0 "x" "y" )"
+case "$probe" in FAIL*) echo "ok   can-fail: check rejects a missing substring";; *) echo "FAIL can-fail: check passed a missing substring"; fails=$((fails+1));; esac
+probe="$( fails=0; check "probe" 0 0 "xy" "x" "y" )"
+case "$probe" in FAIL*) echo "ok   can-fail: check rejects an unwanted substring";; *) echo "FAIL can-fail: check passed an unwanted substring"; fails=$((fails+1));; esac
 
 [ "$fails" -eq 0 ] || exit 1
