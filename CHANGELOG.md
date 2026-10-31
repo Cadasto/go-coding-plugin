@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-10-31
+
+Adds `gosym`, which answers a Go symbol question (definition, uses, implementations, callers) in one shell call, and routes the skills, the Cursor rule and `go-reviewer` through it.
+
 ### Added
 - Skills: `go-coding` bundles `scripts/gosym`, which answers a symbol question (`def`, `refs`, `impl`, `calls`) from the symbol's name in one shell call.
 - Scripts: `scripts/gosym-test.sh` tests `gosym` against a stub `gopls`; CI runs it.
