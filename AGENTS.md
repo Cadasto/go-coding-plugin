@@ -44,7 +44,7 @@ Shared assets (skills, agents) are consumed by both hosts; host-specific manifes
 
 - **Claude manifest**: `.claude-plugin/plugin.json`: `name`, `version`, `description`, `author` (an **object** `{name, url}`; `claude plugin validate` rejects a string), `license`, `repository`, `keywords`. Claude Code discovers components from the **default folders** automatically; no explicit path map is needed.
 - **Cursor manifest**: `.cursor-plugin/plugin.json`: same metadata **plus** explicit top-level path keys `skills`, `agents`, `rules`, `hooks` (a `commands` key would go here too if a `commands/` folder ever shipped). No `mcpServers`. Keep `name`/`version`/`description`/`author` identical to the Claude manifest.
-- **Skills**: `skills/<name>/SKILL.md`, shared by both hosts, including user-invoked slash commands.
+- **Skills**: `skills/<name>/SKILL.md`, shared by both hosts, including user-invoked slash commands. The router bundles `skills/go-coding/scripts/gosym` (bash, needs `gopls`): one shell call per symbol question. The session-start banner names its absolute path; the skills, the rule and `go-reviewer` point there or at the skill's base directory.
 - **Agents**: `agents/<name>.md`, context-isolated specialists.
 - **Cursor rules**: `rules/*.mdc`, Cursor-only, with frontmatter (`description`, `alwaysApply`, `globs`, e.g. `globs: ["**/*.go"]`), referenced by the Cursor manifest's `rules` path.
 - **Claude hooks**: `hooks/hooks.json`, object `{ "hooks": { "SessionStart": [...], "PostToolUse": [...] } }`; command paths use `${CLAUDE_PLUGIN_ROOT}`. Wires `session-start.sh` (`SessionStart`) and `format-on-save.sh` + `skill-nudge.sh` (`PostToolUse`, `matcher: "Write|Edit"`).
@@ -55,8 +55,8 @@ Shared assets (skills, agents) are consumed by both hosts; host-specific manifes
   - `hooks/skill-nudge.sh`: after a `*.go` Write/Edit (Cursor: the `Write|StrReplace` matcher), names ONE matching go-coding skill for that edit, once per skill per session; `hookSpecificOutput.additionalContext` under Claude Code (`go-coding:<skill>`), `additional_context` under Cursor (`/<skill>`).
 - **References**: `references/golangci.v2.yml`, the shipped golangci-lint v2 reference config. Shared reference material lives here, **not** under `commands/`.
 - **MCP config** *(not present)*: `.mcp.json` only if the plugin later integrates an MCP server.
-- **Scripts**: `scripts/validate.sh` (wraps the stdlib-only `scripts/validate.py`), `scripts/hooks-test.sh`, `scripts/usage-report.py` (adoption measurement; see [docs/testing.md](docs/testing.md#measuring-adoption)).
-- **CI**: `.github/workflows/validate.yml` (validator, `--selftest`, hook tests; Go `1.27.x`, the floor minor) and `.github/workflows/links.yml` (link check). `.github/` also holds issue + PR templates and `copilot-instructions.md`.
+- **Scripts**: `scripts/validate.sh` (wraps the stdlib-only `scripts/validate.py`), `scripts/hooks-test.sh`, `scripts/gosym-test.sh` (the `gosym` helper against a stub `gopls`), `scripts/usage-report.py` (adoption measurement; see [docs/testing.md](docs/testing.md#measuring-adoption)).
+- **CI**: `.github/workflows/validate.yml` (validator, `--selftest`, hook tests, `gosym` tests; Go `1.27.x`, the floor minor) and `.github/workflows/links.yml` (link check). `.github/` also holds issue + PR templates and `copilot-instructions.md`.
 - **Contributor docs**: `docs/install.md`, `testing.md`, `versioning.md`, `authoring.md`. Planning and research notes live under `docs/plans/` and `docs/research/`, **gitignored**, not part of the published plugin.
 
 ## Components
@@ -80,6 +80,7 @@ No build step; the plugin is pure Markdown + JSON. Validate and dogfood locally:
 python3 scripts/validate.py --selftest   # proves each check still catches its failure case (CI runs it)
 python3 scripts/validate.py --check-links # every cited URL resolves (needs the network)
 ./scripts/hooks-test.sh                  # bash tests for all three hook scripts
+./scripts/gosym-test.sh                  # bash tests for skills/go-coding/scripts/gosym (stub gopls)
 claude plugin validate .                 # manifest + component structure (no extra deps)
 claude --plugin-dir /path/to/go-coding-plugin # load locally for one session (dogfooding)
 ```

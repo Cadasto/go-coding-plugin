@@ -77,10 +77,9 @@ exported signature are part of the API — they are as reviewable as the code.
   it, keep it to a method or three, and return the concrete type so callers get the full surface and
   new methods don't break them.
 - **Adding a method to an exported interface is a breaking change:** every type that implemented it
-  stops satisfying it. Before adding one, list its implementers from the checkout being changed:
-  `cd <checkout> && gopls workspace_symbol -matcher casesensitive <Interface>` prints the interface's
-  position as its first field; pass that to `cd <checkout> && gopls implementation <position>`, or
-  use `grep` and say so if `gopls` fails (go-coding, *Symbol questions*). This lists the module's
+  stops satisfying it. Before adding one, list its implementers from the checkout being changed with
+  go-coding's `gosym`, `<gosym> -C <checkout> impl <Interface>`, as go-coding's *Symbol questions*
+  say: where `<gosym>` is, and when to use `grep` and say so instead. This lists the module's
   implementers only; those in other modules stay invisible. The compatible route is a new interface carrying the method,
   checked for with a type assertion where the old one is accepted (*Keeping Your Modules Compatible*).
 - **Prefer synchronous signatures** — let the caller add concurrency (→ `go-concurrency`).

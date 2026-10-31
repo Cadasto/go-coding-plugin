@@ -24,7 +24,7 @@ printf 'module x\n\ngo 1.27.0\n' > "$t/go-no-lint/go.mod"
 run_case "go repo with lint config names the hop"      "$t/go-with-lint" "load go-coding then the skill for your diff"
 run_case "go repo with lint config names go-reviewer"  "$t/go-with-lint" "go-reviewer for a diff review"
 run_case "go repo banner routes symbol lookups to gopls" "$t/go-with-lint" "gopls for symbol lookups"
-run_case "go repo banner names the gopls shell route"  "$t/go-with-lint" "gopls references/implementation from the shell"
+run_case "go repo banner names gosym by its absolute path" "$t/go-with-lint" "from the shell $here/skills/go-coding/scripts/gosym -C <dir> def|refs|impl|calls <Name>)"
 run_case_absent "go repo with lint config omits lint-setup" "$t/go-with-lint" "/go-lint-setup"
 run_case_absent "banner names no removed skill"        "$t/go-no-lint"   "go-explain"
 run_case "go repo without lint config offers setup"    "$t/go-no-lint"   "/go-lint-setup"
@@ -39,6 +39,13 @@ esac
 case "$out" in *"/go-errors"*) echo "ok   Cursor banner names a slash skill";; *) echo "FAIL Cursor banner names a slash skill: got '$out'"; fails=$((fails+1));; esac
 if command -v python3 >/dev/null 2>&1; then
   if printf '%s' "$out" | python3 -c 'import json,sys; json.load(sys.stdin)' 2>/dev/null; then echo "ok   Cursor session-start emits valid JSON"; else echo "FAIL Cursor session-start emits valid JSON: '$out'"; fails=$((fails+1)); fi
+  # The banner names gosym's install path, the one part built from outside text: a quote and a
+  # backslash in it must still give valid JSON, carrying the path as written.
+  odd="$t/plug\"in\\x"; mkdir -p "$odd/hooks"; cp "$here/hooks/session-start.sh" "$odd/hooks/"
+  out="$(cd "$t/not-go" && CURSOR_PLUGIN_ROOT="$odd" CURSOR_PROJECT_DIR="$t/go-no-lint" bash "$odd/hooks/session-start.sh")"
+  if printf '%s' "$out" | python3 -c 'import json,sys; assert sys.argv[1] in json.load(sys.stdin)["additional_context"]' "$odd/skills/go-coding/scripts/gosym" 2>/dev/null; then
+    echo "ok   Cursor banner escapes a quote and a backslash in the install path"
+  else echo "FAIL Cursor banner escapes a quote and a backslash in the install path: '$out'"; fails=$((fails+1)); fi
 fi
 out="$(cd "$t/go-no-lint" && CURSOR_PLUGIN_ROOT="$t/go-no-lint" CURSOR_PROJECT_DIR="$t/not-go" bash "$here/hooks/session-start.sh")"
 if [ -z "$out" ]; then echo "ok   Cursor session-start ignores a non-Go project"; else echo "FAIL Cursor session-start ignores a non-Go project: got '$out'"; fails=$((fails+1)); fi

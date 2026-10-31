@@ -6,6 +6,8 @@
 # Cursor runs a plugin hook from the plugin install and reads additional_context
 # from JSON, so there the script first changes into CURSOR_PROJECT_DIR.
 set -u
+# The plugin install holding this script, read before any cd: the banner names gosym's absolute path.
+gosym="$(cd "$(dirname "$0")/.." 2>/dev/null && pwd)/skills/go-coding/scripts/gosym"
 
 # CURSOR_PLUGIN_ROOT is set only for a Cursor plugin hook, so Claude Code started from a
 # Cursor terminal still takes the Claude Code path. Without a usable CURSOR_PROJECT_DIR the
@@ -32,10 +34,10 @@ if is_go_workspace; then
   for cfg in .golangci.yml .golangci.yaml .golangci.toml .golangci.json; do
     [ -e "$cfg" ] && lint="" && break
   done
-  # No quotes or backslashes, so the JSON form needs no escaping; escape first if any part is
-  # ever built from outside text.
-  tail="; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2; gopls for symbol lookups (gopls-lsp plugin, or gopls references/implementation from the shell)."
+  tail="; go-reviewer for a diff review${lint}. gofmt/golangci-lint v2; gopls for symbol lookups (gopls-lsp plugin, or from the shell ${gosym} -C <dir> def|refs|impl|calls <Name>)."
   if [ -n "$cursor" ]; then
+    # The install path is the one part built from outside text: escape it for the JSON string.
+    tail="$(printf '%s' "$tail" | sed 's/\\/\\\\/g; s/"/\\"/g')"
     line="› Go workspace — go-coding: open /go-coding, then the skill for your diff (/go-errors · /go-testing · /go-idioms · /go-concurrency · /go-layout)${tail}"
     printf '{"additional_context":"%s"}\n' "$line"
   else

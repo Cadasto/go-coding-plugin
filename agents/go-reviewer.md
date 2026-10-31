@@ -64,9 +64,11 @@ your grant to run those tools, so no-edit is a contract you keep, not a sandbox:
    a staged or branch change is implied). Read the surrounding code too — most of these bugs live in
    the interaction with unchanged code. When the change touches an exported identifier, an error, an
    interface or an enum with paired dispatch sites, find what it affects per the router's *Symbol
-   questions*: `cd <checkout> && gopls references <position>` (`gopls implementation` for an
-   interface), the position being the first field `gopls workspace_symbol -matcher casesensitive
-   <Name>` prints. If `gopls` is missing, refused or exits non-zero, use `grep`.
+   questions*: `<gosym> -C <checkout> refs <Name>` (`impl` for an interface), `<gosym>` being the
+   absolute path your brief names, else `scripts/gosym` under the base directory `go-coding:go-coding`
+   showed when it loaded. If it warns that gopls stopped at 100 symbols, ask again as `Type.Method`.
+   If `gosym` cannot be found, the call is refused, or it exits 1 or 3, use `grep` and say so; exit 2
+   is a wrong call, fix it.
 3. **Walk every dimension below** against the change, and cite the skill that owns the rule each
    finding rests on.
 4. *(Optional)* confirm a suspicion with `go vet ./...` or `golangci-lint run`; don't block on

@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# gosym: one Go symbol question in one call. It finds the symbol's definition with
+# `gopls workspace_symbol`, then asks gopls at that position, so nobody copies a position by hand.
+#
+#   gosym [-C <dir>] def|refs|impl|calls <Name> [<path part>]
+#
+#   def    where <Name> is defined
+#   refs   every use, resolved by type (gopls references)
+#   impl   an interface's types, or the interfaces a type satisfies (gopls implementation)
+#   calls  the callers and callees of a function or method (gopls call_hierarchy)
+#
+# <Name> is a package-level name (ParseQuery) or a method (Decoder.Decode); a bare name also matches
+# every method and field of that name. Only definitions inside the go.work workspace, else the module,
+# that holds <dir> count, not the standard library or the module cache. <path part> keeps the
+# definitions whose path, relative to that root, contains it. Each definition prints as
+# "== <path>:<line>:<col>-<col> <Name> <Kind>", its answers below it: "(none)" when gopls has none,
+# "(n/a: <Kind>)" when the question does not apply to that kind. Paths print relative to the root.
+#
+# gopls lists at most 100 symbols for a query. When the list reaches that cap a definition may be
+# missing, and gosym says so on stderr, exit 0: the answer is incomplete; ask again as Type.Method.
+#
+# Exit 0 with the answers; 1 when no definition matches; 2 on a usage error; 3 when gopls is missing
+# or fails, the other definitions' answers still printed. On 1 or 3, use grep and say so; on 2, fix
+# the call.
+set -u
+
+usage() {
+  echo "usage: gosym [-C <dir>] def|refs|impl|calls <Name> [<path part>]" >&2
+  exit 2
+}
+
+dir=.
+if [ "${1:-}" = "-C" ]; then
+  [ $# -ge 2 ] || usage
+  dir="$2"
+  shift 2
+fi
+[ $# -ge 2 ] && [ $# -le 3 ] || usage
+cmd="$1"; name="$2"; part="${3:-}"
+case "$cmd" in
+  def) sub="" ;;
+  refs) sub=references ;;
+  impl) sub=implementation ;;
+  calls) sub=call_hierarchy ;;
+  *) usage ;;
+esac
+case "$name" in
+  ''|*[![:alnum:]_.]*) echo "gosym: '$name' is not a Go name (Name or Type.Method)" >&2; exit 2 ;;
+esac
+
+CDPATH='' cd -- "$dir" || { echo "gosym: cannot enter $dir" >&2; exit 2; }
+command -v gopls >/dev/null 2>&1 || { echo "gosym: gopls is not on PATH; use grep and say so" >&2; exit 3; }
+
+# gopls answers for the whole workspace or module, whichever package folder it runs in, so the
+# boundary is the nearest go.work above, else the nearest go.mod.
+root=""; mod=""; d="$PWD"
+while :; do
+  if [ -f "$d/go.work" ]; then root="$d"; break; fi
+  if [ -z "$mod" ] && [ -f "$d/go.mod" ]; then mod="$d"; fi
+  [ -n "$d" ] || break
+  d="${d%/*}"
+done
+root="${root:-$mod}"
+if [ -z "$root" ]; then
+  echo "gosym: no go.mod or go.work above $PWD; only definitions under it count" >&2
+  root="$PWD"
+fi
+logical="${root%/}/"
+physical="$(cd -- "$root" && pwd -P)"; physical="${physical%/}/"
+
+# Strip the root's own prefix, in either spelling, from every path in the text.
+rel() {
+  awk -v a="$physical" -v b="$logical" '
+    function strip(s, p,   out, i) {
+      out = ""
+      while ((i = index(s, p)) > 0) { out = out substr(s, 1, i - 1); s = substr(s, i + length(p)) }
+      return out s
+    }
+    { s = strip($0, a); if (b != a) s = strip(s, b); print s }'
+}
+
+err="$(mktemp)"
+trap 'rm -f "$err"' EXIT
+
+# Anchored at the end ("Name$": every symbol whose name ends in it), the list stays under the cap for
+# all but the commonest names. It still matches loosely and reaches outside the root; keep the exact
+# name inside the root, under the path part. A line is "<path>:<line>:<col>-<col> <Name> <Kind>", and
+# the path may hold spaces, so the name and kind are the last two fields.
+if ! syms="$(gopls workspace_symbol -matcher fuzzy "$name\$" 2>"$err")"; then
+  { printf 'gosym: gopls workspace_symbol failed: '; cat "$err"; } | rel >&2
+  exit 3
+fi
+if [ "$(printf '%s\n' "$syms" | grep -c .)" -ge 100 ]; then
+  hint="ask again as Type.Method"
+  case "$name" in *.*) hint="check the rest with grep and say so" ;; esac
+  echo "gosym: gopls stopped at 100 symbols ending in $name, so a definition may be missing; $hint" >&2
+fi
+tab="$(printf '\t')"
+defs="$(printf '%s\n' "$syms" | awk -v name="$name" -v a="$physical" -v b="$logical" -v part="$part" '
+  NF >= 3 {
+    sym = $(NF - 1); kind = $NF
+    pos = $0; sub(/[ \t]+[^ \t]+[ \t]+[^ \t]+[ \t]*$/, "", pos)
+    if (index(pos, a) == 1) relpos = substr(pos, length(a) + 1)
+    else if (index(pos, b) == 1) relpos = substr(pos, length(b) + 1)
+    else next
+    if (sym != name && !(index(name, ".") == 0 && length(sym) > length(name) &&
+        substr(sym, length(sym) - length(name)) == "." name)) next
+    if (part != "" && index(relpos, part) == 0) next
+    print pos "\t" sym "\t" kind
+  }' | LC_ALL=C sort)"
+if [ -z "$defs" ]; then
+  if [ -s "$err" ]; then
+    { printf 'gosym: gopls listed no %s and said: ' "$name"; cat "$err"; } | rel >&2
+    exit 3
+  fi
+  echo "gosym: no definition of $name in ${logical%/}${part:+ under a path containing $part}; use grep and say so" >&2
+  exit 1
+fi
+if [ -s "$err" ]; then
+  { printf 'gosym: gopls also said: '; cat "$err"; } | rel >&2
+fi
+
+status=0
+while IFS="$tab" read -r pos sym kind; do
+  printf '== %s %s %s\n' "$pos" "$sym" "$kind" | rel
+  [ -n "$sub" ] || continue
+  case "$cmd:$kind" in
+    refs:*|impl:Interface|impl:Struct|impl:Class|impl:Method|calls:Function|calls:Method) ;;
+    *) echo "(n/a: $kind)"; continue ;;
+  esac
+  if ! out="$(gopls "$sub" "$pos" 2>"$err")"; then
+    { printf 'gosym: gopls %s %s failed: ' "$sub" "$pos"; cat "$err"; } | rel >&2
+    status=3
+    continue
+  fi
+  if [ -n "$out" ]; then printf '%s\n' "$out" | rel; else echo "(none)"; fi
+done <<EOF
+$defs
+EOF
+exit "$status"
