@@ -38,20 +38,23 @@ older variant of a rule is kept. Two principles drive it:
 Where a Go symbol is defined, who uses it, who implements it, who calls it:
 
 1. With a language-server tool (Claude Code's `LSP`) whose root is the checkout being changed, use it.
-2. Otherwise ask `gosym`, one call per question: `<the folder holding this SKILL.md>/scripts/gosym -C <checkout> def|refs|impl|calls <Name>`.
-   `<Name>` is a package-level name or `Type.Method`; a bare name also finds the methods of that
-   name, and a third argument, a path part, keeps one package's definition. It prints each
+2. Otherwise ask `gosym`, one call per question: `<gosym> -C <checkout> def|refs|impl|calls <Name>`.
+   `<gosym>` is `scripts/gosym` in this skill's folder: the absolute path the session banner names,
+   or this skill's base directory followed by `/scripts/gosym`. A brief carries that absolute path.
+   `<Name>` is a package-level name or `Type.Method`; a bare name also finds the methods and fields
+   of that name, and a third argument keeps the definitions whose path contains it. It prints each
    definition as `== <file>:<line>:<col>-<col> <Name> <Kind>`, then what `gopls references` (every
    use, resolved by type), `gopls implementation` (an interface's types, or the interfaces a type
-   satisfies) or `gopls call_hierarchy` (callers and callees; functions and methods only) answers
-   there, with paths relative to the checkout.
+   satisfies) or `gopls call_hierarchy` (callers and callees) answers there, or `(n/a: <Kind>)`
+   where the question does not apply, with paths relative to the module. A warning that gopls
+   stopped at 100 symbols means the answer may be incomplete: ask again as `Type.Method`.
 3. Without `gosym`, take the same two steps, `cd <checkout> &&` in each command: `gopls
-   workspace_symbol -matcher fuzzy '<Name>$'` (anchored: unanchored, gopls lists at most 100 symbols
-   and may drop the exact one), then pass the exact hit's first field, unchanged, to `gopls
-   references`, `implementation` or `call_hierarchy`. `gopls definition` takes the position of a
-   use, not a name; a position off the identifier makes `gopls` exit 2.
-4. If `gopls` is missing, the call is refused, or it exits non-zero (`gosym`: exit 1 or 3), use
-   `grep` and say so.
+   workspace_symbol -matcher fuzzy '<Name>$'` (gopls lists at most 100 symbols for any query;
+   anchored at the name's end, the list rarely reaches that), then pass the exact hit's first field,
+   unchanged, to `gopls references`, `implementation` or `call_hierarchy`. `gopls definition` takes
+   the position of a use, not a name; a position off the identifier makes `gopls` exit 2.
+4. If `gosym` cannot be found or the call is refused, `gopls` is missing or exits non-zero, or
+   `gosym` exits 1 or 3, use `grep` and say so. `gosym` exit 2 is a wrong call: fix it.
 
 The command line is experimental (<https://go.dev/gopls/command-line>); `gopls help <command>`
 shows what the installed version takes.
@@ -72,7 +75,7 @@ skill matching the change — with the Skill tool (`go-coding:go-errors`, …), 
 
 One load per skill per session is enough; the skill stays in context. Orchestrators dispatching
 implementer or reviewer subagents carry this table and the *Symbol questions* section into every
-brief, with the absolute path of the checkout or worktree being changed — a subagent does not
+brief, with the absolute paths of the checkout or worktree being changed and of `gosym` — a subagent does not
 inherit the parent session's skills, and may start in a different folder.
 
 ## Minimum checklist (when a second load is not affordable)
